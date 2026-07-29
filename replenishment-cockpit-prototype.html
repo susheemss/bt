@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Replenishment Cockpit — AI-Powered Demand Sensing</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F7F8FA;--surface:#FFFFFF;--surface2:#F1F3F6;--surface3:#E8ECF1;
+  --border:#E2E6EB;--border2:#D0D5DC;
+  --ink:#1A1D23;--ink2:#3B4150;--ink3:#5F6B7A;--ink4:#8B95A5;--ink5:#B0B8C4;
+  --blue:#2E6BE6;--blue-light:#EBF1FD;--blue-dark:#1D4FA0;
+  --green:#1A8754;--green-light:#E6F5ED;
+  --amber:#D97706;--amber-light:#FEF3E2;
+  --red:#C93B3B;--red-light:#FDE8E8;
+  --purple:#6C5CE7;--purple-light:#F0EEFE;
+  --sidebar:#1B2537;--sidebar-hover:#253245;--sidebar-active:#2E6BE6;
+  --radius:6px;--radius-lg:10px;
+  --shadow:0 1px 3px rgba(27,37,55,.06),0 1px 2px rgba(27,37,55,.04);
+  --shadow-md:0 4px 12px rgba(27,37,55,.08),0 1px 3px rgba(27,37,55,.05);
+}
+html{font-size:14px}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--blue);text-decoration:none}
+
+/* ---- LAYOUT ---- */
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.sidebar{background:var(--sidebar);color:#CBD5E1;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;width:220px;z-index:50}
+.sidebar-brand{padding:20px 20px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sidebar-brand .logo{width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:13px;letter-spacing:-.5px}
+.sidebar-brand .brand-text{font-size:13px;font-weight:600;color:#E8ECF1;line-height:1.3}
+.sidebar-brand .brand-sub{font-size:10.5px;color:#64748B;font-weight:400}
+.sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto}
+.nav-section{margin-bottom:18px}
+.nav-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:#4A5568;padding:0 10px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius);cursor:pointer;font-size:12.5px;color:#94A3B8;transition:all .15s;margin-bottom:1px}
+.nav-item:hover{background:var(--sidebar-hover);color:#CBD5E1}
+.nav-item.active{background:rgba(46,107,230,.15);color:#93B4F5;font-weight:500}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.65}
+.nav-item.active svg{opacity:1}
+.nav-item .badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:600;padding:1px 6px;border-radius:10px}
+.nav-item .ai-dot{margin-left:auto;width:6px;height:6px;background:var(--purple);border-radius:50%}
+.sidebar-footer{padding:14px 16px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+.sidebar-footer .avatar{width:30px;height:30px;border-radius:50%;background:#374151;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#94A3B8}
+.sidebar-footer .user-info{flex:1}
+.sidebar-footer .user-name{font-size:12px;font-weight:500;color:#CBD5E1}
+.sidebar-footer .user-role{font-size:10.5px;color:#64748B}
+.main{margin-left:220px;min-height:100vh;display:flex;flex-direction:column}
+
+/* ---- TOPBAR ---- */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:40}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink4)}
+.breadcrumb span{color:var(--ink3)}
+.breadcrumb .sep{color:var(--ink5)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.tb-pill{display:flex;align-items:center;gap:5px;padding:5px 12px;border:1px solid var(--border);border-radius:20px;font-size:11.5px;color:var(--ink3);cursor:pointer;background:var(--surface);transition:all .15s}
+.tb-pill:hover{border-color:var(--border2);color:var(--ink2)}
+.tb-pill.active{border-color:var(--blue);color:var(--blue);background:var(--blue-light)}
+.tb-pill .dot{width:7px;height:7px;border-radius:50%}
+.tb-pill .dot.green{background:var(--green)}
+.tb-pill .dot.amber{background:var(--amber)}
+.tb-btn{padding:6px 14px;border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.tb-btn-primary{background:var(--blue);color:#fff}.tb-btn-primary:hover{background:var(--blue-dark)}
+.tb-btn-ghost{background:transparent;border:1px solid var(--border);color:var(--ink3)}.tb-btn-ghost:hover{border-color:var(--border2);color:var(--ink2)}
+.tb-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius);cursor:pointer;color:var(--ink4);transition:all .15s;position:relative}
+.tb-icon:hover{background:var(--surface2);color:var(--ink2)}
+.tb-icon .notif{position:absolute;top:4px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--red);border:2px solid var(--surface)}
+
+/* ---- CONTENT ---- */
+.content{flex:1;padding:24px 28px 40px}
+.page-header{margin-bottom:22px}
+.page-title{font-size:20px;font-weight:700;color:var(--ink);margin-bottom:3px}
+.page-subtitle{font-size:13px;color:var(--ink4)}
+.page-tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:22px}
+.page-tab{padding:10px 18px;font-size:12.5px;font-weight:500;color:var(--ink4);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s}
+.page-tab:hover{color:var(--ink2)}
+.page-tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+
+/* ---- CARDS & PANELS ---- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:12.5px;font-weight:600;color:var(--ink)}
+.card-body{padding:16px 18px}
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;transition:border-color .15s}
+.kpi:hover{border-color:var(--border2)}
+.kpi-label{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink4);margin-bottom:6px}
+.kpi-value{font-size:24px;font-weight:700;color:var(--ink);line-height:1.1;margin-bottom:4px;font-variant-numeric:tabular-nums}
+.kpi-delta{font-size:11.5px;font-weight:500}
+.kpi-delta.up{color:var(--green)}.kpi-delta.down{color:var(--red)}.kpi-delta.neutral{color:var(--ink4)}
+.kpi.highlight{border-color:var(--blue);background:linear-gradient(135deg,var(--blue-light) 0%,var(--surface) 100%)}
+.kpi.highlight .kpi-label{color:var(--blue)}
+.kpi.highlight .kpi-value{color:var(--blue-dark)}
+.charts-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.chart-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px}
+.chart-panel .chart-title{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:12px}
+.chart-panel .chart-sub{font-size:10.5px;color:var(--ink4);margin-top:8px}
+.chart-area{height:120px;position:relative}
+
+/* ---- AI STRIP ---- */
+.ai-strip{background:var(--surface);border:1px solid var(--purple);border-radius:var(--radius-lg);padding:18px 22px;position:relative;overflow:hidden}
+.ai-strip::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--purple),var(--blue),var(--purple));opacity:.6}
+.ai-strip-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ai-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:12px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;background:var(--purple-light);color:var(--purple)}
+.ai-tag svg{width:12px;height:12px}
+.ai-strip-title{font-size:14px;font-weight:700;color:var(--ink)}
+.ai-strip-body{display:flex;gap:24px}
+.ai-recommendations{flex:1}
+.ai-rec{display:flex;align-items:flex-start;gap:8px;padding:6px 0;font-size:12.5px;color:var(--ink2);line-height:1.5}
+.ai-rec .bullet{width:5px;height:5px;border-radius:50%;background:var(--purple);margin-top:6px;flex-shrink:0}
+.ai-cta-box{min-width:220px;background:var(--surface2);border-radius:var(--radius);padding:16px;text-align:center;border:1px solid var(--border)}
+.ai-cta-box .saving-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink4);margin-bottom:4px}
+.ai-cta-box .saving-value{font-size:22px;font-weight:700;color:var(--green);margin-bottom:12px}
+.ai-cta-box .saving-sub{font-size:10.5px;color:var(--ink4);margin-bottom:12px}
+.btn-ai{display:inline-flex;align-items:center;gap:6px;padding:9px 20px;border-radius:var(--radius);font-size:12.5px;font-weight:600;border:none;cursor:pointer;transition:all .15s;color:#fff;background:linear-gradient(135deg,var(--purple),var(--blue))}
+.btn-ai:hover{opacity:.88;transform:translateY(-1px);box-shadow:0 4px 12px rgba(108,92,231,.25)}
+
+/* ---- SCREEN 2: STORE DETAIL ---- */
+.detail-layout{display:grid;grid-template-columns:280px 1fr;gap:18px}
+.store-sidebar{display:flex;flex-direction:column;gap:14px}
+.store-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px}
+.store-name{font-size:18px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.store-meta{font-size:11.5px;color:var(--ink4);margin-bottom:14px}
+.cap-bar-track{height:20px;background:var(--surface2);border-radius:10px;overflow:hidden;margin-bottom:6px}
+.cap-bar-fill{height:100%;background:var(--blue);border-radius:10px;display:flex;align-items:center;padding-left:10px;font-size:10px;font-weight:600;color:#fff;transition:width .6s ease}
+.cap-bar-label{font-size:10.5px;color:var(--ink4);text-align:right}
+.stat-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--surface2)}
+.stat-row:last-child{border-bottom:none}
+.stat-label{font-size:12px;color:var(--ink3)}
+.stat-value{font-size:12px;font-weight:600;color:var(--ink)}
+.signal-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.signal-chip{padding:4px 10px;border-radius:12px;font-size:11px;font-weight:500;border:1px solid var(--border);color:var(--ink3);background:var(--surface)}
+.signal-chip.active{border-color:var(--purple);color:var(--purple);background:var(--purple-light)}
+.sensing-note{font-size:11px;color:var(--ink4);font-style:italic;margin-top:8px}
+
+/* ---- TABLE ---- */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.data-table thead th{background:var(--sidebar);color:#E8ECF1;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.03em;padding:10px 12px;text-align:left;white-space:nowrap;position:sticky;top:0}
+.data-table thead th:first-child{border-radius:var(--radius) 0 0 0}
+.data-table thead th:last-child{border-radius:0 var(--radius) 0 0}
+.data-table tbody td{padding:10px 12px;border-bottom:1px solid var(--surface2);color:var(--ink2);font-variant-numeric:tabular-nums}
+.data-table tbody tr:hover{background:var(--surface2)}
+.data-table tbody tr:last-child td{border-bottom:none}
+.data-table .num{text-align:right;font-weight:500}
+.status{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10.5px;font-weight:600;white-space:nowrap}
+.status.replenish{background:var(--red-light);color:var(--red)}
+.status.ok{background:var(--green-light);color:var(--green)}
+.status.hold{background:var(--surface2);color:var(--ink4)}
+.status.low{background:var(--amber-light);color:var(--amber)}
+.status.redeploy{background:var(--blue-light);color:var(--blue)}
+
+/* ---- SCREEN 3: DISPATCH ---- */
+.dispatch-layout{display:grid;grid-template-columns:1fr 340px;gap:18px}
+.rationale-panel{background:var(--surface);border:1px solid var(--purple);border-radius:var(--radius-lg);overflow:hidden}
+.rationale-header{padding:16px 18px;border-bottom:1px solid rgba(108,92,231,.15);display:flex;align-items:center;gap:10px}
+.rationale-header .ai-tag{font-size:9px}
+.rationale-title{font-size:14px;font-weight:700;color:var(--ink)}
+.qa-item{padding:16px 18px;border-bottom:1px solid var(--surface2)}
+.qa-item:last-child{border-bottom:none}
+.qa-q{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px}
+.qa-q .q-mark{width:20px;height:20px;border-radius:50%;background:var(--purple-light);color:var(--purple);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.qa-q .q-text{font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.4}
+.qa-a{font-size:12px;color:var(--ink3);line-height:1.55;padding-left:28px}
+.total-row td{font-weight:700!important;background:var(--surface2)!important;color:var(--ink)!important}
+
+/* ---- SVG CHARTS ---- */
+.mini-chart{width:100%;height:100%}
+.bar-chart rect.bar{transition:opacity .15s}
+.bar-chart rect.bar:hover{opacity:.75}
+
+/* ---- TAB CONTENT ---- */
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* ---- AI FOOTER STRIP (screen 2) ---- */
+.ai-footer{background:var(--surface);border:1px solid var(--purple);border-radius:var(--radius-lg);padding:14px 18px;display:flex;align-items:center;gap:14px;margin-top:16px}
+.ai-footer .ai-tag{flex-shrink:0}
+.ai-footer-text{flex:1;font-size:12.5px;color:var(--ink2)}
+.ai-footer .btn-ai{flex-shrink:0;padding:8px 18px;font-size:12px}
+
+/* ---- RESPONSIVE ---- */
+@media(max-width:1200px){.kpi-row{grid-template-columns:repeat(3,1fr)}.charts-row{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:900px){.app{grid-template-columns:1fr}.sidebar{display:none}.main{margin-left:0}.detail-layout,.dispatch-layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo">RC</div>
+    <div>
+      <div class="brand-text">Replenishment</div>
+      <div class="brand-sub">Cockpit v2.4</div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-label">Planning</div>
+      <div class="nav-item active" onclick="showTab('overview')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Network overview
+      </div>
+      <div class="nav-item" onclick="showTab('store')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Stores
+        <span class="badge">3</span>
+      </div>
+      <div class="nav-item" onclick="showTab('dispatch')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        Replenishment
+        <span class="ai-dot"></span>
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Intelligence</div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Demand sensing
+        <span class="ai-dot"></span>
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+        Forecast accuracy
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        POS sell-through
+      </div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Configuration</div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Store settings
+      </div>
+      <div class="nav-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v-2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Users &amp; roles
+      </div>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="avatar">RK</div>
+    <div class="user-info">
+      <div class="user-name">Rajiv Krishnan</div>
+      <div class="user-role">SC Planner · Bengaluru</div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- === SCREEN 1: OVERVIEW === -->
+<div class="tab-content active" id="tab-overview">
+<div class="topbar">
+  <div class="breadcrumb">
+    <span>Network</span><span class="sep">›</span><span>Overview</span>
+  </div>
+  <div class="topbar-right">
+    <div class="tb-pill active"><span class="dot green"></span> Sensing: Active</div>
+    <div class="tb-pill">Horizon: 8 weeks</div>
+    <select class="tb-pill" style="appearance:none;outline:none;font-family:inherit;font-size:11.5px" id="storeSelect" onchange="selectStore(this.value)">
+      <option value="0142">Store #0142 — Indiranagar</option>
+      <option value="0137">Store #0137 — Koramangala</option>
+      <option value="0151">Store #0151 — HSR Layout</option>
+      <option value="0165">Store #0165 — Whitefield</option>
+      <option value="0188">Store #0188 — Jayanagar</option>
+    </select>
+    <div class="tb-icon" title="Notifications">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <span class="notif"></span>
+    </div>
+  </div>
+</div>
+<div class="content">
+  <div class="page-header">
+    <div class="page-title">Network demand &amp; inventory</div>
+    <div class="page-subtitle">Store-level forecast, demand sensing, on-hand and inventory gap — the store selector drives all panels.</div>
+  </div>
+
+  <div class="kpi-row" id="kpiRow">
+    <div class="kpi"><div class="kpi-label">Service level</div><div class="kpi-value">97.4%</div><div class="kpi-delta neutral">target 98%</div></div>
+    <div class="kpi"><div class="kpi-label">Fill rate</div><div class="kpi-value">95.1%</div><div class="kpi-delta up">↑ 1.2 pts w/w</div></div>
+    <div class="kpi"><div class="kpi-label">Capacity utilization</div><div class="kpi-value">88%</div><div class="kpi-delta neutral">within ceiling</div></div>
+    <div class="kpi"><div class="kpi-label">In-transit units</div><div class="kpi-value">12.4K</div><div class="kpi-delta neutral">6 open loads</div></div>
+    <div class="kpi highlight"><div class="kpi-label">Transportation cost <span style="font-size:9px;text-transform:none;letter-spacing:0">(MTD)</span></div><div class="kpi-value">₹15.3L</div><div class="kpi-delta up">↓ 9% vs plan</div></div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-panel">
+      <div class="chart-title">Demand forecast — baseline</div>
+      <div class="chart-area" id="chart1"></div>
+      <div class="chart-sub">Units / week · W1 – W8</div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-title">Demand sensing vs baseline</div>
+      <div class="chart-area" id="chart2"></div>
+      <div class="chart-sub" style="display:flex;align-items:center;gap:12px">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:16px;height:2px;background:var(--ink);display:inline-block"></span> Sensed</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:16px;height:2px;background:var(--ink5);display:inline-block;border-top:1px dashed var(--ink4)"></span> Baseline</span>
+        <span class="ai-tag" style="margin-left:auto;font-size:8.5px;padding:2px 7px">AI-Powered sensing</span>
+      </div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-title">On-hand inventory — DRP</div>
+      <div class="chart-area" id="chart3"></div>
+      <div class="chart-sub">Projected draw-down + replenishment</div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-title">Inventory gap / net requirement</div>
+      <div class="chart-area" id="chart4"></div>
+      <div class="chart-sub" style="color:var(--red);font-weight:500">Below baseline = shortfall to replenish</div>
+    </div>
+  </div>
+
+  <div class="ai-strip">
+    <div class="ai-strip-header">
+      <span class="ai-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> AI technology</span>
+      <span class="ai-strip-title">Replenishment recommendation</span>
+      <span style="font-size:11px;color:var(--ink4);margin-left:4px">capacity-aware · freight-optimized</span>
+    </div>
+    <div class="ai-strip-body">
+      <div class="ai-recommendations">
+        <div class="ai-rec"><span class="bullet"></span> Store #0142 — net requirement 3,200 units across 18 SKUs, feasible within capacity. Release DRP to DC.</div>
+        <div class="ai-rec"><span class="bullet"></span> Consolidate with the #0137 lane to lift truck fill to 92% and avoid the LTL premium.</div>
+        <div class="ai-rec"><span class="bullet"></span> SKU-4471 shows overstock vs sensed demand — redeploy 540 units to Store #0151.</div>
+      </div>
+      <div class="ai-cta-box">
+        <div class="saving-label">Est. freight saving</div>
+        <div class="saving-value">₹5.6L / cycle</div>
+        <div class="saving-sub">Based on AI-optimized lane consolidation</div>
+        <button class="btn-ai" onclick="showTab('dispatch')">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Release DRP order to DC
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- === SCREEN 2: STORE DETAIL === -->
+<div class="tab-content" id="tab-store">
+<div class="topbar">
+  <div class="breadcrumb">
+    <span>Network</span><span class="sep">›</span><span style="color:var(--blue);cursor:pointer" onclick="showTab('overview')">Stores</span><span class="sep">›</span><span>Store #0142 — Indiranagar</span>
+  </div>
+  <div class="topbar-right">
+    <div class="tb-pill">Capacity: 88%</div>
+    <div class="tb-pill">SKUs: 104</div>
+    <button class="tb-btn-ghost tb-btn">Export</button>
+  </div>
+</div>
+<div class="content">
+  <div class="page-header">
+    <div class="page-title">Store #0142 — SKU replenishment detail</div>
+    <div class="page-subtitle">SKU-level net requirement and replenishment quantities. AI technology identifies shortfalls and proposes consolidation.</div>
+  </div>
+
+  <div class="detail-layout">
+    <div class="store-sidebar">
+      <div class="store-card">
+        <div class="store-name">Store #0142</div>
+        <div class="store-meta">Indiranagar · Format L · Lead time 2 days</div>
+        <div style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink4);margin-bottom:8px">Capacity utilization</div>
+        <div class="cap-bar-track"><div class="cap-bar-fill" style="width:88%">88%</div></div>
+        <div class="cap-bar-label">12,320 of 14,000 units</div>
+        <div style="margin-top:16px">
+          <div class="stat-row"><span class="stat-label">On-hand</span><span class="stat-value">12,320 u</span></div>
+          <div class="stat-row"><span class="stat-label">In-transit</span><span class="stat-value">2,480 u</span></div>
+          <div class="stat-row"><span class="stat-label">Open-to-ship headroom</span><span class="stat-value">1,680 u</span></div>
+          <div class="stat-row"><span class="stat-label">Target service level</span><span class="stat-value">98%</span></div>
+        </div>
+      </div>
+      <div class="store-card">
+        <div style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink4);margin-bottom:10px">Active demand signals</div>
+        <div class="signal-chips">
+          <span class="signal-chip active">Promo ↑</span>
+          <span class="signal-chip active">Festival</span>
+          <span class="signal-chip active">Weather</span>
+          <span class="signal-chip">Trend</span>
+          <span class="signal-chip">Event</span>
+        </div>
+        <div class="sensing-note">AI technology detects +6.4% demand uplift vs baseline this horizon</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">SKU replenishment — net requirement &amp; order quantity</div>
+          <span class="ai-tag" style="font-size:8.5px;padding:2px 8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> AI-scored</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr>
+              <th>SKU</th><th>On-hand</th><th>In-transit</th><th>Sensed dmd/wk</th><th>Safety stock</th><th>ROP</th><th>Net req.</th><th>Replen qty</th><th>Status</th>
+            </tr></thead>
+            <tbody>
+              <tr><td>SKU-4471</td><td class="num">1,860</td><td class="num">0</td><td class="num">240</td><td class="num">320</td><td class="num">560</td><td class="num">0</td><td class="num">0</td><td><span class="status hold">Hold</span></td></tr>
+              <tr><td>SKU-4490</td><td class="num">640</td><td class="num">180</td><td class="num">410</td><td class="num">300</td><td class="num">620</td><td class="num">360</td><td class="num">400</td><td><span class="status replenish">Replenish</span></td></tr>
+              <tr><td>SKU-4512</td><td class="num">220</td><td class="num">120</td><td class="num">380</td><td class="num">280</td><td class="num">540</td><td class="num">420</td><td class="num">480</td><td><span class="status replenish">Replenish</span></td></tr>
+              <tr><td>SKU-4533</td><td class="num">980</td><td class="num">0</td><td class="num">210</td><td class="num">260</td><td class="num">480</td><td class="num">0</td><td class="num">0</td><td><span class="status ok">OK</span></td></tr>
+              <tr><td>SKU-4560</td><td class="num">140</td><td class="num">60</td><td class="num">350</td><td class="num">260</td><td class="num">500</td><td class="num">380</td><td class="num">420</td><td><span class="status low">Low</span></td></tr>
+              <tr><td>SKU-4588</td><td class="num">1,540</td><td class="num">0</td><td class="num">180</td><td class="num">220</td><td class="num">420</td><td class="num">0</td><td class="num">0</td><td><span class="status redeploy">Redeploy</span></td></tr>
+              <tr><td>SKU-4601</td><td class="num">310</td><td class="num">240</td><td class="num">300</td><td class="num">240</td><td class="num">460</td><td class="num">210</td><td class="num">240</td><td><span class="status replenish">Replenish</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="ai-footer">
+        <span class="ai-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> AI technology</span>
+        <span class="ai-footer-text"><strong>4 SKUs flagged for replenishment</strong> · Consolidated lane DC → #0142 · Projected truck fill 92%</span>
+        <button class="btn-ai">Auto-release to DC</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- === SCREEN 3: DISPATCH === -->
+<div class="tab-content" id="tab-dispatch">
+<div class="topbar">
+  <div class="breadcrumb">
+    <span>Network</span><span class="sep">›</span><span>Replenishment &amp; dispatch</span><span class="sep">·</span><span>Cycle wk 32</span>
+  </div>
+  <div class="topbar-right">
+    <div class="tb-pill active"><span class="dot green"></span> Optimizer: Active</div>
+    <button class="btn-ai" style="padding:6px 16px;font-size:11.5px">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      Approve all lanes
+    </button>
+  </div>
+</div>
+<div class="content">
+  <div class="page-header">
+    <div class="page-title">AI replenishment &amp; DC dispatch</div>
+    <div class="page-subtitle">Network-level consolidation powered by AI technology to minimize transportation cost within store capacity constraints.</div>
+  </div>
+
+  <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi highlight"><div class="kpi-label">Transportation cost <span style="font-size:9px;text-transform:none;letter-spacing:0">(weekly)</span></div><div class="kpi-value">₹10.8L</div><div class="kpi-delta up">↓ 13% vs un-optimized</div></div>
+    <div class="kpi"><div class="kpi-label">Avg truck utilization</div><div class="kpi-value">85%</div><div class="kpi-delta up">↑ 14 pts</div></div>
+    <div class="kpi"><div class="kpi-label">LTL / expedite loads</div><div class="kpi-value">1</div><div class="kpi-delta up">↓ 7 loads</div></div>
+    <div class="kpi"><div class="kpi-label">Capacity-feasible</div><div class="kpi-value">100%</div><div class="kpi-delta neutral">all stores within cap</div></div>
+  </div>
+
+  <div class="dispatch-layout">
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Consolidated replenishment plan</div>
+          <span class="ai-tag" style="font-size:8.5px;padding:2px 8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> AI-optimized</span>
+        </div>
+        <table class="data-table">
+          <thead><tr>
+            <th>Lane (DC → store)</th><th>SKUs</th><th>Units</th><th>Truck fill</th><th>Mode</th><th>Freight</th><th>vs baseline</th>
+          </tr></thead>
+          <tbody>
+            <tr><td>DC → #0142</td><td class="num">18</td><td class="num">3,200</td><td class="num">92%</td><td>FTL</td><td class="num">₹2.8L</td><td class="num" style="color:var(--green);font-weight:600">−12%</td></tr>
+            <tr><td>DC → #0137</td><td class="num">14</td><td class="num">2,750</td><td class="num">92%</td><td>FTL (consol.)</td><td class="num">₹2.6L</td><td class="num" style="color:var(--green);font-weight:600">−18%</td></tr>
+            <tr><td>DC → #0151</td><td class="num">9</td><td class="num">1,280</td><td class="num">74%</td><td>FTL</td><td class="num">₹1.8L</td><td class="num" style="color:var(--green);font-weight:600">−6%</td></tr>
+            <tr><td>DC → #0165</td><td class="num">11</td><td class="num">1,980</td><td class="num">88%</td><td>FTL</td><td class="num">₹2.2L</td><td class="num" style="color:var(--green);font-weight:600">−9%</td></tr>
+            <tr><td>DC → #0188</td><td class="num">7</td><td class="num">940</td><td class="num">61%</td><td>Milk-run</td><td class="num">₹1.4L</td><td class="num" style="color:var(--green);font-weight:600">−21%</td></tr>
+            <tr class="total-row"><td>Network total</td><td class="num">59</td><td class="num">10,150</td><td class="num">85%</td><td>—</td><td class="num">₹10.8L</td><td class="num" style="color:var(--green);font-weight:600">−13%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="rationale-panel">
+      <div class="rationale-header">
+        <span class="ai-tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> AI technology</span>
+        <span class="rationale-title">Rationale</span>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <span class="q-mark">Q</span>
+          <span class="q-text">How does the system maximize capacity vs the demand forecast?</span>
+        </div>
+        <div class="qa-a">Each store's replenishment order is capped at storage capacity. When stock is constrained, AI technology allocates scarce units to the highest sensed-demand, highest-margin SKUs first — ensuring the most productive fill.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <span class="q-mark">Q</span>
+          <span class="q-text">What is the ideal inventory for each store?</span>
+        </div>
+        <div class="qa-a">Sensed demand over lead time + safety stock for the 98% service target, clamped to physical capacity. AI technology recomputes this every sensing cycle as signals shift.</div>
+      </div>
+      <div class="qa-item">
+        <div class="qa-q">
+          <span class="q-mark">Q</span>
+          <span class="q-text">How is transportation cost reduced?</span>
+        </div>
+        <div class="qa-a">AI technology consolidates store orders onto shared lanes, replacing LTL and expedite loads with full truckloads and milk-runs. This lifts truck fill from 71% to 85% network-wide, cutting per-unit freight cost by 13%.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+// Tab switching
+function showTab(tab){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const id = tab==='overview'?'tab-overview':tab==='store'?'tab-store':'tab-dispatch';
+  document.getElementById(id).classList.add('active');
+  const navIdx = tab==='overview'?0:tab==='store'?1:2;
+  document.querySelectorAll('.nav-item')[navIdx].classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// Store selector
+function selectStore(val){
+  // In a real app this would fetch data. Here we just show a subtle visual feedback.
+  const kpis = document.getElementById('kpiRow');
+  kpis.style.opacity = '0.5';
+  setTimeout(()=>{ kpis.style.opacity = '1'; },300);
+}
+
+// SVG chart helpers
+function createBarChart(containerId, values, opts={}){
+  const c = document.getElementById(containerId);
+  if(!c) return;
+  const w=c.clientWidth||280, h=c.clientHeight||120;
+  const n=values.length, gap=w*0.04, bw=(w-gap*(n+1))/n, mx=Math.max(...values);
+  let svg=`<svg width="${w}" height="${h}" class="mini-chart bar-chart">`;
+  // grid lines
+  for(let i=0;i<4;i++){const y=12+i*(h-24)/3;
+    svg+=`<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="var(--surface2)" stroke-width="1"/>`;}
+  values.forEach((v,i)=>{
+    const bh=Math.max(4,(h-20)*(v/mx));
+    const x=gap+i*(bw+gap), y=h-8-bh;
+    const fill=opts.highlight&&opts.highlight.includes(i)?'var(--amber)':'var(--surface3)';
+    svg+=`<rect class="bar" x="${x}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="${fill}"/>`;
+  });
+  svg+=`</svg>`;
+  c.innerHTML=svg;
+}
+function createLineChart(containerId, data, opts={}){
+  const c = document.getElementById(containerId);
+  if(!c) return;
+  const w=c.clientWidth||280, h=c.clientHeight||120;
+  const pad={t:10,b:12,l:4,r:4};
+  const pw=w-pad.l-pad.r, ph=h-pad.t-pad.b;
+  let svg=`<svg width="${w}" height="${h}" class="mini-chart">`;
+  // grid
+  for(let i=0;i<4;i++){const y=pad.t+i*ph/3;
+    svg+=`<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="var(--surface2)" stroke-width="1"/>`;}
+  data.forEach(series=>{
+    const mx=Math.max(...series.values), mn=Math.min(...series.values);
+    const range=mx-mn||1;
+    const pts=series.values.map((v,i)=>{
+      const x=pad.l+i*(pw/(series.values.length-1));
+      const y=pad.t+ph-(v-mn)/range*ph;
+      return `${x},${y}`;
+    }).join(' ');
+    svg+=`<polyline points="${pts}" fill="none" stroke="${series.color}" stroke-width="${series.width||2}" stroke-linecap="round" stroke-linejoin="round" ${series.dash?'stroke-dasharray="6 4"':''}/>`;
+    if(!series.dash){const last=series.values[series.values.length-1];
+      const lx=pad.l+(series.values.length-1)*(pw/(series.values.length-1));
+      const ly=pad.t+ph-(last-mn)/range*ph;
+      svg+=`<circle cx="${lx}" cy="${ly}" r="4" fill="${series.color}"/>`;}
+  });
+  svg+=`</svg>`;
+  c.innerHTML=svg;
+}
+function createGapChart(containerId){
+  const c = document.getElementById(containerId);
+  if(!c) return;
+  const w=c.clientWidth||280, h=c.clientHeight||120;
+  const pad={t:10,b:12,l:4,r:4};
+  const pw=w-pad.l-pad.r, ph=h-pad.t-pad.b;
+  const zero=pad.t+ph*0.35;
+  let svg=`<svg width="${w}" height="${h}" class="mini-chart">`;
+  for(let i=0;i<4;i++){const y=pad.t+i*ph/3;
+    svg+=`<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="var(--surface2)" stroke-width="1"/>`;}
+  svg+=`<line x1="0" y1="${zero}" x2="${w}" y2="${zero}" stroke="var(--border2)" stroke-width="1" stroke-dasharray="4 3"/>`;
+  const vals=[2,-5,-12,-22,-16,-28];
+  const mx=5,mn=-30,range=mx-mn;
+  const pts=vals.map((v,i)=>{
+    const x=pad.l+i*(pw/(vals.length-1));
+    const y=pad.t+ph-(v-mn)/range*ph;
+    return `${x},${y}`;
+  }).join(' ');
+  svg+=`<polyline points="${pts}" fill="none" stroke="var(--red)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const lx=pad.l+(vals.length-1)*(pw/(vals.length-1));
+  const ly=pad.t+ph-(vals[vals.length-1]-mn)/range*ph;
+  svg+=`<circle cx="${lx}" cy="${ly}" r="4" fill="var(--red)"/>`;
+  svg+=`</svg>`;
+  c.innerHTML=svg;
+}
+
+// Render charts on load
+window.addEventListener('load',()=>{
+  createBarChart('chart1',[42,55,49,63,58,71,66,74]);
+  createLineChart('chart2',[
+    {values:[100,108,112,116,122,130,134,142],color:'var(--ink)',width:2.5},
+    {values:[100,105,108,110,115,118,120,124],color:'var(--ink5)',width:1.5,dash:true}
+  ]);
+  createBarChart('chart3',[72,58,45,33,60,48,36,24],{highlight:[3,7]});
+  createGapChart('chart4');
+});
+window.addEventListener('resize',()=>{
+  createBarChart('chart1',[42,55,49,63,58,71,66,74]);
+  createLineChart('chart2',[
+    {values:[100,108,112,116,122,130,134,142],color:'var(--ink)',width:2.5},
+    {values:[100,105,108,110,115,118,120,124],color:'var(--ink5)',width:1.5,dash:true}
+  ]);
+  createBarChart('chart3',[72,58,45,33,60,48,36,24],{highlight:[3,7]});
+  createGapChart('chart4');
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,2381 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<title>Decision Intelligence AI Platform — BT Supply Chain</title>
+<!-- Preconnect for faster font loading -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   DESIGN TOKENS — Enterprise Precision
+   Aesthetic: Data-forward, clean, confident
+   Inspired by: Linear, Stripe, Vercel
+═══════════════════════════════════════ */
+:root{
+  /* Page & surface */
+  --bg:#F8FAFC;
+  --surface:#FFFFFF;
+  --surface2:#F1F5F9;
+  --surface3:#E2E8F0;
+  --surface-hover:#F8FAFC;
+
+  /* Borders */
+  --border:#E2E8F0;
+  --border2:#CBD5E1;
+
+  /* Typography — warm dark scale */
+  --ink:#0F172A;
+  --ink2:#334155;
+  --ink3:#64748B;
+  --ink4:#94A3B8;
+  --ink5:#CBD5E1;
+
+  /* Brand blue */
+  --blue:#2563EB;
+  --blue-light:#EFF6FF;
+  --blue-mid:#DBEAFE;
+  --blue-dark:#1E40AF;
+  --blue-hover:#1D4ED8;
+
+  /* Status */
+  --green:#059669;
+  --green-light:#ECFDF5;
+  --amber:#D97706;
+  --amber-light:#FFFBEB;
+  --red:#DC2626;
+  --red-light:#FEF2F2;
+
+  /* Misc */
+  --purple:#7C3AED;
+  --purple-light:#F5F3FF;
+
+  /* Radii — single value, enforced */
+  --r:6px;
+
+  /* Shadow scale */
+  --shadow-xs:0 1px 2px rgba(15,23,42,.06);
+  --shadow-sm:0 1px 3px rgba(15,23,42,.08),0 1px 2px rgba(15,23,42,.04);
+  --shadow:0 4px 6px rgba(15,23,42,.06),0 2px 4px rgba(15,23,42,.04);
+  --shadow-md:0 10px 15px rgba(15,23,42,.07),0 4px 6px rgba(15,23,42,.04);
+  --shadow-lg:0 20px 25px rgba(15,23,42,.08),0 8px 10px rgba(15,23,42,.03);
+  --shadow-overlay:0 24px 48px rgba(15,23,42,.18),0 8px 16px rgba(15,23,42,.08);
+}
+
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{
+  font-size:13px;
+  -webkit-text-size-adjust:100%;
+  -ms-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  font-size:13px;
+  color:var(--ink2);
+  background:var(--bg);
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  overflow-x:hidden;
+}
+/* Override key tokens for dramatic visual improvement */
+:root{
+  --bg:#EEF2F7;        /* clearly visible blue-grey page bg */
+  --surface:#FFFFFF;
+  --border:#D1D9E6;
+  --ink:#0F172A;
+  --blue:#2563EB;
+}
+
+/* ── LAYOUT ── */
+.app{min-height:100vh;display:flex;flex-direction:column}
+.main{flex:1;display:flex;flex-direction:column}
+.tab-content{display:none}
+.tab-content.active{display:block;animation:pgIn .2s ease}
+@keyframes pgIn{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══════════════════════════════════════
+   TOP NAVIGATION
+═══════════════════════════════════════ */
+.topnav{
+  background:#FFFFFF;
+  border-bottom:1px solid var(--border);
+  height:54px;
+  display:flex;align-items:center;
+  padding:0 28px;gap:0;
+  position:sticky;top:0;z-index:50;
+  flex-shrink:0;
+  box-shadow:0 1px 4px rgba(15,23,42,.06);
+}
+.tnav-brand{display:flex;align-items:center;gap:10px;margin-right:20px;flex-shrink:0}
+.tnav-logo{
+  width:28px;height:28px;
+  background:var(--blue);
+  border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;color:#fff;font-size:10.5px;
+  flex-shrink:0;
+  box-shadow:0 1px 3px rgba(37,99,235,.35);
+}
+.tnav-name{font-size:13px;font-weight:800;color:var(--ink);letter-spacing:.07em;line-height:1.15}
+.tnav-sub{font-size:9.5px;color:var(--ink4);font-weight:500;margin-top:2px;letter-spacing:.01em}
+.tnav-tabs{display:flex;align-items:stretch;height:54px}
+.tnav-tab{
+  padding:0 14px;
+  display:flex;align-items:center;gap:7px;
+  font-size:13px;font-weight:500;color:var(--ink3);
+  cursor:pointer;
+  border-bottom:2px solid transparent;
+  transition:color .15s,border-color .15s;
+  white-space:nowrap;user-select:none;
+}
+.tnav-tab:hover{color:var(--ink)}
+.tnav-tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+.tnav-badge{background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;margin-left:2px}
+.tnav-sep{width:1px;background:var(--border);margin:15px 0}
+.tnav-right{margin-left:auto;display:flex;align-items:center;gap:5px;flex-shrink:0}
+.tnav-node{
+  display:flex;align-items:center;gap:6px;
+  padding:5px 11px;
+  border:1px solid var(--border);border-radius:var(--r);
+  background:var(--surface);
+  cursor:pointer;transition:border-color .12s;
+}
+.tnav-node:hover{border-color:var(--border2)}
+.tnav-node-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);flex-shrink:0}
+.tnav-node select{appearance:none;border:none;outline:none;font-family:'Inter',sans-serif;font-size:12px;color:var(--ink);background:transparent;cursor:pointer;font-weight:600;max-width:185px}
+.tnav-wk{font-size:11px;font-weight:600;color:var(--ink3);padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--r)}
+.tnav-ctrl{display:flex;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;flex-shrink:0}
+.tnav-ctrl-opt{padding:4px 12px;font-size:11px;cursor:pointer;color:var(--ink4);transition:background .12s,color .12s;user-select:none;border-right:1px solid var(--border);background:var(--surface)}
+.tnav-ctrl-opt:last-child{border-right:none}
+.tnav-ctrl-opt.active{background:var(--blue);color:#fff;font-weight:600}
+.tnav-ctrl-opt:hover:not(.active){background:var(--surface2);color:var(--ink2)}
+.tnav-icon{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:var(--r);cursor:pointer;color:var(--ink4);border:1px solid var(--border);background:var(--surface);transition:all .12s}
+.tnav-icon:hover{background:var(--surface2);color:var(--ink2)}
+/* AI tools group in topnav */
+.tnav-ai-group{display:flex;align-items:center;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;background:var(--surface)}
+.tnav-ai-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 11px;font-size:11.5px;font-weight:500;font-family:'Inter',sans-serif;cursor:pointer;border:none;border-right:1px solid var(--border);background:transparent;color:var(--ink3);transition:background .12s,color .12s;white-space:nowrap}
+.tnav-ai-btn:last-child{border-right:none}
+.tnav-ai-btn:hover{background:var(--surface2);color:var(--ink)}
+.tnav-ai-btn--primary{background:var(--blue);color:#fff;font-weight:600}
+.tnav-ai-btn--primary:hover{background:var(--blue-hover);color:#fff}
+.tnav-ai-btn--agent{color:var(--ink3)}
+.tnav-ai-btn--agent.agent-active{background:#ECFDF5;color:#065F46;font-weight:600}
+
+/* ═══════════════════════════════════════
+   CONTENT WRAPPER
+═══════════════════════════════════════ */
+.content{flex:1;padding:14px 28px 36px;max-width:1400px;width:100%;margin:0 auto}
+.page-header{margin-bottom:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.page-title{font-size:19px;font-weight:800;color:var(--ink);margin-bottom:4px;letter-spacing:-.025em;line-height:1.25}
+.page-sub{font-size:13px;color:var(--ink3);line-height:1.5}
+
+/* ── BUTTONS ── */
+.btn-primary{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 16px;
+  border-radius:var(--r);
+  font-size:12.5px;font-weight:600;
+  border:none;cursor:pointer;
+  color:#fff;background:var(--blue);
+  font-family:'Inter',sans-serif;
+  transition:background .15s,box-shadow .15s;
+  box-shadow:0 1px 2px rgba(37,99,235,.2);
+}
+.btn-primary:hover{background:var(--blue-hover);box-shadow:0 2px 4px rgba(37,99,235,.3)}
+.btn-ghost{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 13px;
+  border-radius:var(--r);
+  font-size:12px;font-weight:500;
+  border:1px solid var(--border);
+  cursor:pointer;color:var(--ink2);
+  background:var(--surface);
+  font-family:'Inter',sans-serif;
+  transition:all .12s;
+}
+.btn-ghost:hover{border-color:var(--border2);background:var(--surface2);color:var(--ink)}
+
+/* ═══════════════════════════════════════
+   FILTER BAR
+═══════════════════════════════════════ */
+.filter-bar{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:7px 14px;margin-bottom:12px;
+  display:flex;align-items:center;gap:0;
+  flex-wrap:wrap;row-gap:6px;
+  box-shadow:var(--shadow-xs);
+}
+.filter-group{display:flex;align-items:center;gap:5px;padding-right:16px;margin-right:12px;border-right:1px solid var(--border);flex-wrap:wrap}
+.filter-group-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);white-space:nowrap;margin-right:3px}
+.fchip{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:3px 11px;border-radius:20px;
+  font-size:11.5px;font-weight:500;
+  border:1px solid var(--border);
+  color:var(--ink3);background:var(--surface);
+  cursor:pointer;transition:all .12s;
+  user-select:none;white-space:nowrap;
+}
+.fchip:hover{border-color:var(--blue);color:var(--blue)}
+.fchip.on{border-color:var(--blue);color:var(--blue);background:var(--blue-light);font-weight:600}
+.filter-clear{
+  margin-left:auto;display:none;align-items:center;gap:4px;
+  padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;
+  color:var(--ink3);background:var(--surface2);
+  border:1px solid var(--border);cursor:pointer;transition:all .12s;
+}
+.filter-clear:hover{color:var(--red);border-color:var(--red)}
+.filter-clear.visible{display:inline-flex}
+.sku-fw{position:relative}
+.sku-net-inp{
+  border:1px solid var(--border);border-radius:20px;
+  padding:3px 12px;font-size:11.5px;width:175px;
+  outline:none;font-family:'Inter',sans-serif;
+  color:var(--ink2);background:var(--surface);
+  transition:border-color .12s,box-shadow .12s;
+}
+.sku-net-inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.sku-drop{position:absolute;top:calc(100% + 6px);left:0;width:310px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-md);z-index:200;max-height:240px;overflow-y:auto;display:none}
+.sku-drop.open{display:block}
+.sku-opt{padding:9px 13px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--surface2);transition:background .1s}
+.sku-opt:last-child{border-bottom:none}
+.sku-opt:hover{background:var(--surface2)}
+.sku-opt-store{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:4px;background:var(--blue-dark);color:#fff;flex-shrink:0}
+.sku-no-res{padding:14px;text-align:center;font-size:11.5px;color:var(--ink4)}
+.sku-active-tag{display:none;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--blue);color:var(--blue);background:var(--blue-light);cursor:pointer;margin-left:5px}
+
+/* ═══════════════════════════════════════
+   KPI TILES
+   Clean enterprise style — number first,
+   label second, delta third
+═══════════════════════════════════════ */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px}
+.kpi{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:16px 18px;
+  transition:box-shadow .15s,transform .15s;
+  box-shadow:0 1px 4px rgba(15,23,42,.08),0 0 0 1px rgba(15,23,42,.04);
+}
+.kpi:hover{box-shadow:0 4px 12px rgba(15,23,42,.1),0 0 0 1px rgba(15,23,42,.05);transform:translateY(-1px)}
+.kpi.hi{border-top:3px solid var(--blue);padding-top:14px;background:linear-gradient(160deg,#EFF6FF 0%,#FFFFFF 50%)}
+.kpi-label{
+  font-size:10px;font-weight:700;
+  color:var(--ink4);
+  margin-bottom:8px;
+  text-transform:uppercase;letter-spacing:.06em;
+}
+.kpi-value{
+  font-size:28px;font-weight:800;
+  color:var(--ink);line-height:1;
+  margin-bottom:6px;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-.03em;
+}
+.kpi.hi .kpi-value{color:var(--blue-dark)}
+.kpi.hi .kpi-label{color:var(--blue)}
+.kpi-delta{font-size:11.5px;font-weight:500;display:flex;align-items:center;gap:3px}
+.delta-up{color:var(--green)}.delta-down{color:var(--red)}.delta-neu{color:var(--ink4)}
+
+/* ═══════════════════════════════════════
+   CHARTS
+═══════════════════════════════════════ */
+.charts-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+.chart-panel{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:16px 18px;
+  box-shadow:0 1px 4px rgba(15,23,42,.07),0 0 0 1px rgba(15,23,42,.03);
+  transition:box-shadow .15s;
+}
+.chart-panel:hover{box-shadow:0 4px 12px rgba(15,23,42,.09),0 0 0 1px rgba(15,23,42,.04)}
+.chart-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2px}
+.chart-title{font-size:12.5px;font-weight:600;color:var(--ink);letter-spacing:-.005em}
+.chart-sub{font-size:10.5px;color:var(--ink4);margin-bottom:8px;line-height:1.4}
+.chart-area{height:148px;position:relative}
+.chart-legend{display:flex;align-items:center;gap:14px;margin-top:9px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink4)}
+.leg-bar{width:10px;height:10px;border-radius:2px;display:inline-block}
+.leg-line{width:18px;height:2px;border-radius:1px;display:inline-block}
+.ai-tag{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 8px;border-radius:4px;
+  font-size:9.5px;font-weight:600;
+  background:var(--blue-light);
+  color:var(--blue-dark);
+  border:1px solid var(--blue-mid);
+}
+#tt{
+  position:fixed;background:rgba(15,23,42,.9);color:#fff;
+  padding:6px 10px;border-radius:5px;
+  font-size:11px;font-weight:500;
+  pointer-events:none;z-index:999;
+  white-space:nowrap;
+  box-shadow:var(--shadow-md);display:none;
+}
+
+/* ═══════════════════════════════════════
+   AI RECOMMENDATIONS STRIP
+═══════════════════════════════════════ */
+.ai-strip{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:16px 18px;
+  box-shadow:0 1px 4px rgba(15,23,42,.07),0 0 0 1px rgba(15,23,42,.03);
+}
+.ai-strip-inner{display:flex;gap:20px;align-items:flex-start}
+.ai-strip-left{flex:1;min-width:0}
+.ai-strip-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ai-strip-title{font-size:13px;font-weight:600;color:var(--ink);letter-spacing:-.01em}
+.ai-strip-sub{font-size:11.5px;color:var(--ink4)}
+.ai-recs{display:flex;flex-direction:column;gap:1px}
+.ai-rec{display:flex;align-items:flex-start;gap:10px;padding:8px 10px;border-radius:var(--r);transition:background .12s;cursor:default}
+.ai-rec:hover{background:var(--surface2)}
+.ai-rec-icon{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:7px}
+.icon-order{background:var(--red)}.icon-consol{background:var(--blue)}.icon-redeploy{background:var(--amber)}
+.ai-rec-body{flex:1;min-width:0}
+.ai-rec-text{font-size:12.5px;color:var(--ink2);line-height:1.55}
+.ai-rec-meta{font-size:11px;color:var(--ink4);margin-top:2px}
+.ai-analyzing{display:none;align-items:center;gap:8px;padding:6px 0;color:var(--ink4);font-size:12px}
+.ai-dots span{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--ink4);margin:0 2px;animation:bdots 1.1s infinite}
+.ai-dots span:nth-child(2){animation-delay:.18s}.ai-dots span:nth-child(3){animation-delay:.36s}
+@keyframes bdots{0%,80%,100%{transform:translateY(0);opacity:.3}40%{transform:translateY(-4px);opacity:1}}
+.ai-cta{
+  min-width:200px;max-width:200px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:16px;text-align:center;
+  flex-shrink:0;display:flex;
+  flex-direction:column;align-items:center;
+}
+.saving-label{font-size:10px;font-weight:700;color:var(--ink4);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
+.saving-value{font-size:28px;font-weight:700;color:var(--green);line-height:1;margin-bottom:4px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.saving-sub{font-size:11px;color:var(--ink4);margin-bottom:14px;line-height:1.5}
+
+/* ═══════════════════════════════════════
+   SCREEN 2 — STORES
+═══════════════════════════════════════ */
+.detail-layout{display:grid;grid-template-columns:260px 1fr;gap:14px}
+.store-sidebar{display:flex;flex-direction:column;gap:10px}
+.store-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--shadow-xs)}
+.sec-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink4);margin-bottom:9px}
+.store-name-lg{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:2px;letter-spacing:-.01em}
+.store-meta{font-size:11.5px;color:var(--ink3);margin-bottom:14px}
+.cap-donut-wrap{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.cap-donut{position:relative;width:64px;height:64px;flex-shrink:0}
+.cap-donut svg{width:64px;height:64px}
+.cap-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.cap-donut-pct{font-size:15px;font-weight:700;color:var(--ink);line-height:1;letter-spacing:-.01em}
+.cap-donut-lbl{font-size:9px;color:var(--ink4);margin-top:1px}
+.cap-kv{flex:1}
+.cap-kv-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--surface2);font-size:12px}
+.cap-kv-row:last-child{border-bottom:none}
+.cap-kv-k{color:var(--ink3)}.cap-kv-v{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.signal-item{margin-bottom:9px}
+.signal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;font-size:11.5px}
+.signal-name{font-weight:500;color:var(--ink2);display:flex;align-items:center;gap:6px}
+.signal-val{color:var(--ink4);font-size:11px}
+.sig-track{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.sig-fill{height:100%;border-radius:2px;transition:width .45s ease}
+.sig-promo{background:var(--blue)}.sig-festival{background:var(--amber)}.sig-weather{background:#0EA5E9}.sig-trend{background:var(--green)}.sig-event{background:var(--red)}
+.sensing-note{font-size:11.5px;color:var(--ink3);line-height:1.55;padding:10px 12px;background:var(--blue-light);border:1px solid var(--blue-mid);border-radius:var(--r);margin-top:6px}
+/* SKU status filter */
+.sf-bar{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.sf-chip{padding:3px 11px;border-radius:20px;font-size:11px;font-weight:500;border:1px solid var(--border);color:var(--ink3);background:var(--surface);cursor:pointer;transition:all .12s;user-select:none;white-space:nowrap}
+.sf-chip:hover{border-color:var(--border2);background:var(--surface2)}
+.sf-chip.f-all.sel{border-color:var(--blue);color:var(--blue);background:var(--blue-light)}
+.sf-chip.f-replenish.sel{border-color:var(--red);color:var(--red);background:var(--red-light)}
+.sf-chip.f-low.sel{border-color:var(--amber);color:var(--amber);background:var(--amber-light)}
+.sf-chip.f-ok.sel{border-color:var(--green);color:var(--green);background:var(--green-light)}
+.sf-chip.f-hold.sel{border-color:var(--ink4);color:var(--ink4);background:var(--surface2)}
+.sf-chip.f-redeploy.sel{border-color:var(--blue);color:var(--blue);background:var(--blue-light)}
+.sf-count{margin-left:2px;font-size:9px;padding:0 4px;border-radius:3px;background:rgba(0,0,0,.06);color:inherit}
+/* Card & table */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(15,23,42,.07),0 0 0 1px rgba(15,23,42,.03)}
+.card-header{padding:11px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--surface)}
+.card-title{font-size:12.5px;font-weight:600;color:var(--ink);letter-spacing:-.005em}
+.search-wrap{display:flex;align-items:center;gap:6px;padding:5px 11px;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);transition:border-color .12s,box-shadow .12s}
+.search-wrap:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.search-wrap input{border:none;outline:none;font-family:'Inter',sans-serif;font-size:12px;color:var(--ink2);width:145px;background:transparent}
+.search-wrap input::placeholder{color:var(--ink5)}
+/* Data table */
+.data-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.data-table thead th{
+  background:var(--surface2);
+  color:var(--ink3);
+  font-weight:600;font-size:10.5px;
+  text-transform:uppercase;letter-spacing:.05em;
+  padding:8px 13px;text-align:left;
+  white-space:nowrap;
+  border-bottom:1px solid var(--border);
+}
+.data-table thead th.r{text-align:right}
+.data-table tbody td{
+  padding:9px 13px;
+  border-bottom:1px solid var(--border);
+  color:var(--ink2);
+  font-variant-numeric:tabular-nums;
+  vertical-align:middle;
+}
+.data-table tbody tr:hover td{background:var(--surface2)}
+.data-table tbody tr:last-child td{border-bottom:none}
+.data-table .num{text-align:right;font-weight:600}
+.sku-id{font-weight:600;color:var(--ink);font-size:12px;font-family:'SF Mono','Fira Code',monospace;letter-spacing:.01em}
+/* Status badges */
+.sbadge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:600;white-space:nowrap}
+.sbadge::before{content:'';width:5px;height:5px;border-radius:50%}
+.sbadge.replenish{background:var(--red-light);color:var(--red)}.sbadge.replenish::before{background:var(--red)}
+.sbadge.ok{background:var(--green-light);color:var(--green)}.sbadge.ok::before{background:var(--green)}
+.sbadge.hold{background:var(--surface2);color:var(--ink4)}.sbadge.hold::before{background:var(--ink5)}
+.sbadge.low{background:var(--amber-light);color:var(--amber)}.sbadge.low::before{background:var(--amber)}
+.sbadge.redeploy{background:var(--blue-light);color:var(--blue)}.sbadge.redeploy::before{background:var(--blue)}
+/* AI footer */
+.ai-footer{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px 15px;display:flex;align-items:center;gap:12px;margin-top:12px;box-shadow:var(--shadow-xs)}
+.ai-footer-text{flex:1;font-size:12.5px;color:var(--ink2);line-height:1.45}
+/* Selection row */
+.sku-row-selected td{background:rgba(37,99,235,.04)!important}
+.sku-row-checked td{background:rgba(37,99,235,.04)!important}
+
+/* ═══════════════════════════════════════
+   SCREEN 3 — REPLENISHMENT
+═══════════════════════════════════════ */
+.dispatch-top{display:grid;grid-template-columns:1fr 240px;gap:10px;margin-bottom:10px}
+.dispatch-bottom{display:grid;grid-template-columns:1fr 240px;gap:10px}
+/* Map */
+.uk-map-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-xs)}
+.uk-map-header{padding:9px 15px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface)}
+.uk-map-body{display:flex;gap:0}
+.uk-map-svg-wrap{flex:1;min-height:392px;overflow:hidden;background:linear-gradient(180deg,#FBFCFE 0%,#F4F7FB 100%)}
+.uk-telemetry{width:212px;flex-shrink:0;border-left:1px solid var(--border);padding:14px;overflow-y:auto;background:var(--surface)}
+.tel-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--ink4);margin-bottom:9px}
+.tel-store-name{font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:1px;letter-spacing:-.01em}
+.tel-coords{font-size:9px;color:var(--ink4);font-family:monospace;margin-bottom:9px;letter-spacing:.01em}
+.tel-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:9px}
+.tel-tile{background:var(--surface2);border-radius:var(--r);padding:6px 9px;border:1px solid var(--border)}
+.tel-tile-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink4);margin-bottom:2px}
+.tel-tile-value{font-size:13px;font-weight:700;color:var(--ink)}
+.tel-kv{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--surface2);font-size:11.5px}
+.tel-kv:last-child{border-bottom:none}
+.tel-kv-k{color:var(--ink3)}.tel-kv-v{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.tel-alerts{margin-top:10px}
+.tel-alert-title{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink4);margin-bottom:6px}
+.tel-alert-item{display:flex;align-items:flex-start;gap:6px;font-size:11px;color:var(--ink3);margin-bottom:6px;line-height:1.4}
+.tel-alert-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:3px}
+/* Replenishment table */
+.fill-wrap{display:flex;align-items:center;gap:8px}
+.fill-val{font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;min-width:32px;color:var(--ink2)}
+.fill-track{height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;width:52px}
+.fill-bar{height:100%;border-radius:3px;transition:width .4s ease}
+.fill-hi{background:var(--green)}.fill-md{background:var(--blue)}.fill-lo{background:var(--amber)}
+.mode-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:600;letter-spacing:.01em}
+.mode-badge.ftl{background:var(--blue-light);color:var(--blue-dark)}
+.mode-badge.consol{background:var(--green-light);color:var(--green)}
+.mode-badge.milkrun{background:var(--amber-light);color:var(--amber)}
+.vs-save{color:var(--green);font-weight:600;font-variant-numeric:tabular-nums}
+.total-row td{font-weight:700!important;background:var(--surface2)!important;color:var(--ink)!important;border-top:2px solid var(--border)!important}
+.lane-chk{width:14px;height:14px;accent-color:var(--blue);cursor:pointer}
+.lane-approved td{background:rgba(5,150,105,.04)!important}
+/* AI Advisor */
+.ai-advisor-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);display:flex;flex-direction:column;height:100%;box-shadow:var(--shadow-xs)}
+.aa-head{padding:12px 15px;border-bottom:1px solid var(--border);background:var(--surface2);flex-shrink:0}
+.aa-title{font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:2px;letter-spacing:-.01em}
+.aa-sub{font-size:11px;color:var(--ink4)}
+.aa-chat{flex:1;padding:12px 14px;min-height:160px;max-height:240px;overflow-y:auto}
+.aa-bubble{padding:10px 13px;border-radius:var(--r);font-size:12px;line-height:1.65;margin-bottom:8px;white-space:pre-line}
+.aa-bubble.question{background:var(--blue-light);color:var(--blue-dark);font-weight:500;border-left:2px solid var(--blue)}
+.aa-bubble.answer{background:var(--surface2);color:var(--ink2);border-left:2px solid var(--border2)}
+.aa-empty{font-size:12px;color:var(--ink4);text-align:center;padding:24px 0;line-height:1.6}
+.aa-questions{padding:10px 14px;border-top:1px solid var(--border);flex-shrink:0}
+.aa-q-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:8px}
+.aa-q-btn{display:block;width:100%;text-align:left;padding:7px 11px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);font-family:'Inter',sans-serif;font-size:11.5px;color:var(--ink3);cursor:pointer;transition:all .12s;margin-bottom:5px;font-weight:500;line-height:1.4}
+.aa-q-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-light)}
+.aa-q-btn:last-child{margin-bottom:0}
+
+/* KPIs row (dispatch page) */
+.kpi-row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+
+/* ── AI ADVISOR PANEL ── */
+.ai-advisor-panel{position:fixed;top:0;right:0;bottom:0;width:480px;background:var(--surface);z-index:61;box-shadow:var(--shadow-lg);transform:translateX(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;border-left:1px solid var(--border)}
+.ai-advisor-panel.open{transform:translateX(0)}
+.aap-header{padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.aap-chat{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px;background:var(--bg)}
+.aap-msg{display:flex;align-items:flex-start;gap:10px}
+.aap-msg.aap-msg-user{flex-direction:row-reverse}
+.aap-avatar{width:28px;height:28px;border-radius:8px;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0;margin-top:2px}
+.aap-msg-user .aap-avatar{background:var(--surface3);color:var(--ink3)}
+.aap-bubble{background:var(--surface);border:1px solid var(--border);border-radius:8px;border-top-left-radius:2px;padding:11px 14px;font-size:12.5px;color:var(--ink2);line-height:1.65;max-width:380px;box-shadow:var(--shadow-xs)}
+.aap-msg-user .aap-bubble{background:var(--blue);color:#fff;border-color:var(--blue);border-radius:8px;border-top-right-radius:2px}
+.aap-typing{display:flex;align-items:center;gap:4px;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:8px;width:60px}
+.aap-typing span{width:6px;height:6px;border-radius:50%;background:var(--ink4);animation:bdots 1.1s infinite}
+.aap-typing span:nth-child(2){animation-delay:.18s}.aap-typing span:nth-child(3){animation-delay:.36s}
+.aap-questions{padding:12px 20px;border-top:1px solid var(--border);flex-shrink:0;background:var(--surface);display:flex;flex-direction:column;gap:5px}
+.aap-q-btn{display:block;width:100%;text-align:left;padding:8px 12px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);font-family:'Inter',sans-serif;font-size:12px;color:var(--ink2);cursor:pointer;transition:all .12s;font-weight:500;line-height:1.4}
+.aap-q-btn:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-light)}
+.aap-q-btn:disabled{opacity:.4;cursor:default;pointer-events:none}
+
+/* ── ALERT BELL ── */
+.tnav-alert-btn{position:relative;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:var(--r);cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--ink3);transition:all .12s;flex-shrink:0}
+.tnav-alert-btn:hover{background:var(--surface2);color:var(--ink);border-color:var(--border2)}
+.alert-badge{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--surface);font-family:'Inter',sans-serif;line-height:1}
+/* ── ALERT PANEL ── */
+.alert-panel{position:fixed;top:0;right:0;bottom:0;width:460px;background:var(--surface);z-index:61;box-shadow:var(--shadow-lg);transform:translateX(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;border-left:1px solid var(--border)}
+.alert-panel.open{transform:translateX(0)}
+.alp-header{padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.alp-body{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.alert-card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow-xs)}
+.alert-card-head{padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border)}
+.alert-sev{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:3px;letter-spacing:.03em}
+.sev-critical{background:var(--red-light);color:var(--red);border:1px solid rgba(220,38,38,.2)}
+.sev-warning{background:var(--amber-light);color:var(--amber);border:1px solid rgba(217,119,6,.2)}
+.sev-info{background:var(--blue-light);color:var(--blue-dark);border:1px solid rgba(37,99,235,.15)}
+.alert-card-title{font-size:12.5px;font-weight:600;color:var(--ink);flex:1}
+.alert-card-time{font-size:10.5px;color:var(--ink4);white-space:nowrap}
+.alert-card-body{padding:10px 14px;font-size:12px;color:var(--ink2);line-height:1.55}
+.alert-card-meta{padding:8px 14px;border-top:1px solid var(--surface2);background:var(--surface2);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.alert-sent-to{font-size:11px;color:var(--ink3);display:flex;align-items:center;gap:5px}
+.alert-sent-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px}
+.badge-sent{background:#ECFDF5;color:#065F46;border:1px solid #A7F3D0}
+.badge-pending{background:var(--amber-light);color:#92400E;border:1px solid #FDE68A}
+.btn-escalate{padding:4px 10px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:var(--ink3);cursor:pointer;transition:all .12s;white-space:nowrap}
+.btn-escalate:hover{border-color:var(--blue);color:var(--blue);background:var(--blue-light)}
+.btn-resolve{padding:4px 10px;border-radius:var(--r);border:none;background:var(--green);font-family:'Inter',sans-serif;font-size:11px;font-weight:600;color:#fff;cursor:pointer;transition:opacity .12s}
+.btn-resolve:hover{opacity:.85}
+.alp-footer{padding:14px 20px;border-top:1px solid var(--border);background:var(--surface);flex-shrink:0}
+/* ── AI AGENT BUTTON ── */
+.tnav-agent-btn{background:var(--surface);border-color:var(--border);color:var(--ink3)}
+.tnav-agent-btn:hover{background:var(--surface2);border-color:var(--border2);color:var(--ink)}
+.tnav-agent-btn.agent-active{background:#ECFDF5;border-color:#6EE7B7;color:#065F46}
+.agent-status-dot{width:7px;height:7px;border-radius:50%;background:var(--ink5);flex-shrink:0;transition:background .3s}
+.agent-active .agent-status-dot{background:#16A34A;animation:agentPulse 2s infinite}
+@keyframes agentPulse{0%,100%{box-shadow:0 0 0 0 rgba(22,163,74,.4)}60%{box-shadow:0 0 0 5px rgba(22,163,74,0)}}
+
+/* ── AI AGENT PANEL ── */
+.ai-agent-panel{position:fixed;top:0;right:0;bottom:0;width:500px;background:var(--surface);z-index:61;box-shadow:var(--shadow-lg);transform:translateX(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;border-left:1px solid var(--border)}
+.ai-agent-panel.open{transform:translateX(0)}
+.agp-header{padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.agp-toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.agp-toggle{position:relative;width:40px;height:22px;cursor:pointer}
+.agp-toggle input{opacity:0;width:0;height:0}
+.agp-slider{position:absolute;inset:0;background:var(--surface3);border-radius:11px;transition:background .2s}
+.agp-slider::before{content:'';position:absolute;width:18px;height:18px;left:2px;bottom:2px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.agp-toggle input:checked + .agp-slider{background:var(--green)}
+.agp-toggle input:checked + .agp-slider::before{transform:translateX(18px)}
+.agp-body{flex:1;overflow-y:auto;padding:0}
+.agp-section{padding:14px 20px;border-bottom:1px solid var(--border)}
+.agp-section-title{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:12px}
+/* Agent tasks */
+.agent-task{display:flex;align-items:flex-start;gap:12px;padding:10px 12px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:8px;background:var(--surface)}
+.agent-task:last-child{margin-bottom:0}
+.task-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.task-body{flex:1;min-width:0}
+.task-name{font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:2px}
+.task-desc{font-size:11.5px;color:var(--ink3);line-height:1.4}
+.task-status{font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap;margin-top:5px;display:inline-block}
+.ts-watching{background:#EFF6FF;color:#1D4ED8}
+.ts-idle{background:var(--surface2);color:var(--ink4)}
+/* Pending approvals */
+.approval-card{border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden}
+.approval-card:last-child{margin-bottom:0}
+.approval-head{padding:10px 13px;background:var(--amber-light);border-bottom:1px solid #FDE68A;display:flex;align-items:center;gap:7px}
+.approval-badge{font-size:9.5px;font-weight:700;color:#92400E;background:#FEF3C7;padding:1px 6px;border-radius:3px;border:1px solid #FDE68A}
+.approval-title{font-size:12px;font-weight:600;color:#78350F}
+.approval-body{padding:10px 13px;font-size:12px;color:var(--ink2);line-height:1.5;background:var(--surface)}
+.approval-actions{padding:8px 13px;border-top:1px solid var(--border);display:flex;gap:7px;background:var(--surface)}
+.btn-approve{padding:5px 14px;border-radius:var(--r);border:none;background:var(--green);color:#fff;font-family:'Inter',sans-serif;font-size:11.5px;font-weight:600;cursor:pointer;transition:opacity .12s}
+.btn-approve:hover{opacity:.85}
+.btn-reject{padding:5px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);color:var(--ink3);font-family:'Inter',sans-serif;font-size:11.5px;font-weight:600;cursor:pointer;transition:all .12s}
+.btn-reject:hover{border-color:var(--red);color:var(--red)}
+/* Activity log */
+.log-entry{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--surface2)}
+.log-entry:last-child{border-bottom:none}
+.log-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.log-text{font-size:12px;color:var(--ink2);line-height:1.45;flex:1}
+.log-time{font-size:10.5px;color:var(--ink4);white-space:nowrap;margin-top:1px}
+
+/* ═══════════════════════════════════════
+   DRILL-DOWN PANEL
+═══════════════════════════════════════ */
+.drill-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.25);z-index:60;opacity:0;pointer-events:none;transition:opacity .22s;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.drill-backdrop.open{opacity:1;pointer-events:all}
+.drill-panel{
+  position:fixed;top:0;right:0;bottom:0;width:460px;
+  background:var(--surface);z-index:61;
+  box-shadow:var(--shadow-lg);
+  transform:translateX(100%);
+  transition:transform .26s cubic-bezier(.4,0,.2,1);
+  display:flex;flex-direction:column;
+  border-left:1px solid var(--border);
+}
+.drill-panel.open{transform:translateX(0)}
+.drill-header{padding:15px 20px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surface)}
+.drill-back{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--blue);cursor:pointer;margin-bottom:9px;background:none;border:none;padding:0;font-family:'Inter',sans-serif;transition:opacity .12s}
+.drill-back:hover{opacity:.7}
+.drill-week-label{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:2px;letter-spacing:-.02em}
+.drill-meta{font-size:12px;color:var(--ink4)}
+.drill-body{flex:1;overflow-y:auto;padding:0 0 28px}
+.drill-section{padding:15px 20px;border-bottom:1px solid var(--surface2)}
+.drill-section:last-child{border-bottom:none}
+.drill-section-title{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:12px}
+.drill-hero{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.drill-stat{background:var(--surface2);border-radius:var(--r);padding:12px 14px;border:1px solid var(--border)}
+.drill-stat-label{font-size:11px;color:var(--ink3);margin-bottom:4px}
+.drill-stat-value{font-size:22px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.drill-stat-delta{font-size:11.5px;margin-top:3px;font-weight:500}
+.signal-waterfall{display:flex;flex-direction:column;gap:7px}
+.swf-row{display:flex;align-items:center;gap:10px}
+.swf-label{font-size:12px;color:var(--ink2);width:130px;flex-shrink:0}
+.swf-bar-wrap{flex:1;height:5px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.swf-bar{height:100%;border-radius:3px}
+.swf-val{font-size:12px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;min-width:44px;text-align:right}
+.cat-rows{display:flex;flex-direction:column;gap:8px}
+.cat-row{display:flex;align-items:center;gap:10px}
+.cat-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.cat-name{font-size:12px;color:var(--ink2);width:130px;flex-shrink:0}
+.cat-bar-wrap{flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.cat-bar{height:100%;border-radius:3px}
+.cat-pct{font-size:12px;font-weight:600;color:var(--ink3);min-width:32px;text-align:right}
+.cat-units{font-size:11px;color:var(--ink4);min-width:40px;text-align:right}
+.drill-table{width:100%;border-collapse:collapse}
+.drill-table thead th{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink4);padding:4px 9px;text-align:left;border-bottom:1px solid var(--border)}
+.drill-table thead th.r{text-align:right}
+.drill-table tbody td{padding:7px 9px;font-size:12.5px;color:var(--ink2);border-bottom:1px solid var(--surface2);font-variant-numeric:tabular-nums}
+.drill-table tbody tr:last-child td{border-bottom:none}
+.drill-table td.r{text-align:right;font-weight:600}
+.stock-rows{display:flex;flex-direction:column;gap:6px}
+.stock-row{display:flex;align-items:center;justify-content:space-between;padding:9px 11px;border-radius:var(--r);font-size:12px;border:1px solid transparent}
+.stock-row.risk-critical{background:var(--red-light);border-color:rgba(220,38,38,.15)}
+.stock-row.risk-watch{background:var(--amber-light);border-color:rgba(217,119,6,.15)}
+.stock-row.risk-ok{background:var(--green-light);border-color:rgba(5,150,105,.12)}
+.stock-row-left{flex:1;min-width:0}
+.stock-row-sku{font-weight:600;color:var(--ink);font-size:12px}
+.stock-row-name{font-size:11px;color:var(--ink3);margin-top:2px}
+.stock-row-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.stock-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap}
+.sb-critical{background:var(--red);color:#fff}.sb-watch{background:var(--amber);color:#fff}.sb-ok{background:var(--green);color:#fff}
+.action-list{display:flex;flex-direction:column;gap:8px}
+.action-item{display:flex;align-items:flex-start;gap:11px;padding:10px 12px;background:var(--surface2);border-radius:var(--r);border-left:3px solid var(--blue)}
+.action-item.urgent{border-left-color:var(--red);background:var(--red-light)}
+.action-num{font-size:11px;font-weight:700;color:var(--blue);flex-shrink:0;margin-top:2px}
+.action-item.urgent .action-num{color:var(--red)}
+.action-text{font-size:12.5px;color:var(--ink2);line-height:1.55}
+
+/* ═══════════════════════════════════════
+   MODAL
+═══════════════════════════════════════ */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border-radius:8px;padding:26px;max-width:430px;width:90%;box-shadow:var(--shadow-overlay);transform:translateY(10px);transition:transform .22s;border:1px solid var(--border)}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-icon{width:40px;height:40px;border-radius:8px;background:var(--blue);display:flex;align-items:center;justify-content:center;margin-bottom:14px;box-shadow:0 2px 6px rgba(37,99,235,.3)}
+.modal-title{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:7px;letter-spacing:-.02em}
+.modal-body{font-size:13px;color:var(--ink3);line-height:1.65;margin-bottom:18px}
+.modal-stats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:18px}
+.mstat{background:var(--surface2);border-radius:var(--r);padding:11px 13px;border:1px solid var(--border)}
+.mstat-label{font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4);margin-bottom:3px}
+.mstat-value{font-size:18px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+.modal-cancel{padding:8px 17px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);color:var(--ink2);font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .12s}
+.modal-cancel:hover{background:var(--surface2);border-color:var(--border2)}
+.modal-confirm{padding:8px 20px;border-radius:var(--r);border:none;background:var(--blue);color:#fff;font-family:'Inter',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s;box-shadow:0 1px 2px rgba(37,99,235,.2)}
+.modal-confirm:hover{background:var(--blue-hover);box-shadow:0 2px 5px rgba(37,99,235,.3)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:var(--r);font-size:13px;font-weight:500;z-index:200;display:flex;align-items:center;gap:11px;box-shadow:var(--shadow-md);transform:translateY(60px);opacity:0;transition:all .32s cubic-bezier(.4,0,.2,1)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-icon{width:20px;height:20px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .22s ease}
+@media(max-width:1280px){.kpi-row{grid-template-columns:repeat(3,1fr)}.charts-row{grid-template-columns:1fr}.dispatch-top,.dispatch-bottom{grid-template-columns:1fr}}
+@media(max-width:1000px){.detail-layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="tt"></div>
+
+<!-- ALERT PANEL -->
+<div class="drill-backdrop" id="alert-backdrop" onclick="closeAlerts()"></div>
+<div class="alert-panel" id="alert-panel">
+  <div class="alp-header">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <button class="drill-back" onclick="closeAlerts()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Close</button>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div>
+        <div style="font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-.01em">KPI Alerts</div>
+        <div style="font-size:12px;color:var(--ink4);margin-top:2px">Threshold breaches · auto-notified executives</div>
+      </div>
+      <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--red-light);color:var(--red);border:1px solid rgba(220,38,38,.2)" id="alert-count-badge">3 active</span>
+    </div>
+    <!-- Alert Agent toggle -->
+    <div id="alert-agent-bar" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2)">
+      <div style="display:flex;align-items:center;gap:9px">
+        <div style="width:28px;height:28px;border-radius:7px;background:#ECFDF5;border:1px solid #A7F3D0;display:flex;align-items:center;justify-content:center;flex-shrink:0" id="alert-agent-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+        </div>
+        <div>
+          <div style="font-size:12.5px;font-weight:600;color:var(--ink)">Alert Agent</div>
+          <div style="font-size:11px;color:var(--ink4);margin-top:1px" id="alert-agent-status-text">On — alerts sent automatically to executives</div>
+        </div>
+      </div>
+      <label class="agp-toggle" style="flex-shrink:0">
+        <input type="checkbox" id="alert-agent-toggle" checked onchange="toggleAlertAgent(this.checked)">
+        <span class="agp-slider"></span>
+      </label>
+    </div>
+  </div>
+  <div class="alp-body" id="alp-body">
+
+    <!-- Alert 1: Critical SL -->
+    <div class="alert-card" id="alc-1">
+      <div class="alert-card-head">
+        <span class="alert-sev sev-critical">CRITICAL</span>
+        <span class="alert-card-title">Service level below target — Birmingham</span>
+        <span class="alert-card-time">08:55 today</span>
+      </div>
+      <div class="alert-card-body">
+        <strong>Store #0151 · Birmingham Bullring</strong> service level dropped to <strong style="color:var(--red)">96.8%</strong> against a 98% target. 4 SKUs are below ROP. At current sell-through rate, SL will fall to 96.2% by end of week without intervention.
+      </div>
+      <div class="alert-card-meta">
+        <div class="alert-sent-to">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span>Supply Chain Director, Store GM</span>
+          <span class="alert-sent-badge badge-sent">✓ Alert sent</span>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn-escalate" onclick="escalateAlert('alc-1','Birmingham SL breach escalated to VP Operations.')">Escalate to VP</button>
+          <button class="btn-resolve" onclick="resolveAlert('alc-1')">Resolve</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert 2: Stockout risk -->
+    <div class="alert-card" id="alc-2">
+      <div class="alert-card-head">
+        <span class="alert-sev sev-critical">CRITICAL</span>
+        <span class="alert-card-title">Stockout risk — iPhone 15 Screen Protector</span>
+        <span class="alert-card-time">08:38 today</span>
+      </div>
+      <div class="alert-card-body">
+        <strong>SKU-4560 · London Oxford St</strong> has only <strong style="color:var(--red)">3 days of supply</strong> remaining at current sell-through rate (45 units/week). If no replenishment is dispatched today, stockout expected by <strong>Thursday</strong>.
+      </div>
+      <div class="alert-card-meta">
+        <div class="alert-sent-to">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span>Replenishment Planner, Store Manager</span>
+          <span class="alert-sent-badge badge-sent">✓ Alert sent</span>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn-escalate" onclick="escalateAlert('alc-2','Stockout risk escalated — London Oxford St iPhone 15 Screen Protector.')">Escalate to SC Director</button>
+          <button class="btn-resolve" onclick="resolveAlert('alc-2')">Resolve</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alert 3: Capacity warning -->
+    <div class="alert-card" id="alc-3">
+      <div class="alert-card-head">
+        <span class="alert-sev sev-warning">WARNING</span>
+        <span class="alert-card-title">Capacity ceiling approaching — Leeds Trinity</span>
+        <span class="alert-card-time">07:30 today</span>
+      </div>
+      <div class="alert-card-body">
+        <strong>Store #0165 · Leeds Trinity</strong> is at <strong style="color:var(--amber)">84% capacity</strong>. Festival + Trend signals are projecting +4.7% demand uplift in W4. If the full replenishment order is released without adjustment, the store will exceed its 90% operational ceiling.
+      </div>
+      <div class="alert-card-meta">
+        <div class="alert-sent-to">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span>DC Manager, Leeds Store GM</span>
+          <span class="alert-sent-badge badge-pending">⏳ Pending acknowledgement</span>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn-escalate" onclick="escalateAlert('alc-3','Leeds capacity warning escalated to Supply Chain Director.')">Escalate</button>
+          <button class="btn-resolve" onclick="resolveAlert('alc-3')">Resolve</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <div class="alp-footer">
+    <div style="font-size:11px;color:var(--ink4);margin-bottom:10px">Alerts are automatically sent when KPIs breach configured thresholds. Recipients are set per store and per KPI type.</div>
+    <button class="btn-primary" style="width:100%;justify-content:center" onclick="showToast('Test alert sent to all configured executives.')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+      Send test alert to all executives
+    </button>
+  </div>
+</div>
+
+<!-- AI AGENT PANEL -->
+<div class="drill-backdrop" id="ai-agent-backdrop" onclick="closeAIAgent()"></div>
+<div class="ai-agent-panel" id="ai-agent-panel">
+  <div class="agp-header">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <button class="drill-back" onclick="closeAIAgent()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Close</button>
+      <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:3px;background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;letter-spacing:.04em">PRODUCT PREVIEW</span>
+    </div>
+    <div class="agp-toggle-row">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border-radius:8px;background:#ECFDF5;border:1px solid #6EE7B7;display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em">AI Planning Agent</div>
+          <div style="font-size:11.5px;color:var(--ink4);margin-top:1px" id="agent-status-text">Agent is inactive</div>
+        </div>
+      </div>
+      <label class="agp-toggle"><input type="checkbox" id="agent-toggle" onchange="toggleAgent(this.checked)"><span class="agp-slider"></span></label>
+    </div>
+    <div style="font-size:11.5px;color:var(--ink3);background:var(--surface2);border-radius:var(--r);padding:9px 12px;line-height:1.55">
+      In the live product, this agent monitors your network 24/7, detects exceptions, and either acts autonomously or brings decisions to you for approval — based on rules you configure.
+    </div>
+  </div>
+  <div class="agp-body" id="agp-body">
+    <!-- Monitoring tasks -->
+    <div class="agp-section">
+      <div class="agp-section-title">Monitoring tasks (3 active)</div>
+      <div class="agent-task">
+        <div class="task-icon" style="background:#EFF6FF"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+        <div class="task-body">
+          <div class="task-name">Service level watchdog</div>
+          <div class="task-desc">Alerts and generates an expedite plan if any store's SL drops below 97%</div>
+          <span class="task-status ts-watching">● Watching all 5 stores</span>
+        </div>
+      </div>
+      <div class="agent-task">
+        <div class="task-icon" style="background:#ECFDF5"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div>
+        <div class="task-body">
+          <div class="task-name">Lane consolidation optimiser</div>
+          <div class="task-desc">Automatically identifies opportunities to consolidate DC→store lanes when combined truck fill exceeds 85%</div>
+          <span class="task-status ts-watching">● Monitoring Wk 32 lanes</span>
+        </div>
+      </div>
+      <div class="agent-task">
+        <div class="task-icon" style="background:#FFFBEB"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        <div class="task-body">
+          <div class="task-name">Dead stock detector</div>
+          <div class="task-desc">Flags SKUs with >4 weeks of supply and proposes redeployment or markdown actions</div>
+          <span class="task-status ts-watching">● 3 SKUs currently flagged</span>
+        </div>
+      </div>
+    </div>
+    <!-- Pending approvals -->
+    <div class="agp-section">
+      <div class="agp-section-title">Pending your approval (2)</div>
+      <div class="approval-card" id="approval-1">
+        <div class="approval-head">
+          <span class="approval-badge">URGENT</span>
+          <span class="approval-title">Expedite order — Birmingham Bullring</span>
+        </div>
+        <div class="approval-body">Agent detected SL at 96.8% (below 97% threshold). Proposed: release DRP order for 4 SKUs totalling 128 units via FTL. Estimated SL recovery: +0.9 pts within 2 days.</div>
+        <div class="approval-actions">
+          <button class="btn-approve" onclick="approveAction('approval-1','Expedite order released to DC — Birmingham Bullring.')">Approve & release</button>
+          <button class="btn-reject" onclick="rejectAction('approval-1')">Reject</button>
+        </div>
+      </div>
+      <div class="approval-card" id="approval-2">
+        <div class="approval-head">
+          <span class="approval-badge" style="background:#DBEAFE;color:#1E40AF;border-color:#BFDBFE">OPTIMISE</span>
+          <span class="approval-title" style="color:#1E3A8A">Consolidate Edinburgh onto Leeds milk-run</span>
+        </div>
+        <div class="approval-body">Agent identified that adding Edinburgh to the Leeds milk-run reduces Edinburgh standalone freight from £880 to £620. Weekly saving: £260. Annual saving: £13,520. No change to delivery lead time.</div>
+        <div class="approval-actions">
+          <button class="btn-approve" onclick="approveAction('approval-2','Lane consolidation approved — Edinburgh added to Leeds milk-run.')">Approve</button>
+          <button class="btn-reject" onclick="rejectAction('approval-2')">Reject</button>
+        </div>
+      </div>
+    </div>
+    <!-- Activity log -->
+    <div class="agp-section" style="border-bottom:none">
+      <div class="agp-section-title">Agent activity log</div>
+      <div id="agent-log">
+        <div class="log-entry"><div class="log-dot" style="background:var(--green)"></div><div class="log-text">Demand sensing cycle completed — 5 stores updated</div><div class="log-time">08:42</div></div>
+        <div class="log-entry"><div class="log-dot" style="background:var(--amber)"></div><div class="log-text">SKU-4560 (iPhone 15 Screen Protector, London) flagged — 3 days supply remaining</div><div class="log-time">08:38</div></div>
+        <div class="log-entry"><div class="log-dot" style="background:var(--blue)"></div><div class="log-text">Lane consolidation opportunity identified — Manchester + London FTL (consol.) saves £2,700</div><div class="log-time">08:15</div></div>
+        <div class="log-entry"><div class="log-dot" style="background:var(--red)"></div><div class="log-text">Birmingham SL breach detected — 96.8%, below 97% threshold. Approval request sent.</div><div class="log-time">07:55</div></div>
+        <div class="log-entry"><div class="log-dot" style="background:var(--green)"></div><div class="log-text">Weekly forecast refresh completed — 8-week rolling horizon updated for all stores</div><div class="log-time">06:00</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI ADVISOR PANEL -->
+<div class="drill-backdrop" id="ai-advisor-backdrop" onclick="closeAIAdvisor()"></div>
+<div class="ai-advisor-panel" id="ai-advisor-panel">
+  <div class="aap-header">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <button class="drill-back" onclick="closeAIAdvisor()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+        Close
+      </button>
+      <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:3px;background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;letter-spacing:.04em">PRODUCT PREVIEW</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <div style="width:32px;height:32px;border-radius:8px;background:var(--blue);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em">AI Replenishment Advisor</div>
+        <div style="font-size:11.5px;color:var(--ink4);margin-top:1px">Contextual planning intelligence · grounded in live BT network data</div>
+      </div>
+    </div>
+    <div style="font-size:11.5px;color:var(--ink3);background:var(--blue-light);border:1px solid var(--blue-mid);border-radius:var(--r);padding:8px 12px;line-height:1.5;margin-top:6px">
+      In the live product, this assistant will be connected to your BT store POS data, DC inventory, and live demand signals — answering planning questions in real time.
+    </div>
+  </div>
+  <div class="aap-chat" id="aap-chat">
+    <!-- Pre-loaded opening message -->
+    <div class="aap-msg aap-msg-ai">
+      <div class="aap-avatar">AI</div>
+      <div class="aap-bubble">
+        <strong>Hello. I'm your AI Replenishment Advisor.</strong><br><br>
+        I can answer questions about your 5-store BT network — stock positions, demand signals, freight optimisation, and replenishment decisions.<br><br>
+        Select a question below or ask me anything about the current planning cycle.
+      </div>
+    </div>
+  </div>
+  <div class="aap-questions">
+    <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:8px">Suggested questions</div>
+    <button class="aap-q-btn" onclick="askPanel('capacity')">Which stores are approaching capacity this cycle?</button>
+    <button class="aap-q-btn" onclick="askPanel('freight')">How much are we saving on freight vs unoptimised dispatch?</button>
+    <button class="aap-q-btn" onclick="askPanel('risk')">Which SKUs are at stockout risk this week?</button>
+    <button class="aap-q-btn" onclick="askPanel('deadstock')">Where is dead stock tying up working capital?</button>
+    <button class="aap-q-btn" onclick="askPanel('action')">What should I action before end of day?</button>
+  </div>
+</div>
+
+<!-- DRILL-DOWN PANEL -->
+<div class="drill-backdrop" id="drill-backdrop" onclick="closeDrillDown()"></div>
+<div class="drill-panel" id="drill-panel">
+  <div class="drill-header">
+    <button class="drill-back" onclick="closeDrillDown()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Back to overview
+    </button>
+    <div class="drill-week-label" id="dp-week-label">W1 — Detail</div>
+    <div class="drill-meta" id="dp-meta"></div>
+  </div>
+  <div class="drill-body" id="drill-body"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="modal-title">Release DRP orders to DC?</div>
+    <div class="modal-body">This will auto-release Distribution Requirements Planning orders for all approved lanes this cycle. The DC will begin picking and dispatch within 4 hours.</div>
+    <div class="modal-stats">
+      <div class="mstat"><div class="mstat-label">Network lanes</div><div class="mstat-value">5</div></div>
+      <div class="mstat"><div class="mstat-label">Total units</div><div class="mstat-value">1,015</div></div>
+      <div class="mstat"><div class="mstat-label">Freight cost</div><div class="mstat-value" style="color:var(--blue)">£8,690</div></div>
+      <div class="mstat"><div class="mstat-label">Freight saving</div><div class="mstat-value" style="color:var(--green)">£1,300</div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-confirm" onclick="confirmDRP()">Confirm &amp; release</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"><div class="toast-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><span id="toastMsg"></span></div>
+
+<div class="app">
+
+<!-- TOP NAVIGATION -->
+<nav class="topnav">
+  <div class="tnav-brand">
+    <div class="tnav-logo">DI</div>
+    <div>
+      <div class="tnav-name">DECISION INTELLIGENCE</div>
+      <div class="tnav-sub">Platform for Stores</div>
+    </div>
+  </div>
+  <div class="tnav-sep"></div>
+  <div class="tnav-tabs">
+    <div class="tnav-tab active" id="nav-overview" onclick="showScreen('overview')">Overview</div>
+    <div class="tnav-tab" id="nav-store" onclick="showScreen('store')">Stores <span class="tnav-badge" id="shortfall-badge">4</span></div>
+    <div class="tnav-tab" id="nav-dispatch" onclick="showScreen('dispatch')">Replenishment</div>
+  </div>
+  <div class="tnav-right">
+    <!-- Horizon toggle -->
+    <div class="tnav-ctrl">
+      <div class="tnav-ctrl-opt" id="seg-4w" onclick="setHorizon(4)">4W</div>
+      <div class="tnav-ctrl-opt active" id="seg-8w" onclick="setHorizon(8)">8W</div>
+    </div>
+    <!-- Node selector -->
+    <div class="tnav-node">
+      <span class="tnav-node-lbl">STORE</span>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8592A3" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+      <select id="storeSelect" onchange="selectStore(this.value)">
+        <option value="0142">London Oxford St — #0142</option>
+        <option value="0137">Manchester Arndale — #0137</option>
+        <option value="0151">Birmingham Bullring — #0151</option>
+        <option value="0165">Leeds Trinity — #0165</option>
+        <option value="0188">Edinburgh Princes St — #0188</option>
+      </select>
+    </div>
+    <!-- Divider -->
+    <div class="tnav-sep"></div>
+    <!-- Alert bell -->
+    <button class="tnav-alert-btn" id="alert-btn" onclick="openAlerts()" title="Active alerts">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <span class="alert-badge" id="alert-badge">3</span>
+    </button>
+    <div class="tnav-sep"></div>
+    <!-- AI tools group -->
+    <div class="tnav-ai-group">
+      <button class="tnav-ai-btn" onclick="showToast('Generating AI Intelligence Report — analysing network data…')" title="Generate AI Intelligence Report">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span>Report</span>
+      </button>
+      <button class="tnav-ai-btn tnav-ai-btn--primary" onclick="openAIAdvisor()" title="AI Advisor">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/></svg>
+        <span>AI Advisor</span>
+      </button>
+      <button class="tnav-ai-btn tnav-ai-btn--agent" id="agent-nav-btn" onclick="openAIAgent()" title="AI Agent">
+        <span class="agent-status-dot" id="agent-nav-dot"></span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        <span>AI Agent</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="main">
+
+<!-- ═══════════════════ SCREEN 1 — OVERVIEW ═══════════════════ -->
+<div class="tab-content active" id="tab-overview">
+<div class="content">
+  <!-- KPI row -->
+  <div class="kpi-row" id="kpi-row">
+    <div class="kpi"><div class="kpi-label">Service level</div><div class="kpi-value" id="kpi-sl">97.4%</div><div class="kpi-delta delta-down" id="kpi-sl-d">↓ 0.6 pts vs target</div></div>
+    <div class="kpi"><div class="kpi-label">Fill rate</div><div class="kpi-value" id="kpi-fr">95.1%</div><div class="kpi-delta delta-up" id="kpi-fr-d">↑ 1.2 pts w/w</div></div>
+    <div class="kpi"><div class="kpi-label">Capacity util.</div><div class="kpi-value" id="kpi-cu">88%</div><div class="kpi-delta delta-neu" id="kpi-cu-d">within ceiling</div></div>
+    <div class="kpi"><div class="kpi-label">In-transit units</div><div class="kpi-value" id="kpi-it">320</div><div class="kpi-delta delta-neu" id="kpi-it-d">2 open loads</div></div>
+    <div class="kpi hi"><div class="kpi-label">Transport cost (MTD)</div><div class="kpi-value" id="kpi-tc">£12,400</div><div class="kpi-delta delta-up" id="kpi-tc-d">↓ 9% vs plan</div></div>
+  </div>
+  <!-- Charts 2x2 -->
+  <div class="charts-row">
+    <div class="chart-panel">
+      <div class="chart-head">
+        <div><div class="chart-title">Demand forecast</div><div class="chart-sub">Units / week · baseline vs AI sensed uplift · click any bar to drill down</div></div>
+      </div>
+      <div class="chart-area" id="chart1"></div>
+      <div class="chart-legend">
+        <div class="leg-item"><span class="leg-bar" style="background:#94A3B8;opacity:.7"></span>Baseline forecast</div>
+        <div class="leg-item"><span class="leg-bar" style="background:var(--blue)"></span>AI sensed uplift</div>
+      </div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-head">
+        <div><div class="chart-title">Demand sensing vs baseline</div><div class="chart-sub">Daily sensing overlay · signal recalculated · dashed = baseline  solid = sensed</div></div>
+        <span class="ai-tag">AI sensing</span>
+      </div>
+      <div class="chart-area" id="chart2"></div>
+      <div class="chart-legend">
+        <div class="leg-item"><span class="leg-line" style="background:var(--blue)"></span>Sensed demand</div>
+        <div class="leg-item"><span class="leg-line" style="background:var(--ink5);border-top:1.5px dashed var(--ink4)"></span>Baseline</div>
+        <span id="uplift-badge" class="ai-tag" style="margin-left:auto"></span>
+      </div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-head">
+        <div><div class="chart-title">On-hand inventory (W1–W8)</div><div class="chart-sub">Projected draw-down + planned replenishment cycles · click to drill down</div></div>
+      </div>
+      <div class="chart-area" id="chart3"></div>
+      <div class="chart-legend">
+        <div class="leg-item"><span class="leg-bar" style="background:#94A3B8;opacity:.65"></span>On-hand</div>
+        <div class="leg-item"><span class="leg-bar" style="background:var(--green);opacity:.85"></span>Replen entry</div>
+        <div class="leg-item" style="gap:3px"><span style="border-top:1.5px dashed var(--amber);width:16px;display:inline-block"></span>ROP</div>
+      </div>
+    </div>
+    <div class="chart-panel">
+      <div class="chart-head">
+        <div><div class="chart-title">Inventory gap / net requirement</div><div class="chart-sub">Shortfalls dropping below reorder point (ROP)</div></div>
+        <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;background:var(--red-light);color:var(--red)">deficit shortfall barrier</span>
+      </div>
+      <div class="chart-area" id="chart4"></div>
+      <div class="chart-legend">
+        <div class="leg-item"><span style="width:9px;height:9px;background:var(--red);opacity:.4;border-radius:2px;display:inline-block"></span>Shortfall</div>
+        <div class="leg-item"><span style="width:9px;height:9px;background:var(--green);opacity:.35;border-radius:2px;display:inline-block"></span>Surplus</div>
+      </div>
+    </div>
+  </div>
+  <!-- AI Strip -->
+  <div class="ai-strip">
+    <div class="ai-strip-inner">
+      <div class="ai-strip-left">
+        <div class="ai-strip-head">
+          <span class="ai-tag">AI recommendations</span>
+          <span class="ai-strip-title">Replenishment recommendations</span>
+          <span class="ai-strip-sub">Based on current stock levels, demand signals and delivery lead times</span>
+        </div>
+        <div class="ai-analyzing" id="ai-analyzing"><span>Analysing store signals</span><span class="ai-dots"><span></span><span></span><span></span></span></div>
+        <div class="ai-recs" id="ai-recs"></div>
+      </div>
+      <div class="ai-cta">
+        <div class="saving-label">Est. freight saving</div>
+        <div class="saving-value" id="ai-saving">£4,500</div>
+        <div class="saving-sub">Estimated saving vs unplanned dispatch this cycle</div>
+        <button class="btn-primary" style="width:100%" onclick="showScreen('dispatch')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          Release DRP to DC
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════ SCREEN 2 — STORES ═══════════════════ -->
+<div class="tab-content" id="tab-store">
+<div class="content">
+  <div class="page-header">
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="sf-bar" id="sf-bar">
+        <span class="sf-chip f-all sel" onclick="setFilter('all')">All <span class="sf-count" id="sf-cnt-all">10</span></span>
+        <span class="sf-chip f-replenish" onclick="setFilter('replenish')">Replenish <span class="sf-count" id="sf-cnt-replenish">3</span></span>
+        <span class="sf-chip f-low" onclick="setFilter('low')">Low <span class="sf-count" id="sf-cnt-low">2</span></span>
+        <span class="sf-chip f-ok" onclick="setFilter('ok')">OK <span class="sf-count" id="sf-cnt-ok">3</span></span>
+        <span class="sf-chip f-hold" onclick="setFilter('hold')">Hold <span class="sf-count" id="sf-cnt-hold">1</span></span>
+        <span class="sf-chip f-redeploy" onclick="setFilter('redeploy')">Redeploy <span class="sf-count" id="sf-cnt-redeploy">1</span></span>
+      </div>
+      <div class="search-wrap">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="sku-search" placeholder="Search SKU…" oninput="filterTable()">
+      </div>
+      <button class="btn-ghost" onclick="showToast('Export ready — check your downloads.')">Export</button>
+    </div>
+  </div>
+  <div class="detail-layout">
+    <div class="store-sidebar">
+      <div class="store-card">
+        <div class="store-name-lg" id="s2-store-name">Store #0142</div>
+        <div class="store-meta" id="s2-store-meta">London Oxford St · Lead time 2 days</div>
+        <div class="cap-donut-wrap">
+          <div class="cap-donut">
+            <svg viewBox="0 0 68 68"><circle cx="34" cy="34" r="28" fill="none" stroke="var(--surface3)" stroke-width="7"/><circle id="donut-arc" cx="34" cy="34" r="28" fill="none" stroke="var(--blue)" stroke-width="7" stroke-linecap="round" stroke-dasharray="175.9" stroke-dashoffset="21" transform="rotate(-90 34 34)"/></svg>
+            <div class="cap-donut-center"><div class="cap-donut-pct" id="s2-cap-pct">88%</div><div class="cap-donut-lbl">cap</div></div>
+          </div>
+          <div class="cap-kv">
+            <div class="cap-kv-row"><span class="cap-kv-k">On-hand</span><span class="cap-kv-v" id="s2-onhand">1,584 u</span></div>
+            <div class="cap-kv-row"><span class="cap-kv-k">In-transit</span><span class="cap-kv-v" id="s2-intransit">320 u</span></div>
+            <div class="cap-kv-row"><span class="cap-kv-k">Open-to-ship</span><span class="cap-kv-v" id="s2-ots">216 u</span></div>
+            <div class="cap-kv-row"><span class="cap-kv-k">Target SL</span><span class="cap-kv-v">98%</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="store-card">
+        <div class="sec-label">Active demand signals</div>
+        <div id="s2-signals"></div>
+        <div class="sensing-note" id="s2-sensing-note"><span id="s2-sensing-text">Demand is tracking <strong>+6.4%</strong> above forecast this week, driven by active signals below.</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Store SKU replenishment detail — net requirement &amp; order quantity</div>
+          <span class="ai-tag">Decision Intelligence</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead><tr>
+              <th style="width:32px"><input type="checkbox" id="sku-select-all" class="lane-chk" onchange="toggleAllSKUs(this)" title="Select all"></th>
+              <th>SKU</th><th>Product</th><th class="r">On-hand</th><th class="r">In-transit</th>
+              <th class="r">Sensed dmd/wk</th><th class="r">Safety stock</th>
+              <th class="r" style="color:var(--blue)">ROP</th>
+              <th class="r">Net req.</th><th class="r">Replen qty</th><th>Status</th>
+            </tr></thead>
+            <tbody id="sku-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="ai-footer">
+        <span class="ai-tag">Decision Intelligence</span>
+        <span class="ai-footer-text" id="s2-footer-text"><strong>4 SKUs flagged for replenishment</strong> · Consolidated lane DC → #0142 · Projected truck fill 92%</span>
+        <button class="btn-primary" id="release-btn" onclick="releaseSelected()" disabled style="opacity:.45;cursor:not-allowed">Release selected to DC</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════ SCREEN 3 — REPLENISHMENT ═══════════════════ -->
+<div class="tab-content" id="tab-dispatch">
+<div class="content">
+  <div class="page-header">
+    <button class="btn-primary" onclick="openModal()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      Approve all lanes
+    </button>
+  </div>
+  <!-- KPI tiles -->
+  <div class="kpi-row-4">
+    <div class="kpi hi"><div class="kpi-label">Transport cost (weekly)</div><div class="kpi-value">£8,690</div><div class="kpi-delta delta-up">↓ 13% vs un-optimised</div></div>
+    <div class="kpi"><div class="kpi-label">Avg truck utilisation</div><div class="kpi-value">85%</div><div class="kpi-delta delta-up">↑ 14 pts vs baseline</div></div>
+    <div class="kpi"><div class="kpi-label">LTL / expedite loads</div><div class="kpi-value">1</div><div class="kpi-delta delta-up">↓ 7 loads vs baseline</div></div>
+    <div class="kpi"><div class="kpi-label">Capacity-feasible</div><div class="kpi-value">100%</div><div class="kpi-delta delta-neu">all 5 stores within cap</div></div>
+  </div>
+  <!-- Replen table + rationale -->
+  <div class="dispatch-bottom" style="margin-bottom:10px">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Consolidated replenishment plan — DC dispatch cycle Wk 32</div>
+        <span class="ai-tag">AI-optimised</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th style="width:28px"></th><th>Lane (DC → store)</th><th class="r">SKUs</th><th class="r">Units</th><th>Truck fill</th><th>Mode</th><th class="r">Freight</th><th class="r">vs baseline</th></tr></thead>
+          <tbody>
+            <tr id="lane-0142"><td><input type="checkbox" class="lane-chk" onchange="toggleLane('0142',this)"></td><td onclick="highlightStore('0142')" style="cursor:pointer"><strong>DC → London Oxford St</strong> <span style="font-size:10.5px;color:var(--ink4)">#0142</span></td><td class="num">18</td><td class="num">320</td><td><div class="fill-wrap"><span class="fill-val">91%</span><div class="fill-track"><div class="fill-bar fill-hi" style="width:91%"></div></div></div></td><td><span class="mode-badge ftl">FTL</span></td><td class="num">£2,100</td><td class="num vs-save">↓ 14%</td></tr>
+            <tr id="lane-0137"><td><input type="checkbox" class="lane-chk" onchange="toggleLane('0137',this)"></td><td onclick="highlightStore('0137')" style="cursor:pointer"><strong>DC → Manchester · London</strong> <span style="font-size:10.5px;color:var(--ink4)">#0137 · #0142</span></td><td class="num">22</td><td class="num">275</td><td><div class="fill-wrap"><span class="fill-val">87%</span><div class="fill-track"><div class="fill-bar fill-hi" style="width:87%"></div></div></div></td><td><span class="mode-badge consol">FTL (consol.)</span></td><td class="num">£2,500</td><td class="num vs-save">↓ 18%</td></tr>
+            <tr id="lane-0151"><td><input type="checkbox" class="lane-chk" onchange="toggleLane('0151',this)"></td><td onclick="highlightStore('0151')" style="cursor:pointer"><strong>DC → Birmingham Bullring</strong> <span style="font-size:10.5px;color:var(--ink4)">#0151</span></td><td class="num">9</td><td class="num">128</td><td><div class="fill-wrap"><span class="fill-val">74%</span><div class="fill-track"><div class="fill-bar fill-md" style="width:74%"></div></div></div></td><td><span class="mode-badge ftl">FTL</span></td><td class="num">£1,450</td><td class="num vs-save">↓ 9%</td></tr>
+            <tr id="lane-0165"><td><input type="checkbox" class="lane-chk" onchange="toggleLane('0165',this)"></td><td onclick="highlightStore('0165')" style="cursor:pointer"><strong>DC → Leeds Trinity</strong> <span style="font-size:10.5px;color:var(--ink4)">#0165</span></td><td class="num">11</td><td class="num">198</td><td><div class="fill-wrap"><span class="fill-val">88%</span><div class="fill-track"><div class="fill-bar fill-hi" style="width:88%"></div></div></div></td><td><span class="mode-badge ftl">FTL</span></td><td class="num">£1,760</td><td class="num vs-save">↓ 11%</td></tr>
+            <tr id="lane-0188"><td><input type="checkbox" class="lane-chk" onchange="toggleLane('0188',this)"></td><td onclick="highlightStore('0188')" style="cursor:pointer"><strong>DC → Edinburgh Princes St</strong> <span style="font-size:10.5px;color:var(--ink4)">#0188</span></td><td class="num">7</td><td class="num">94</td><td><div class="fill-wrap"><span class="fill-val">61%</span><div class="fill-track"><div class="fill-bar fill-lo" style="width:61%"></div></div></div></td><td><span class="mode-badge milkrun">Milk-run</span></td><td class="num">£880</td><td class="num vs-save">↓ 21%</td></tr>
+            <tr class="total-row"><td></td><td>Network total</td><td class="num">67</td><td class="num">1,015</td><td><div class="fill-wrap"><span class="fill-val" style="color:var(--green)">85%</span><div class="fill-track"><div class="fill-bar fill-hi" style="width:85%"></div></div></div></td><td>—</td><td class="num">£8,690</td><td class="num vs-save">↓ 13%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Rationale panel -->
+    <div class="card" style="height:fit-content">
+      <div class="card-header"><div class="card-title">Decision rationale</div><span class="ai-tag">AI reasoning</span></div>
+      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:14px">
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:5px">How does the plan stay within each store's capacity?</div>
+          <div style="font-size:12px;color:var(--ink3);line-height:1.6">Each order is capped at the physical space available. When space is tight, higher-demand SKUs are prioritised so every shelf unit is used productively.</div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:5px">How much stock should each store hold?</div>
+          <div style="font-size:12px;color:var(--ink3);line-height:1.6">Enough to cover sales during the 2-day delivery window, plus a safety buffer to maintain 98% service level. Recalculated each week as demand signals change.</div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:5px">How is freight cost being cut this week?</div>
+          <div style="font-size:12px;color:var(--ink3);line-height:1.6">Combining store orders onto shared trucks lifted average fill from 71% to 85%, saving £1,300 vs dispatching each store separately.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- UK map + telemetry — full width below table -->
+  <div class="dispatch-top" style="grid-template-columns:1fr 280px">
+    <div class="uk-map-card">
+      <div class="uk-map-header">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:12px;font-weight:700;color:var(--ink)">Network control tower — UK distribution</span>
+          <span style="font-size:10px;color:var(--green);font-weight:600;display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>Live</span>
+        </div>
+        <div style="font-size:10.5px;color:var(--ink4)">Click a store node for telemetry</div>
+      </div>
+      <div class="uk-map-body">
+        <div class="uk-map-svg-wrap" id="uk-map-svg-wrap"></div>
+        <div class="uk-telemetry" id="uk-telemetry">
+          <div class="tel-title">Active telemetry console</div>
+          <div class="tel-store-name" id="tel-store-name">London Oxford St</div>
+          <div class="tel-coords" id="tel-coords">#0142 · 51.5138° N, 0.1416° W</div>
+          <div class="tel-grid">
+            <div class="tel-tile"><div class="tel-tile-label">Dispatch mode</div><div class="tel-tile-value" id="tel-mode">FTL</div></div>
+            <div class="tel-tile"><div class="tel-tile-label">Truck util.</div><div class="tel-tile-value" id="tel-util" style="color:var(--green)">91%</div></div>
+          </div>
+          <div class="tel-kv"><span class="tel-kv-k">Consolidated volume</span><span class="tel-kv-v" id="tel-units">320 units</span></div>
+          <div class="tel-kv"><span class="tel-kv-k">Sensed SKU count</span><span class="tel-kv-v" id="tel-skus">18 active SKUs</span></div>
+          <div class="tel-kv"><span class="tel-kv-k">Freight allocation</span><span class="tel-kv-v" id="tel-freight">£2,100</span></div>
+          <div class="tel-alerts">
+            <div class="tel-alert-title">Demand &amp; signal alerts</div>
+            <div id="tel-alerts-list"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- AI Advisor -->
+    <div class="ai-advisor-card">
+      <div class="aa-head">
+        <div class="aa-title">AI Replenishment Advisor</div>
+        <div class="aa-sub">Grounding logic with active demand &amp; supply factors</div>
+      </div>
+      <div class="aa-chat" id="aa-chat">
+        <div class="aa-empty">Click one of the planning questions below to receive contextual optimisation insights grounded in live network data.</div>
+      </div>
+      <div class="aa-questions">
+        <div class="aa-q-label">Planning questions</div>
+        <button class="aa-q-btn" onclick="askAdvisor('capacity')">Q: Maximise capacity vs demand forecast</button>
+        <button class="aa-q-btn" onclick="askAdvisor('deadstock')">Q: Identify dead stock risk across the network</button>
+        <button class="aa-q-btn" onclick="askAdvisor('freight')">Q: How is freight cost being optimised this cycle</button>
+        <button class="aa-q-btn" onclick="askAdvisor('attention')">Q: Which stores need immediate attention</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+/* ════════════════════════════════
+   DATA
+════════════════════════════════ */
+const STORES={
+  '0142':{name:'London Oxford St',format:'L',maxCap:1800,onHand:1584,inTransit:320,ots:216,lead:2,capPct:88,
+    signals:[{t:'Promo',pct:4.2,on:true},{t:'Festival',pct:2.8,on:true},{t:'Weather',pct:1.1,on:true},{t:'Trend',pct:0,on:false},{t:'Event',pct:0,on:false}],
+    uplift:6.4,
+    kpis:{sl:'97.4%',slD:'↓ 0.6 pts vs target',slC:'delta-down',fr:'95.1%',frD:'↑ 1.2 pts w/w',frC:'delta-up',cu:'88%',cuD:'within ceiling',cuC:'delta-neu',it:'320',itD:'2 open loads',itC:'delta-neu',tc:'£12,400',tcD:'↓ 9% vs plan',tcC:'delta-up'},
+    forecast:[420,465,510,560,610,665,710,760],sensed:[452,508,556,612,668,724,774,828],
+    gap:[20,10,-30,-155,-95,-210,-160,-310],rop:350,
+    aiRecs:[
+      {type:'order',text:'Order 320 units across 18 SKUs — stock is running low and fits within available headroom.',meta:'Ready to release to DC this cycle'},
+      {type:'consol',text:'Consolidate with Manchester Arndale on the same truck — fills to 92% and avoids a part-load surcharge.',meta:'Saves £2,700 vs running two separate deliveries'},
+      {type:'redeploy',text:'SKU-4471 has excess stock. Move 54 units to Birmingham which is running short.',meta:'No freight cost — internal transfer'}],
+    saving:'£4,500',
+    coords:{lat:'51.5138° N',lng:'0.1416° W'},
+    telMode:'FTL',telUtil:'91%',telUnits:'320 units',telSKUs:'18 active SKUs',telFreight:'£2,100',
+    telAlerts:[{col:'#D97706',text:'Promo + Festival signals active · +6.4% uplift'},{col:'#2563EB',text:'iPhone 15 screen protector: 3 days of supply'}],
+    skus:[
+      {id:'SKU-4471',name:'iPhone 15 Pro Max 256GB',oh:42,it:0,dmd:8,ss:12,rop:22,nr:0,rq:0,st:'hold'},
+      {id:'SKU-4490',name:'Samsung Galaxy S24 Ultra 512GB',oh:14,it:6,dmd:12,ss:18,rop:34,nr:18,rq:20,st:'replenish'},
+      {id:'SKU-4512',name:'USB-C Fast Charger 65W',oh:28,it:12,dmd:38,ss:28,rop:62,nr:48,rq:54,st:'replenish'},
+      {id:'SKU-4533',name:'iPhone 15 Pro Case — MagSafe',oh:124,it:0,dmd:28,ss:22,rop:48,nr:0,rq:0,st:'ok'},
+      {id:'SKU-4560',name:'iPhone 15 Screen Protector',oh:18,it:8,dmd:45,ss:36,rop:74,nr:48,rq:54,st:'low'},
+      {id:'SKU-4588',name:'AirPods Pro 2nd Gen',oh:84,it:0,dmd:18,ss:14,rop:30,nr:0,rq:0,st:'redeploy'},
+      {id:'SKU-4601',name:'Samsung S24 Clear Cover',oh:38,it:24,dmd:32,ss:24,rop:50,nr:24,rq:28,st:'replenish'},
+      {id:'SKU-4624',name:'MagSafe Wallet — Leather',oh:96,it:16,dmd:24,ss:18,rop:38,nr:0,rq:0,st:'ok'},
+      {id:'SKU-4647',name:'Google Pixel 8 Pro 128GB',oh:8,it:0,dmd:6,ss:10,rop:18,nr:16,rq:18,st:'low'},
+      {id:'SKU-4671',name:'USB-C to Lightning Cable 1m',oh:145,it:36,dmd:32,ss:22,rop:46,nr:0,rq:0,st:'ok'}]},
+  '0137':{name:'Manchester Arndale',format:'M',maxCap:1400,onHand:1008,inTransit:235,ots:392,lead:2,capPct:72,
+    signals:[{t:'Promo',pct:3.1,on:true},{t:'Festival',pct:0,on:false},{t:'Weather',pct:0,on:false},{t:'Trend',pct:1.8,on:true},{t:'Event',pct:0,on:false}],
+    uplift:3.1,
+    kpis:{sl:'98.2%',slD:'↑ 0.4 pts w/w',slC:'delta-up',fr:'96.4%',frD:'↑ 0.8 pts w/w',frC:'delta-up',cu:'72%',cuD:'within ceiling',cuC:'delta-neu',it:'235',itD:'2 open loads',itC:'delta-neu',tc:'£9,800',tcD:'↓ 7% vs plan',tcC:'delta-up'},
+    forecast:[310,325,345,360,420,395,370,350],sensed:[320,335,356,371,433,407,381,361],
+    gap:[15,8,0,0,-38,0,-25,-88],rop:280,
+    aiRecs:[
+      {type:'order',text:'Order 275 units across 14 SKUs — headroom is comfortable at 392 units.',meta:'Ready to release to DC this cycle'},
+      {type:'consol',text:'Combine with London Oxford St on the same truck — saves £960 in freight this week.',meta:'Combined truck fills to 87%'},
+      {type:'order',text:'SKU-7312 and SKU-7345 selling faster than planned. Increase safety stock by 15%.',meta:'Risk of stockout in 2 weeks if not acted on'}],
+    saving:'£2,600',
+    coords:{lat:'53.4808° N',lng:'2.2426° W'},
+    telMode:'FTL (consol.)',telUtil:'87%',telUnits:'275 units',telSKUs:'14 active SKUs',telFreight:'£2,500',
+    telAlerts:[{col:'#2563EB',text:'Promo + Trend signals active · +3.1% uplift'},{col:'#16A34A',text:'SL tracking above 98% target'}],
+    skus:[
+      {id:'SKU-7290',name:'iPhone 15 128GB',oh:68,it:16,dmd:18,ss:14,rop:30,nr:0,rq:0,st:'ok'},
+      {id:'SKU-7312',name:'Samsung Galaxy A55 5G',oh:22,it:8,dmd:28,ss:20,rop:42,nr:28,rq:32,st:'replenish'},
+      {id:'SKU-7334',name:'iPhone 15 Case — Silicone',oh:86,it:0,dmd:12,ss:14,rop:28,nr:0,rq:0,st:'hold'},
+      {id:'SKU-7345',name:'Power Bank 20000mAh USB-C',oh:18,it:6,dmd:24,ss:18,rop:38,nr:28,rq:32,st:'low'},
+      {id:'SKU-7378',name:'Samsung A55 Screen Protector',oh:56,it:0,dmd:16,ss:14,rop:30,nr:0,rq:0,st:'ok'},
+      {id:'SKU-7401',name:'Google Pixel 8 128GB',oh:18,it:8,dmd:22,ss:16,rop:34,nr:22,rq:26,st:'replenish'},
+      {id:'SKU-7423',name:'Wireless Charging Pad 15W',oh:104,it:0,dmd:10,ss:12,rop:22,nr:0,rq:0,st:'redeploy'},
+      {id:'SKU-7445',name:'iPhone 15 Pro Case — Clear',oh:28,it:12,dmd:18,ss:14,rop:30,nr:0,rq:0,st:'ok'}]},
+  '0151':{name:'Birmingham Bullring',format:'S',maxCap:1100,onHand:715,inTransit:110,ots:385,lead:2,capPct:65,
+    signals:[{t:'Promo',pct:0,on:false},{t:'Festival',pct:0,on:false},{t:'Weather',pct:1.8,on:true},{t:'Trend',pct:0,on:false},{t:'Event',pct:0,on:false}],
+    uplift:1.8,
+    kpis:{sl:'96.8%',slD:'↓ 1.2 pts vs target',slC:'delta-down',fr:'93.6%',frD:'↓ 0.4 pts w/w',frC:'delta-down',cu:'65%',cuD:'within ceiling',cuC:'delta-neu',it:'110',itD:'1 open load',itC:'delta-neu',tc:'£6,800',tcD:'↓ 5% vs plan',tcC:'delta-up'},
+    forecast:[280,262,248,235,220,208,198,190],sensed:[285,267,253,239,224,212,202,194],
+    gap:[0,0,-18,-42,-65,-88,-105,-120],rop:180,
+    aiRecs:[
+      {type:'order',text:'Service level is below 98% target. 7 SKUs need ordering this cycle — do not defer.',meta:'Expedite this week and review safety stock levels'},
+      {type:'redeploy',text:'Accept 54 units of SKU-4471 from London. Covers the W4 gap with no freight cost.',meta:'Internal transfer — no PO needed'},
+      {type:'order',text:'Rain forecast is lifting accessory demand by 1.8%. Prioritise cases and cables.',meta:'Pull forward accessories to W3'}],
+    saving:'£1,400',
+    coords:{lat:'52.4797° N',lng:'1.8951° W'},
+    telMode:'FTL',telUtil:'74%',telUnits:'128 units',telSKUs:'9 active SKUs',telFreight:'£1,450',
+    telAlerts:[{col:'#DC2626',text:'SL at 96.8% — below 98% target. Act today.'},{col:'#2563EB',text:'Weather signal active · +1.8% uplift on accessories'}],
+    skus:[
+      {id:'SKU-3110',name:'iPhone 15 256GB',oh:44,it:8,dmd:14,ss:10,rop:24,nr:0,rq:0,st:'ok'},
+      {id:'SKU-3145',name:'Samsung Galaxy S24 128GB',oh:12,it:4,dmd:18,ss:14,rop:30,nr:20,rq:24,st:'replenish'},
+      {id:'SKU-3167',name:'iPhone 14 Case — Black',oh:62,it:0,dmd:8,ss:10,rop:20,nr:0,rq:0,st:'hold'},
+      {id:'SKU-3189',name:'USB-C Cable 2m Braided',oh:8,it:2,dmd:16,ss:14,rop:28,nr:24,rq:28,st:'low'},
+      {id:'SKU-3201',name:'iPhone 14 Screen Protector',oh:38,it:0,dmd:12,ss:10,rop:22,nr:0,rq:0,st:'ok'},
+      {id:'SKU-3224',name:'AirPods 3rd Gen',oh:14,it:6,dmd:16,ss:12,rop:26,nr:12,rq:14,st:'replenish'},
+      {id:'SKU-3246',name:'MagSafe Charger 15W',oh:54,it:0,dmd:8,ss:8,rop:16,nr:0,rq:0,st:'redeploy'}]},
+  '0165':{name:'Leeds Trinity',format:'M',maxCap:1500,onHand:1260,inTransit:240,ots:250,lead:2,capPct:84,
+    signals:[{t:'Promo',pct:0,on:false},{t:'Festival',pct:3.4,on:true},{t:'Weather',pct:0,on:false},{t:'Trend',pct:2.1,on:true},{t:'Event',pct:0,on:false}],
+    uplift:4.7,
+    kpis:{sl:'97.9%',slD:'↑ 0.2 pts w/w',slC:'delta-up',fr:'95.8%',frD:'↑ 1.6 pts w/w',frC:'delta-up',cu:'84%',cuD:'near ceiling',cuC:'delta-neu',it:'240',itD:'2 open loads',itC:'delta-neu',tc:'£11,000',tcD:'↓ 11% vs plan',tcC:'delta-up'},
+    forecast:[280,330,400,480,520,460,380,310],sensed:[293,346,420,503,545,482,398,325],
+    gap:[10,0,-18,-245,-280,-195,-88,-22],rop:320,
+    aiRecs:[
+      {type:'order',text:'198 units needed across 11 SKUs. Very little headroom left — order now, do not wait.',meta:'Release to DC this cycle'},
+      {type:'order',text:'Festival and trend activity pushing demand up 4.7%. Order W3 stock early to avoid W4 gap.',meta:'W4 shortfall of 112 units if deferred'},
+      {type:'consol',text:'Volume large enough for a dedicated full truck. Fills to 88% — cheaper than splitting the load.',meta:'Freight estimated at £1,760'}],
+    saving:'£3,300',
+    coords:{lat:'53.7974° N',lng:'1.5438° W'},
+    telMode:'FTL',telUtil:'88%',telUnits:'198 units',telSKUs:'11 active SKUs',telFreight:'£1,760',
+    telAlerts:[{col:'#D97706',text:'Festival + Trend signals · +4.7% uplift'},{col:'#D97706',text:'Capacity at 84% — near ceiling. Advance W4.'}],
+    skus:[
+      {id:'SKU-9001',name:'iPhone 15 Pro 256GB',oh:52,it:12,dmd:22,ss:16,rop:36,nr:0,rq:0,st:'ok'},
+      {id:'SKU-9045',name:'Samsung Galaxy S24+ 256GB',oh:16,it:4,dmd:30,ss:22,rop:46,nr:28,rq:32,st:'replenish'},
+      {id:'SKU-9067',name:'iPhone 15 Pro Case — Titanium',oh:22,it:6,dmd:26,ss:20,rop:42,nr:28,rq:32,st:'low'},
+      {id:'SKU-9089',name:'Google Pixel 8a 128GB',oh:78,it:0,dmd:14,ss:16,rop:30,nr:0,rq:0,st:'hold'},
+      {id:'SKU-9112',name:'USB-C Fast Charger 45W',oh:34,it:10,dmd:24,ss:18,rop:38,nr:8,rq:12,st:'replenish'},
+      {id:'SKU-9134',name:'Samsung S24+ Screen Protector',oh:118,it:0,dmd:12,ss:14,rop:26,nr:0,rq:0,st:'redeploy'},
+      {id:'SKU-9156',name:'Power Bank 10000mAh',oh:22,it:4,dmd:20,ss:16,rop:32,nr:16,rq:18,st:'replenish'},
+      {id:'SKU-9178',name:'iPhone 15 Case — Natural',oh:56,it:8,dmd:16,ss:12,rop:26,nr:0,rq:0,st:'ok'}]},
+  '0188':{name:'Edinburgh Princes St',format:'S',maxCap:1200,onHand:732,inTransit:96,ots:465,lead:2,capPct:61,
+    signals:[{t:'Promo',pct:0,on:false},{t:'Festival',pct:0,on:false},{t:'Weather',pct:0,on:false},{t:'Trend',pct:0,on:false},{t:'Event',pct:2.2,on:true}],
+    uplift:2.2,
+    kpis:{sl:'97.1%',slD:'↓ 0.9 pts vs target',slC:'delta-neu',fr:'94.3%',frD:'↑ 0.5 pts w/w',frC:'delta-up',cu:'61%',cuD:'within ceiling',cuC:'delta-neu',it:'96',itD:'1 open load',itC:'delta-neu',tc:'£6,300',tcD:'↓ 6% vs plan',tcC:'delta-up'},
+    forecast:[180,182,185,188,210,208,185,180],sensed:[184,186,189,192,232,229,204,198],
+    gap:[12,8,5,0,-18,0,8,5],rop:150,
+    aiRecs:[
+      {type:'order',text:'94 units needed across 7 SKUs. Volume is small — a milk run is the right call here.',meta:'Milk run saves on part-load freight charges'},
+      {type:'order',text:'Local event lifting demand by 2.2%. Watch sell-through daily — top-up if it crosses 80%.',meta:'Watch sell-through this week'},
+      {type:'redeploy',text:'Store has spare capacity. Can absorb 60–80 units from stores sitting on excess stock.',meta:'Potential sources: London or Leeds'}],
+    saving:'£960',
+    coords:{lat:'55.9521° N',lng:'3.1965° W'},
+    telMode:'Milk-run',telUtil:'61%',telUnits:'94 units',telSKUs:'7 active SKUs',telFreight:'£880',
+    telAlerts:[{col:'#2563EB',text:'Local event signal · +2.2% uplift on accessories'},{col:'#16A34A',text:'Capacity at 61% — available for redeployment'}],
+    skus:[
+      {id:'SKU-6010',name:'iPhone 15 128GB',oh:52,it:6,dmd:14,ss:10,rop:22,nr:0,rq:0,st:'ok'},
+      {id:'SKU-6034',name:'Samsung Galaxy A35 5G',oh:10,it:4,dmd:20,ss:14,rop:30,nr:22,rq:26,st:'replenish'},
+      {id:'SKU-6056',name:'iPhone 15 Case — Pink',oh:78,it:0,dmd:8,ss:10,rop:18,nr:0,rq:0,st:'hold'},
+      {id:'SKU-6078',name:'USB-C Cable 1m',oh:9,it:2,dmd:14,ss:12,rop:24,nr:16,rq:18,st:'low'},
+      {id:'SKU-6101',name:'iPhone 15 Screen Protector',oh:34,it:0,dmd:12,ss:10,rop:20,nr:0,rq:0,st:'ok'},
+      {id:'SKU-6123',name:'AirPods Case — Clear',oh:14,it:4,dmd:14,ss:12,rop:24,nr:10,rq:12,st:'replenish'},
+      {id:'SKU-6145',name:'Wireless Earbuds — BT Sport',oh:68,it:0,dmd:6,ss:8,rop:14,nr:0,rq:0,st:'redeploy'}]}
+};
+
+let currentStore='0142',currentHorizon=8,skuFilter='all';
+
+/* ════════ UTILS ════════ */
+function fmt(v){return Math.abs(v)>=1000?(v/1000).toFixed(1)+'K':Math.round(v).toLocaleString('en-GB')}
+function niceStep(r){const e=Math.pow(10,Math.floor(Math.log10(r||1)));return r/e>=5?5*e:r/e>=2?2*e:e}
+function $id(id){return document.getElementById(id)}
+function set(id,val){const el=$id(id);if(el)el.textContent=val}
+function setDelta(id,val,cls){const el=$id(id);if(!el)return;el.textContent=val;el.className='kpi-delta '+cls}
+function showTT(e,msg){const tt=$id('tt');tt.textContent=msg;tt.style.display='block';tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY-10)+'px'}
+function hideTT(){$id('tt').style.display='none'}
+document.addEventListener('mousemove',e=>{const tt=$id('tt');if(tt.style.display==='block'){tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY-10)+'px'}});
+
+/* ════════ NAVIGATION ════════ */
+function showScreen(name){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tnav-tab').forEach(t=>t.classList.remove('active'));
+  $id('tab-'+name).classList.add('active');
+  const nav=$id('nav-'+name);if(nav)nav.classList.add('active');
+  if(name==='store') renderStoreDetail(currentStore);
+  if(name==='dispatch') renderUKMap(currentStore);
+  window.scrollTo(0,0);
+}
+
+/* ════════ STORE SELECT ════════ */
+function selectStore(id){
+  currentStore=id;
+  $id('storeSelect').value=id;
+
+  // Sync location filter chips
+  document.querySelectorAll('.loc-chip').forEach(c=>c.classList.remove('on'));
+  const chip=document.querySelector(`.loc-chip[data-loc="${id}"]`);
+  if(chip) chip.classList.add('on'); else document.querySelector('.loc-all')?.classList.add('on');
+  locationFilter=id;
+  updateClearBtn2();
+
+  const activeTab=document.querySelector('.tab-content.active')?.id;
+
+  if(activeTab==='tab-overview'||!activeTab){
+    const row=$id('kpi-row');
+    row.style.opacity='0.3';row.style.transform='translateY(4px)';row.style.transition='none';
+    $id('ai-analyzing').style.display='flex';
+    $id('ai-recs').style.opacity='0';
+    setTimeout(()=>{
+      updateKPIs(id);
+      row.style.transition='opacity .28s ease,transform .28s ease';
+      row.style.opacity='1';row.style.transform='translateY(0)';
+      renderAllCharts(id);
+    },160);
+    setTimeout(()=>{
+      $id('ai-analyzing').style.display='none';
+      updateAIStrip(id);
+      $id('ai-recs').style.transition='opacity .3s';
+      $id('ai-recs').style.opacity='1';
+    },900);
+  } else if(activeTab==='tab-store'){
+    renderStoreDetail(id);
+  } else if(activeTab==='tab-dispatch'){
+    renderUKMap(id);
+  }
+}
+
+function updateKPIs(id){
+  const k=STORES[id].kpis;
+  set('kpi-sl',k.sl);setDelta('kpi-sl-d',k.slD,k.slC);
+  set('kpi-fr',k.fr);setDelta('kpi-fr-d',k.frD,k.frC);
+  set('kpi-cu',k.cu);setDelta('kpi-cu-d',k.cuD,k.cuC);
+  set('kpi-it',k.it);setDelta('kpi-it-d',k.itD,k.itC);
+  set('kpi-tc',k.tc);setDelta('kpi-tc-d',k.tcD,k.tcC);
+}
+
+function updateAIStrip(id){
+  const s=STORES[id];
+  const iconBg={order:'var(--red)',consol:'var(--blue)',redeploy:'var(--amber)'};
+  $id('ai-recs').innerHTML=s.aiRecs.map(r=>`
+    <div class="ai-rec fade-in">
+      <div class="ai-rec-icon icon-${r.type}"></div>
+      <div class="ai-rec-body">
+        <div class="ai-rec-text">${r.text}</div>
+        <div class="ai-rec-meta">${r.meta}</div>
+      </div>
+    </div>`).join('');
+  set('ai-saving',s.saving);
+}
+
+/* ════════ HORIZON ════════ */
+function setHorizon(n){
+  currentHorizon=n;
+  $id('seg-4w').classList.toggle('active',n===4);
+  $id('seg-8w').classList.toggle('active',n===8);
+  renderAllCharts(currentStore);
+}
+
+/* ════════ CHARTS ════════ */
+function renderAllCharts(id){
+  const s=STORES[id],n=currentHorizon;
+  const wk=Array.from({length:n},(_,i)=>'W'+(i+1));
+  renderStackedBar('chart1',s.forecast.slice(0,n),s.sensed.slice(0,n),{labels:wk});
+  // Chart 2: daily Mon–Sun for current week (like the reference)
+  const dailyLabels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const dailyFactors=[0.82,0.91,0.97,1.18,1.08,1.32,0.68];
+  const weekAvgBase=s.forecast[0]/7, weekAvgSensed=s.sensed[0]/7;
+  const dailyBase=dailyFactors.map(f=>Math.round(weekAvgBase*f*4.2));
+  const dailySensed=dailyFactors.map(f=>Math.round(weekAvgSensed*f*4.2));
+  renderDualLine('chart2',dailySensed,dailyBase,{labels:dailyLabels,uplift:s.uplift});
+  renderOnHand('chart3',computeOH(s).slice(0,n),s.rop,{labels:wk});
+  renderGap('chart4',s.gap.slice(0,n),{labels:wk});
+  set('uplift-badge','+'+s.uplift+'% vs baseline');
+}
+
+function computeOH(s){
+  let oh=s.onHand;const r=[];
+  for(let i=0;i<8;i++){r.push(Math.max(0,oh));oh-=s.forecast[i]*0.82;if(i===3)oh+=s.onHand*0.44;}
+  return r;
+}
+
+function svgBase(cid,W,H){const el=$id(cid);if(!el)return null;return{el,W:el.clientWidth||W,H:el.clientHeight||H}}
+
+/* Stacked bar: baseline (grey) + uplift (blue) */
+function renderStackedBar(cid,baseline,sensed,opts){
+  const b=svgBase(cid,400,160);if(!b)return;
+  const{el,W,H}=b,pad={t:8,b:20,l:36,r:6},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b,n=baseline.length;
+  const maxV=Math.max(...sensed)*1.1||1,yS=niceStep(maxV/4),yM=Math.ceil(maxV/yS)*yS;
+  const gap=cw*0.06/(n+1),bw=(cw-gap*(n+1))/n;
+  let s=`<svg width="${W}" height="${H}"><defs>
+    <linearGradient id="gb${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#94A3B8" stop-opacity=".75"/><stop offset="100%" stop-color="#94A3B8" stop-opacity=".35"/></linearGradient>
+    <linearGradient id="gu${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563EB" stop-opacity=".9"/><stop offset="100%" stop-color="#2563EB" stop-opacity=".5"/></linearGradient>
+  </defs>`;
+  for(let i=0;i<=4;i++){const yv=(i/4)*yM,y=pad.t+ch-(yv/yM)*ch;s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#E8ECF1" stroke-width="1"/><text x="${pad.l-4}" y="${y+4}" font-size="8.5" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;}
+  baseline.forEach((bv,i)=>{
+    const sv=sensed[i],uplift=Math.max(0,sv-bv);
+    const x=pad.l+gap+i*(bw+gap);
+    const bh=Math.max(3,(bv/yM)*ch),by=pad.t+ch-bh;
+    s+=`<rect x="${x}" y="${by}" width="${bw}" height="${bh}" rx="2" fill="url(#gb${cid})" onclick="showDrillDown(${i})" onmouseenter="showTT(event,'${opts.labels[i]} baseline: ${fmt(bv)} units — click to drill down')" onmouseleave="hideTT()" style="cursor:pointer"/>`;
+    if(uplift>0){
+      const uh=Math.max(2,(uplift/yM)*ch),uy=by-uh;
+      s+=`<rect x="${x}" y="${uy}" width="${bw}" height="${uh}" rx="2" fill="url(#gu${cid})" onclick="showDrillDown(${i})" onmouseenter="showTT(event,'${opts.labels[i]} AI uplift: +${fmt(uplift)} units')" onmouseleave="hideTT()" style="cursor:pointer"/>`;
+      s+=`<text x="${x+bw/2}" y="${uy-3}" font-size="7" fill="var(--blue)" text-anchor="middle" opacity=".8">▼</text>`;
+    }
+    s+=`<text x="${x+bw/2}" y="${H-3}" font-size="8.5" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;
+  });
+  s+='</svg>';el.innerHTML=s;
+}
+
+function renderDualLine(cid,sensed,baseline,opts){
+  const b=svgBase(cid,400,160);if(!b)return;
+  const{el,W,H}=b,pad={t:8,b:20,l:36,r:6},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b,n=sensed.length;
+  const all=[...sensed,...baseline],mx=Math.max(...all)*1.06,mn=Math.min(...all)*0.95,rng=mx-mn||1;
+  const pt=(v,i)=>[pad.l+(i/(n-1))*cw,pad.t+ch-((v-mn)/rng)*ch];
+  const yS=niceStep((mx-mn)/4),yB=Math.floor(mn/yS)*yS;
+  let s=`<svg width="${W}" height="${H}"><defs><linearGradient id="area${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563EB" stop-opacity=".12"/><stop offset="100%" stop-color="#2563EB" stop-opacity=".01"/></linearGradient></defs>`;
+  for(let i=0;i<=4;i++){const yv=yB+i*yS,y=pad.t+ch-((yv-mn)/rng)*ch;if(y<pad.t-2||y>pad.t+ch+2)continue;s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#E8ECF1" stroke-width="1"/><text x="${pad.l-4}" y="${y+4}" font-size="8.5" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;}
+  const aPts=[...sensed.map(pt),...baseline.map(pt).reverse()];
+  s+=`<polygon points="${aPts.map(p=>p.join(',')).join(' ')}" fill="url(#area${cid})"/>`;
+  s+=`<polyline points="${baseline.map(pt).map(p=>p.join(',')).join(' ')}" fill="none" stroke="#B0B8C8" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  s+=`<polyline points="${sensed.map(pt).map(p=>p.join(',')).join(' ')}" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  sensed.forEach((v,i)=>{const[x,y]=pt(v,i);s+=`<circle cx="${x}" cy="${y}" r="3" fill="#2563EB" onmouseenter="showTT(event,'${opts.labels[i]} sensed: ${fmt(v)} u (+${opts.uplift}%)')" onmouseleave="hideTT()" style="cursor:pointer"/>`;});
+  sensed.forEach((_,i)=>{const[x]=pt(0,i);s+=`<text x="${x}" y="${H-3}" font-size="8.5" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;});
+  s+='</svg>';el.innerHTML=s;
+}
+
+function renderOnHand(cid,data,rop,opts){
+  const b=svgBase(cid,400,160);if(!b)return;
+  const{el,W,H}=b,pad={t:8,b:20,l:40,r:6},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b,n=data.length;
+  const mx=Math.max(...data,rop)*1.1||1,yS=niceStep(mx/4),yM=Math.ceil(mx/yS)*yS;
+  const gap=cw*0.06/(n+1),bw=(cw-gap*(n+1))/n;
+  let s=`<svg width="${W}" height="${H}"><defs>
+    <linearGradient id="boh${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#94A3B8" stop-opacity=".7"/><stop offset="100%" stop-color="#94A3B8" stop-opacity=".3"/></linearGradient>
+    <linearGradient id="brp${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#16A34A" stop-opacity=".9"/><stop offset="100%" stop-color="#16A34A" stop-opacity=".4"/></linearGradient>
+  </defs>`;
+  for(let i=0;i<=4;i++){const yv=(i/4)*yM,y=pad.t+ch-(yv/yM)*ch;s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#E8ECF1" stroke-width="1"/><text x="${pad.l-4}" y="${y+4}" font-size="8.5" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;}
+  const ropy=pad.t+ch-(rop/yM)*ch;
+  s+=`<line x1="${pad.l}" y1="${ropy}" x2="${W-pad.r}" y2="${ropy}" stroke="#D97706" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${W-pad.r-2}" y="${ropy-3}" font-size="8" fill="#D97706" text-anchor="end">ROP</text>`;
+  // Replen entries at W2, W4, W6, W8 (every other week)
+  const replenWeeks=[1,3,5,7];
+  data.forEach((v,i)=>{
+    const bh=Math.max(3,(v/yM)*ch),x=pad.l+gap+i*(bw+gap),y=pad.t+ch-bh;
+    const isReplen=replenWeeks.includes(i);
+    // Base bar
+    const baseH=isReplen?Math.max(3,(v*0.6/yM)*ch):bh;
+    s+=`<rect x="${x}" y="${pad.t+ch-baseH}" width="${bw}" height="${baseH}" rx="2" fill="url(#boh${cid})" onclick="showInventoryDrillDown(${i})" onmouseenter="showTT(event,'${opts.labels[i]} on-hand: ${fmt(v)} u — click to drill down')" onmouseleave="hideTT()" style="cursor:pointer"/>`;
+    if(isReplen){
+      const rh=bh-baseH;
+      s+=`<rect x="${x}" y="${pad.t+ch-bh}" width="${bw}" height="${rh}" rx="2" fill="url(#brp${cid})" style="cursor:pointer"/>`;
+    }
+    s+=`<text x="${x+bw/2}" y="${y-4}" font-size="7" fill="var(--blue)" text-anchor="middle" opacity=".8">▼</text>`;
+    s+=`<text x="${x+bw/2}" y="${H-3}" font-size="8.5" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;
+  });
+  s+='</svg>';el.innerHTML=s;
+}
+
+function renderGap(cid,data,opts){
+  const b=svgBase(cid,400,160);if(!b)return;
+  const{el,W,H}=b,pad={t:8,b:20,l:40,r:6},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b,n=data.length;
+  const mx=Math.max(...data,200),mn=Math.min(...data,-200),rng=mx-mn||1;
+  const pt=(v,i)=>[pad.l+(i/(n-1))*cw,pad.t+ch-((v-mn)/rng)*ch];
+  const zY=pad.t+ch-((0-mn)/rng)*ch;
+  const yS=niceStep((mx-mn)/4),yB=Math.floor(mn/yS)*yS;
+  let s=`<svg width="${W}" height="${H}"><defs>
+    <linearGradient id="gneg${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#DC2626" stop-opacity=".2"/><stop offset="100%" stop-color="#DC2626" stop-opacity=".03"/></linearGradient>
+    <linearGradient id="gpos${cid}" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#16A34A" stop-opacity=".15"/><stop offset="100%" stop-color="#16A34A" stop-opacity=".02"/></linearGradient>
+    <clipPath id="cneg${cid}"><rect x="${pad.l}" y="${zY}" width="${cw}" height="${pad.t+ch-zY}"/></clipPath>
+    <clipPath id="cpos${cid}"><rect x="${pad.l}" y="${pad.t}" width="${cw}" height="${Math.max(0,zY-pad.t)}"/></clipPath>
+  </defs>`;
+  for(let i=0;i<=4;i++){const yv=yB+i*yS,y=pad.t+ch-((yv-mn)/rng)*ch;if(y<pad.t-2||y>pad.t+ch+2)continue;s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="${Math.abs(yv)<1?'#C8D0DB':'#E8ECF1'}" stroke-width="${Math.abs(yv)<1?1.5:1}"/><text x="${pad.l-4}" y="${y+4}" font-size="8.5" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;}
+  const lPts=data.map(pt),pathD=`M${lPts[0].join(',')} ${lPts.slice(1).map(p=>`L${p.join(',')}`).join(' ')} L${lPts[n-1][0]},${zY} L${lPts[0][0]},${zY}Z`;
+  s+=`<path d="${pathD}" fill="url(#gpos${cid})" clip-path="url(#cpos${cid})"/>`;
+  s+=`<path d="${pathD}" fill="url(#gneg${cid})" clip-path="url(#cneg${cid})"/>`;
+  s+=`<line x1="${pad.l}" y1="${zY}" x2="${W-pad.r}" y2="${zY}" stroke="#1C2128" stroke-width="1" stroke-dasharray="3 3" opacity=".18"/>`;
+  s+=`<polyline points="${lPts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+  data.forEach((v,i)=>{const[x,y]=pt(v,i);s+=`<circle cx="${x}" cy="${y}" r="3.5" fill="${v<0?'#DC2626':'#16A34A'}" onmouseenter="showTT(event,'${opts.labels[i]} net req: ${fmt(v)} u')" onmouseleave="hideTT()" style="cursor:pointer"/>`;});
+  data.forEach((_,i)=>{const[x]=pt(0,i);s+=`<text x="${x}" y="${H-3}" font-size="8.5" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;});
+  s+='</svg>';el.innerHTML=s;
+}
+
+/* ════════ UK MAP ════════ */
+let mapHighlight=null;
+
+/* Service-level → status colour (meaningful, not decorative) */
+function slStatus(slStr){
+  const v=parseFloat(slStr);
+  if(v>=98) return {col:'#16A34A',k:'green',label:'On target'};
+  if(v>=97) return {col:'#D97706',k:'amber',label:'Watch'};
+  return {col:'#DC2626',k:'red',label:'Below target'};
+}
+
+/* Simplified but recognisable Great Britain silhouette (local coords) */
+const GB_PATH='95,26 120,55 150,90 165,140 172,180 178,205 196,250 205,275 212,298 232,300 258,300 290,305 278,340 285,372 280,392 235,400 190,410 150,418 110,422 34,446 60,408 98,392 82,378 70,372 48,356 58,330 72,300 70,285 95,272 100,240 98,210 85,185 72,168 55,140 48,110 58,75 72,48';
+
+function renderUKMap(activeStore){
+  const wrap=$id('uk-map-svg-wrap');if(!wrap)return;
+
+  const VW=600,VH=460,OFFX=210,OFFY=0;
+  // Geographically accurate node positions (real UK lat/lon, local coords)
+  const dc={x:181,y:331};
+  const nodes={
+    '0188':{x:121,y:156,label:'Edinburgh', dur:3.0,lp:'above'},
+    '0137':{x:155,y:278,label:'Manchester',dur:2.4,lp:'left'},
+    '0165':{x:180,y:262,label:'Leeds',     dur:2.5,lp:'above'},
+    '0151':{x:167,y:327,label:'Birmingham',dur:2.1,lp:'left'},
+    '0142':{x:231,y:375,label:'London',    dur:1.8,lp:'right'}
+  };
+  const order=['0188','0137','0165','0151','0142'];
+
+  // Status counts for legend
+  const counts={green:0,amber:0,red:0};
+  order.forEach(id=>counts[slStatus(STORES[id].kpis.sl).k]++);
+
+  let svg=`<svg width="100%" height="100%" viewBox="0 0 ${VW} ${VH}" preserveAspectRatio="xMidYMid meet" xmlns:xlink="http://www.w3.org/1999/xlink" style="display:block;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">`;
+  svg+=`<defs>
+    <filter id="landShadow" x="-25%" y="-25%" width="150%" height="150%"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#1E293B" flood-opacity="0.13"/></filter>
+    <linearGradient id="landGrad" x1="0" y1="0" x2="0.4" y2="1"><stop offset="0%" stop-color="#EDF2F8"/><stop offset="100%" stop-color="#DDE5EF"/></linearGradient>
+  </defs>`;
+
+  /* ── LEFT LEGEND (screen coords) ── */
+  svg+=`<text x="24" y="30" font-size="9.5" font-weight="700" fill="#94A3B8" letter-spacing=".09em">NETWORK STATUS</text>`;
+  const legRows=[
+    {c:'#16A34A',t:'On target ≥98%',n:counts.green,y:52},
+    {c:'#D97706',t:'Watch 97–98%',n:counts.amber,y:73},
+    {c:'#DC2626',t:'Below target',n:counts.red,y:94}
+  ];
+  legRows.forEach(r=>{
+    svg+=`<circle cx="29" cy="${r.y-3}" r="4.5" fill="${r.c}"/>`;
+    svg+=`<text x="42" y="${r.y}" font-size="11" fill="#475569">${r.t}</text>`;
+    svg+=`<text x="172" y="${r.y}" font-size="11.5" font-weight="700" fill="#0F172A" text-anchor="end">${r.n}</text>`;
+  });
+  svg+=`<line x1="24" y1="116" x2="172" y2="116" stroke="#E2E8F0"/>`;
+  svg+=`<text x="24" y="140" font-size="9.5" font-weight="700" fill="#94A3B8" letter-spacing=".09em">DISPATCH CYCLE · WK 32</text>`;
+  const stat=[
+    {k:'Active lanes',v:'5',y:162,c:'#0F172A'},
+    {k:'Avg truck fill',v:'85%',y:183,c:'#16A34A'},
+    {k:'Network units',v:'1,015',y:204,c:'#0F172A'},
+    {k:'Weekly freight',v:'£8,690',y:225,c:'#0F172A'}
+  ];
+  stat.forEach(s=>{
+    svg+=`<text x="24" y="${s.y}" font-size="11" fill="#475569">${s.k}</text>`;
+    svg+=`<text x="172" y="${s.y}" font-size="11.5" font-weight="700" fill="${s.c}" text-anchor="end">${s.v}</text>`;
+  });
+  // LIVE pill
+  svg+=`<g transform="translate(24,250)">
+    <rect width="92" height="20" rx="10" fill="#ECFDF5" stroke="#A7F3D0" stroke-width="1"/>
+    <circle cx="15" cy="10" r="3.5" fill="#16A34A"><animate attributeName="opacity" values="1;.25;1" dur="1.5s" repeatCount="indefinite"/></circle>
+    <text x="26" y="13.5" font-size="9" font-weight="700" fill="#15803D" letter-spacing=".04em">LIVE GPS FEED</text>
+  </g>`;
+
+  /* ── MAP GROUP (translated) ── */
+  svg+=`<g transform="translate(${OFFX},${OFFY})">`;
+  // Land mass
+  svg+=`<polygon points="${GB_PATH}" fill="url(#landGrad)" stroke="#BCC9D9" stroke-width="1.4" stroke-linejoin="round" filter="url(#landShadow)"/>`;
+
+  // Lanes (hidden ref path + glow + animated dash + travelling dot)
+  let lanePaths='',laneVis='',laneDots='';
+  order.forEach(id=>{
+    const n=nodes[id], st=slStatus(STORES[id].kpis.sl), isA=id===activeStore;
+    const dx=n.x-dc.x, dy=n.y-dc.y, len=Math.hypot(dx,dy)||1, off=20;
+    const cx=(dc.x+n.x)/2+(-dy/len)*off, cy=(dc.y+n.y)/2+(dx/len)*off;
+    const path=`M${dc.x},${dc.y} Q${cx},${cy} ${n.x},${n.y}`;
+    lanePaths+=`<path id="lp-${id}" d="${path}" fill="none" style="visibility:hidden"/>`;
+    laneVis+=`<path d="${path}" fill="none" stroke="${st.col}" stroke-width="${isA?5:3}" opacity="${isA?.16:.07}" stroke-linecap="round"/>`;
+    laneVis+=`<path d="${path}" fill="none" stroke="${st.col}" stroke-width="${isA?2:1.3}" stroke-dasharray="${isA?'8 5':'5 6'}" opacity="${isA?.85:.42}" stroke-linecap="round"><animate attributeName="stroke-dashoffset" values="52;0" dur="${(n.dur/1.4).toFixed(1)}s" repeatCount="indefinite"/></path>`;
+    laneDots+=`<circle r="${isA?3.6:2.4}" fill="${st.col}" opacity="${isA?1:.6}"><animateMotion dur="${n.dur}s" repeatCount="indefinite"><mpath href="#lp-${id}" xlink:href="#lp-${id}"/></animateMotion></circle>`;
+  });
+  svg+=lanePaths+laneVis+laneDots;
+
+  // DC hub — neutral authoritative bullseye
+  svg+=`<circle cx="${dc.x}" cy="${dc.y}" r="15" fill="none" stroke="#2563EB" stroke-width="1" opacity="0.25"><animate attributeName="r" values="13;22" dur="2.6s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.3;0" dur="2.6s" repeatCount="indefinite"/></circle>`;
+  svg+=`<circle cx="${dc.x}" cy="${dc.y}" r="12" fill="#0F172A"/>`;
+  svg+=`<circle cx="${dc.x}" cy="${dc.y}" r="12" fill="none" stroke="#fff" stroke-width="1.2"/>`;
+  svg+=`<circle cx="${dc.x}" cy="${dc.y}" r="6" fill="none" stroke="#60A5FA" stroke-width="1.4"/>`;
+  svg+=`<circle cx="${dc.x}" cy="${dc.y}" r="2.6" fill="#60A5FA"/>`;
+  svg+=`<text x="${dc.x}" y="${dc.y+26}" font-size="10" font-weight="700" fill="#0F172A" text-anchor="middle">Coventry DC</text>`;
+  svg+=`<text x="${dc.x}" y="${dc.y+37}" font-size="7.5" font-weight="600" fill="#94A3B8" text-anchor="middle" letter-spacing=".06em">DISTRIBUTION CENTRE</text>`;
+
+  // Store nodes
+  order.forEach(id=>{
+    const n=nodes[id], st=slStatus(STORES[id].kpis.sl), isA=id===activeStore;
+    if(isA){
+      svg+=`<circle cx="${n.x}" cy="${n.y}" r="9" fill="none" stroke="${st.col}" stroke-width="1.4" opacity="0"><animate attributeName="r" values="9;22" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.7;0" dur="2s" repeatCount="indefinite"/></circle>`;
+    }
+    svg+=`<circle cx="${n.x}" cy="${n.y}" r="${isA?9:7}" fill="#fff" stroke="${st.col}" stroke-width="${isA?2.6:2}"/>`;
+    svg+=`<circle cx="${n.x}" cy="${n.y}" r="${isA?4:3}" fill="${st.col}"/>`;
+    // hit area
+    svg+=`<circle cx="${n.x}" cy="${n.y}" r="13" fill="transparent" style="cursor:pointer" onclick="highlightStore('${id}')" onmouseenter="showTT(event,'${STORES[id].name} · SL ${STORES[id].kpis.sl} · ${nodes[id].label} lane · ${STORES[id].telUtil} fill')" onmouseleave="hideTT()"/>`;
+    // label
+    let lx=n.x,ly=n.y,anchor='middle';
+    if(n.lp==='above'){ly=n.y-14;anchor='middle';}
+    else if(n.lp==='left'){lx=n.x-12;ly=n.y+3.5;anchor='end';}
+    else {lx=n.x+12;ly=n.y+3.5;anchor='start';}
+    svg+=`<text x="${lx}" y="${ly}" text-anchor="${anchor}" font-size="10" style="pointer-events:none"><tspan font-weight="700" fill="#1E293B">${n.label}</tspan><tspan fill="#94A3B8"> · </tspan><tspan font-weight="700" fill="${st.col}">${STORES[id].kpis.sl}</tspan></text>`;
+  });
+  svg+=`</g>`;
+
+  svg+='</svg>';
+  wrap.innerHTML=svg;
+  updateTelemetry(activeStore);
+}
+
+function highlightStore(id){
+  mapHighlight=id;
+  renderUKMap(id);
+  updateTelemetry(id);
+  // Highlight the row in the dispatch table
+  document.querySelectorAll('.data-table tbody tr').forEach(r=>r.style.background='');
+  const row=$id('lane-'+id);if(row) row.style.background='rgba(37,99,235,.06)';
+}
+
+function updateTelemetry(id){
+  const s=STORES[id];
+  set('tel-store-name',s.name);
+  set('tel-coords',`#${id} · ${s.coords.lat}, ${s.coords.lng}`);
+  set('tel-mode',s.telMode);
+  set('tel-util',s.telUtil);
+  const util=$id('tel-util');if(util) util.style.color=parseInt(s.telUtil)>=85?'var(--green)':parseInt(s.telUtil)>=70?'var(--blue)':'var(--amber)';
+  set('tel-units',s.telUnits);
+  set('tel-skus',s.telSKUs);
+  set('tel-freight',s.telFreight);
+  const alertEl=$id('tel-alerts-list');
+  if(alertEl) alertEl.innerHTML=s.telAlerts.map(a=>`
+    <div class="tel-alert-item">
+      <span class="tel-alert-dot" style="background:${a.col}"></span>
+      <span>${a.text}</span>
+    </div>`).join('');
+}
+
+/* ════════ AI ADVISOR ════════ */
+const AI_QA={
+  capacity:{
+    q:'Maximise capacity vs demand forecast',
+    a:`London Oxford St is operating at 88% capacity — highest across the network. Consolidating DC → London and Manchester onto FTL (consol.) achieves 92% truck fill and saves £2,700 vs separate dispatch.\n\nLeeds Trinity is approaching capacity at 84% with festival + trend signals pushing demand up 4.7%. Pulling W4 stock forward by 2 days is recommended before headroom closes.\n\nBirmingham Bullring has the most headroom at 65% — ideal absorption point for any London excess stock.`
+  },
+  deadstock:{
+    q:'Identify dead stock risk across the network',
+    a:`3 SKUs flagged with >4 weeks of supply:\n\n• SKU-4471 — iPhone 15 Pro Max (London) — 5.3 wks supply, £50,358 tied up. Recommend: return to DC.\n• SKU-4588 — AirPods Pro 2nd Gen (London) — 4.7 wks, £19,236. Redeploy to Edinburgh (2.1 wks supply there).\n• SKU-4624 — MagSafe Wallet (London) — 4.0 wks, £5,664.\n\nTotal capital unlock potential: £75,258.`
+  },
+  freight:{
+    q:'How is freight cost being optimised this cycle',
+    a:`Current weekly freight: £8,690 — already 13% below unoptimised baseline of £9,988.\n\nAdditional opportunity identified: consolidating Edinburgh onto the Leeds run as a milk-run extension reduces Edinburgh freight from £880 to ~£620, saving £260/week (£13,520 annualised).\n\nImplementing this change would bring network freight to £8,430. Confidence: 87%.`
+  },
+  attention:{
+    q:'Which stores need immediate attention',
+    a:`2 stores require action before end of today:\n\n① Birmingham Bullring (#0151) — SL at 96.8%, below 98% target. Samsung Galaxy S24 and USB-C Cable 2m are below ROP. Release expedite order immediately.\n\n② London Oxford St (#0142) — iPhone 15 Screen Protector has only 3 days of supply remaining. Stockout risk within 72 hours if not dispatched today.`
+  }
+};
+
+function askAdvisor(key){
+  const qa=AI_QA[key];if(!qa)return;
+  const chat=$id('aa-chat');
+  chat.innerHTML=`<div class="aa-bubble question">${qa.q}</div><div class="aa-bubble answer fade-in" style="white-space:pre-line">${qa.a}</div>`;
+  chat.scrollTop=0;
+}
+
+/* ════════ STORE DETAIL ════════ */
+function renderStoreDetail(id){
+  const s=STORES[id];
+  set('s2-title',`${s.name} — SKU replenishment detail`);
+  set('s2-store-name',`Store #${id}`);
+  set('s2-store-meta',`${s.name} · Lead time ${s.lead} days`);
+  set('s2-onhand',s.onHand.toLocaleString('en-GB')+' u');
+  set('s2-intransit',s.inTransit.toLocaleString('en-GB')+' u');
+  set('s2-ots',s.ots.toLocaleString('en-GB')+' u');
+  set('s2-cap-pct',s.capPct+'%');
+  const circ=2*Math.PI*28,arc=$id('donut-arc');
+  if(arc){arc.setAttribute('stroke-dasharray',circ);arc.setAttribute('stroke-dashoffset',circ*(1-s.capPct/100));arc.setAttribute('stroke',s.capPct>=85?'var(--amber)':'var(--blue)');}
+  const sigCls={Promo:'sig-promo',Festival:'sig-festival',Weather:'sig-weather',Trend:'sig-trend',Event:'sig-event'};
+  const sigEl=$id('s2-signals');
+  if(sigEl) sigEl.innerHTML=s.signals.map(sig=>`
+    <div class="signal-item">
+      <div class="signal-header">
+        <div class="signal-name"><span style="width:7px;height:7px;border-radius:50%;background:${sig.on?'var(--blue)':'var(--ink5)'};display:inline-block"></span>${sig.t}</div>
+        <span class="signal-val">${sig.on?`+${sig.pct}% uplift`:'Inactive'}</span>
+      </div>
+      <div class="sig-track"><div class="sig-fill ${sigCls[sig.t]}" style="width:${sig.on?Math.min(100,(sig.pct/6)*100):0}%;opacity:${sig.on?1:0.25}"></div></div>
+    </div>`).join('');
+  const stEl=$id('s2-sensing-text');if(stEl) stEl.innerHTML=`Demand is tracking <strong>+${s.uplift}%</strong> above forecast this week, driven by active signals below.`;
+  const cnt={all:s.skus.length,replenish:0,low:0,ok:0,hold:0,redeploy:0};
+  s.skus.forEach(sk=>cnt[sk.st]++);
+  ['all','replenish','low','ok','hold','redeploy'].forEach(f=>set('sf-cnt-'+f,cnt[f]));
+  const flags=cnt.replenish+cnt.low;
+  const fill={'0142':'92','0137':'87','0151':'74','0165':'88','0188':'61'};
+  const ftEl=$id('s2-footer-text');
+  if(ftEl) ftEl.innerHTML=`<strong>${flags} SKUs flagged for replenishment</strong> · Consolidated lane DC → #${id} · Projected truck fill ${fill[id]||'85'}%`;
+  renderSKUTable(id,skuFilter);
+}
+
+function renderSKUTable(id,filter){
+  const s=STORES[id],search=($id('sku-search')?.value||'').toLowerCase();
+  const tbody=$id('sku-tbody');if(!tbody)return;
+  const rows=s.skus.filter(sk=>(filter==='all'||sk.st===filter)&&(sk.id.toLowerCase().includes(search)||(sk.name||'').toLowerCase().includes(search)));
+  // Auto-check replenish/low SKUs by default
+  tbody.innerHTML=rows.length?rows.map(sk=>{
+    const autoCheck=sk.st==='replenish'||sk.st==='low';
+    return`<tr class="${autoCheck?'sku-row-selected':''}">
+    <td><input type="checkbox" class="lane-chk sku-chk" data-sku="${sk.id}" ${autoCheck?'checked':''} onchange="updateSKUSelection()"></td>
+    <td><div class="sku-id">${sk.id}</div></td>
+    <td style="color:var(--ink2)">${sk.name||'—'}</td>
+    <td class="num">${sk.oh.toLocaleString('en-GB')}</td>
+    <td class="num">${sk.it?sk.it.toLocaleString('en-GB'):'-'}</td>
+    <td class="num">${sk.dmd.toLocaleString('en-GB')}</td>
+    <td class="num">${sk.ss.toLocaleString('en-GB')}</td>
+    <td class="num" style="color:var(--blue);font-weight:700">${sk.rop.toLocaleString('en-GB')}</td>
+    <td class="num" style="color:${sk.nr>0?'var(--red)':'var(--ink4)'}">${sk.nr||'-'}</td>
+    <td class="num" style="font-weight:${sk.rq?700:400};color:${sk.rq?'var(--ink)':'var(--ink4)'}">${sk.rq||'-'}</td>
+    <td><span class="sbadge ${sk.st}">${sk.st.charAt(0).toUpperCase()+sk.st.slice(1)}</span></td>
+  </tr>`;}).join(''):`<tr><td colspan="11" style="text-align:center;padding:28px 0;color:var(--ink4);font-size:12px">No SKUs match this filter</td></tr>`;
+  updateSKUSelection();
+}
+
+/* ════════ FILTERS ════════ */
+function setFilter(f){skuFilter=f;document.querySelectorAll('.sf-chip').forEach(c=>c.classList.remove('sel'));document.querySelector('.sf-chip.f-'+f)?.classList.add('sel');renderSKUTable(currentStore,f)}
+function filterTable(){renderSKUTable(currentStore,skuFilter)}
+
+let locationFilter='all',selectedSKU2=null,skuQuery2='',timeFilter2='32';
+const STORE_LABELS={'0142':'LON','0137':'MAN','0151':'BHM','0165':'LDS','0188':'EDN'};
+
+function getFilteredStores(){
+  const all=['0142','0137','0151','0165','0188'];
+  let r=all;
+  if(locationFilter!=='all') r=r.filter(id=>id===locationFilter);
+  if(selectedSKU2) r=r.filter(id=>id===selectedSKU2.storeId);
+  return new Set(r);
+}
+function setLocationFilter(val){
+  locationFilter=val;
+  document.querySelectorAll('.loc-chip').forEach(c=>c.classList.remove('on'));
+  const sel=val==='all'?document.querySelector('.loc-all'):document.querySelector(`.loc-chip[data-loc="${val}"]`);
+  if(sel)sel.classList.add('on');
+  if(val!=='all') selectStore(val);
+  updateClearBtn2();
+}
+function setTimeFilter(wk){
+  timeFilter2=wk;
+  document.querySelectorAll('.time-chip').forEach(c=>c.classList.remove('on'));
+  document.querySelector(`.time-chip[data-wk="${wk}"]`)?.classList.add('on');
+  const ws=$id('weekSelect');if(ws)ws.value=wk;
+  renderAllCharts(currentStore);
+  updateClearBtn2();
+}
+function clearFilters(){
+  locationFilter='all';
+  document.querySelectorAll('.loc-chip').forEach(c=>c.classList.remove('on'));
+  document.querySelector('.loc-all')?.classList.add('on');
+  timeFilter2='32';
+  document.querySelectorAll('.time-chip').forEach(c=>c.classList.remove('on'));
+  document.querySelector('.time-chip[data-wk="32"]')?.classList.add('on');
+  selectedSKU2=null;skuQuery2='';
+  const inp=$id('sku-net-inp');if(inp)inp.value='';
+  const tag=$id('sku-active-tag');if(tag)tag.style.display='none';
+  $id('sku-drop')?.classList.remove('open');
+  renderAllCharts(currentStore);
+  updateClearBtn2();
+}
+function updateClearBtn2(){
+  const active=locationFilter!=='all'||!!selectedSKU2||timeFilter2!=='32';
+  $id('filter-clear')?.classList.toggle('visible',active);
+}
+/* SKU filter */
+function onSKUInput(val){skuQuery2=val.trim().toLowerCase();if(!skuQuery2){$id('sku-drop').classList.remove('open');return;}renderSKUDrop2();}
+function openSKUDrop(){if(skuQuery2)renderSKUDrop2();}
+function renderSKUDrop2(){
+  const drop=$id('sku-drop');
+  const matches=Object.keys(STORES).flatMap(sid=>STORES[sid].skus.map(sk=>({...sk,storeId:sid}))).filter(s=>s.id.toLowerCase().includes(skuQuery2)||(s.name||'').toLowerCase().includes(skuQuery2));
+  if(!matches.length){drop.innerHTML=`<div class="sku-no-res">No SKUs match "${skuQuery2}"</div>`;}
+  else{drop.innerHTML=matches.slice(0,12).map(m=>`
+    <div class="sku-opt" onclick="selectSKU2('${m.id}','${m.storeId}','${m.st}')">
+      <span class="sku-opt-store">${STORE_LABELS[m.storeId]}</span>
+      <div style="flex:1;min-width:0"><div class="sku-opt-id" style="font-size:11.5px;font-weight:700">${m.id}</div><div style="font-size:10.5px;color:var(--ink4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name||''}</div></div>
+      <span class="sbadge ${m.st}" style="font-size:9px;padding:1px 5px;flex-shrink:0">${m.st.charAt(0).toUpperCase()+m.st.slice(1)}</span>
+    </div>`).join('');}
+  drop.classList.add('open');
+}
+function selectSKU2(id,storeId,status){
+  selectedSKU2={id,storeId,status};skuQuery2='';
+  const inp=$id('sku-net-inp');if(inp)inp.value='';
+  $id('sku-drop').classList.remove('open');
+  const tag=$id('sku-active-tag');if(tag){tag.innerHTML=`${id} &nbsp;✕`;tag.style.display='inline-flex';}
+  updateClearBtn2();
+}
+function clearSKUFilter(){selectedSKU2=null;skuQuery2='';const inp=$id('sku-net-inp');if(inp)inp.value='';const tag=$id('sku-active-tag');if(tag)tag.style.display='none';$id('sku-drop')?.classList.remove('open');updateClearBtn2();}
+document.addEventListener('click',e=>{if(!e.target.closest('#sku-fw'))$id('sku-drop')?.classList.remove('open');});
+
+/* ════════ SKU SELECTION ════════ */
+function toggleAllSKUs(masterCb){
+  document.querySelectorAll('.sku-chk').forEach(cb=>cb.checked=masterCb.checked);
+  updateSKUSelection();
+}
+
+function updateSKUSelection(){
+  const all=document.querySelectorAll('.sku-chk');
+  const checked=document.querySelectorAll('.sku-chk:checked');
+  const count=checked.length;
+  const total=all.length;
+  // Cross-browser row highlight (replaces :has() which Edge may not support)
+  all.forEach(cb=>cb.closest('tr')?.classList.remove('sku-row-checked'));
+  checked.forEach(cb=>cb.closest('tr')?.classList.add('sku-row-checked'));
+  // Update master checkbox state
+  const master=$id('sku-select-all');
+  if(master){
+    master.checked=count===total&&total>0;
+    master.indeterminate=count>0&&count<total;
+  }
+  // Update release button
+  const btn=$id('release-btn');
+  if(btn){
+    if(count>0){
+      btn.disabled=false;
+      btn.style.opacity='1';
+      btn.style.cursor='pointer';
+      btn.textContent=`Release ${count} SKU${count>1?'s':''} to DC`;
+    } else {
+      btn.disabled=true;
+      btn.style.opacity='.45';
+      btn.style.cursor='not-allowed';
+      btn.textContent='Release selected to DC';
+    }
+  }
+  // Update footer text
+  const ftEl=$id('s2-footer-text');
+  if(ftEl&&count>0){
+    const replenishable=Array.from(checked).map(cb=>cb.dataset.sku).join(', ');
+    ftEl.innerHTML=`<strong>${count} SKU${count>1?'s':''} selected for release</strong> · DC → #${currentStore} · Click "Release" to dispatch`;
+  }
+}
+
+function releaseSelected(){
+  const checked=document.querySelectorAll('.sku-chk:checked');
+  if(!checked.length) return;
+  openModal();
+}
+
+/* ════════ DISPATCH ════════ */
+function toggleLane(id,cb){const row=$id('lane-'+id);if(row)row.classList.toggle('lane-approved',cb.checked)}
+
+/* ════════ MODAL / TOAST ════════ */
+function openModal(){$id('modal').classList.add('open')}
+function closeModal(){$id('modal').classList.remove('open')}
+function confirmDRP(){
+  closeModal();
+  const s=STORES[currentStore];
+
+  // Collect selected SKUs from stores page checkboxes
+  const checkedBoxes=document.querySelectorAll('.sku-chk:checked');
+  let totalReleased=0;
+  checkedBoxes.forEach(cb=>{
+    const sku=s.skus.find(sk=>sk.id===cb.dataset.sku);
+    if(!sku) return;
+    const releasing=sku.rq>0?sku.rq:(sku.nr>0?sku.nr:0);
+    if(releasing>0){
+      totalReleased+=releasing;
+      sku.it=(sku.it||0)+releasing;  // moves to in-transit
+      sku.rq=0;                      // replen qty fulfilled
+      sku.nr=0;                      // net requirement satisfied
+      if(sku.st==='replenish'||sku.st==='low') sku.st='ok';
+    }
+  });
+
+  // If nothing selected (called from dispatch page), use store total
+  if(totalReleased===0){
+    s.skus.forEach(sk=>{
+      if(sk.st==='replenish'||sk.st==='low'){
+        const r=sk.rq||sk.nr||0;
+        totalReleased+=r;
+        sk.it=(sk.it||0)+r;
+        sk.rq=0;sk.nr=0;sk.st='ok';
+      }
+    });
+  }
+
+  // Update store-level inventory metrics
+  if(totalReleased>0){
+    s.inTransit=Math.min(s.inTransit+totalReleased, s.maxCap-s.onHand);
+    s.ots=Math.max(0, s.maxCap-s.onHand-s.inTransit);
+    // Update the KPI tile value
+    s.kpis.it=s.inTransit.toLocaleString('en-GB');
+    s.kpis.itD=`${Math.ceil((s.inTransit/(s.onHand||1))*100)}% of on-hand`;
+    s.kpis.itC='delta-up';
+  }
+
+  // Refresh store detail panel (left column + SKU table both update)
+  renderStoreDetail(currentStore);
+
+  // Refresh overview KPI tiles
+  updateKPIs(currentStore);
+
+  // Mark dispatch lane rows as approved
+  document.querySelectorAll('[id^="lane-"] .lane-chk').forEach(cb=>{
+    cb.checked=true;
+    const tr=cb.closest('tr');if(tr)tr.classList.add('lane-approved');
+  });
+
+  showToast(`DRP order released — ${totalReleased.toLocaleString()} units now in transit to ${s.name}. Expected in 2 days.`);
+}
+function showToast(msg){const t=$id('toast');$id('toastMsg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);}
+
+/* ════════ HORIZON ════════ */
+function setHorizon(n){currentHorizon=n;$id('seg-4w').classList.toggle('active',n===4);$id('seg-8w').classList.toggle('active',n===8);renderAllCharts(currentStore);}
+
+/* ════════ DRILL-DOWN (demand) ════════ */
+const WEEK_DATES=[
+  {label:'W1',range:'4–10 Aug 2025'},{label:'W2',range:'11–17 Aug 2025'},
+  {label:'W3',range:'18–24 Aug 2025'},{label:'W4',range:'25–31 Aug 2025'},
+  {label:'W5',range:'1–7 Sep 2025'},{label:'W6',range:'8–14 Sep 2025'},
+  {label:'W7',range:'15–21 Sep 2025'},{label:'W8',range:'22–28 Sep 2025'}
+];
+const CAT_MIX=[[32,26,25,17],[35,24,24,17],[33,27,24,16],[38,22,23,17],[31,28,24,17],[36,25,23,16],[34,26,24,16],[35,25,24,16]];
+const CAT_COLORS=['var(--blue)','var(--green)','var(--amber)','var(--ink4)'];
+const CAT_NAMES=['Handsets','Cases & Covers','Charging & Cables','Audio & Other'];
+
+function showDrillDown(weekIdx){
+  const s=STORES[currentStore],wd=WEEK_DATES[weekIdx]||WEEK_DATES[0];
+  const baseline=s.forecast[weekIdx]||0,sensed=s.sensed[weekIdx]||0,uplift=sensed-baseline;
+  const prevBaseline=weekIdx>0?(s.forecast[weekIdx-1]||0):baseline;
+  const wowPct=prevBaseline>0?Math.round(((baseline-prevBaseline)/prevBaseline)*100):0;
+  set('dp-week-label',`${wd.label} — Demand detail`);set('dp-meta',`${wd.range} · ${s.name}`);
+  const activeSignals=s.signals.filter(sg=>sg.on);
+  const signalUnits=activeSignals.map(sg=>({name:sg.t,units:Math.round(baseline*(sg.pct/100))}));
+  const mix=CAT_MIX[weekIdx]||CAT_MIX[0];
+  const sorted=[...s.skus].sort((a,b)=>b.dmd-a.dmd).slice(0,5);
+  const stockHealth=s.skus.map(sk=>{
+    let oh=sk.oh;for(let w=0;w<=weekIdx;w++){oh-=sk.dmd*0.88;if(w===1&&sk.rq>0)oh+=sk.rq;}
+    oh=Math.round(Math.max(0,oh));const ratio=sk.rop>0?oh/sk.rop:1;
+    const risk=ratio<0.5?'critical':ratio<1.2?'watch':'ok';return{...sk,projOH:oh,risk};
+  }).filter(sk=>sk.risk!=='ok').sort((a,b)=>a.risk==='critical'?-1:1);
+  const actions=[];
+  const critCount=stockHealth.filter(s=>s.risk==='critical').length;
+  const watchCount=stockHealth.filter(s=>s.risk==='watch').length;
+  if(critCount>0)actions.push({urgent:true,text:`${critCount} SKU${critCount>1?'s':''} projected below ROP by end of ${wd.label} — release replenishment before ${wd.range.split('–')[0]} ${wd.range.split(' ')[1]}.`});
+  if(watchCount>0)actions.push({urgent:false,text:`${watchCount} SKU${watchCount>1?'s':''} approaching reorder point. Monitor daily sell-through and front-load if demand strengthens.`});
+  if(uplift>baseline*0.04)actions.push({urgent:false,text:`Demand sensing shows +${((uplift/baseline)*100).toFixed(1)}% uplift this week. Consider pulling forward W${weekIdx+2} order by 2–3 days.`});
+  if(!actions.length)actions.push({urgent:false,text:`Stock position healthy for ${wd.label}. No immediate action required — continue monitoring daily sell-through.`});
+
+  let html=`<div class="drill-section"><div class="drill-section-title">At a glance</div>
+    <div class="drill-hero">
+      <div class="drill-stat"><div class="drill-stat-label">Forecast demand</div><div class="drill-stat-value">${baseline.toLocaleString()}</div><div class="drill-stat-delta ${wowPct>=0?'delta-up':'delta-down'}">${wowPct>=0?'↑':'↓'} ${Math.abs(wowPct)}% vs ${weekIdx>0?WEEK_DATES[weekIdx-1].label:'prior week'}</div></div>
+      <div class="drill-stat"><div class="drill-stat-label">Sensed demand</div><div class="drill-stat-value">${sensed.toLocaleString()}</div><div class="drill-stat-delta delta-up">+${((uplift/baseline)*100).toFixed(1)}% above baseline</div></div>
+    </div></div>`;
+  html+=`<div class="drill-section"><div class="drill-section-title">What's driving demand this week</div><div class="signal-waterfall">
+    <div class="swf-row"><span class="swf-label">Base forecast</span><div class="swf-bar-wrap"><div class="swf-bar" style="width:100%;background:var(--blue);opacity:.55"></div></div><span class="swf-val">${baseline.toLocaleString()} u</span></div>`;
+  const maxSig=Math.max(...signalUnits.map(s=>s.units),1);
+  const sigCol={Promo:'var(--purple)',Festival:'var(--amber)',Weather:'var(--blue)',Trend:'var(--green)',Event:'var(--red)'};
+  signalUnits.forEach(sg=>{const col=sigCol[sg.name]||'var(--ink4)';html+=`<div class="swf-row"><span class="swf-label">${sg.name} signal</span><div class="swf-bar-wrap"><div class="swf-bar" style="width:${Math.round((sg.units/maxSig)*100)}%;background:${col}"></div></div><span class="swf-val" style="color:${col}">+${sg.units} u</span></div>`;});
+  html+=`<div class="swf-row" style="margin-top:4px;padding-top:7px;border-top:1px solid var(--border)"><span class="swf-label" style="font-weight:600;color:var(--ink)">Sensed total</span><div class="swf-bar-wrap"><div class="swf-bar" style="width:100%;background:var(--ink)"></div></div><span class="swf-val" style="font-weight:700;color:var(--ink)">${sensed.toLocaleString()} u</span></div></div></div>`;
+  html+=`<div class="drill-section"><div class="drill-section-title">Category breakdown</div><div class="cat-rows">`;
+  mix.forEach((pct,ci)=>{const units=Math.round(sensed*pct/100);html+=`<div class="cat-row"><span class="cat-dot" style="background:${CAT_COLORS[ci]}"></span><span class="cat-name">${CAT_NAMES[ci]}</span><div class="cat-bar-wrap"><div class="cat-bar" style="width:${pct*2.5}%;background:${CAT_COLORS[ci]};opacity:.75"></div></div><span class="cat-pct">${pct}%</span><span class="cat-units">${units} u</span></div>`;});
+  html+=`</div></div>`;
+  html+=`<div class="drill-section"><div class="drill-section-title">Top 5 SKUs by demand</div><table class="drill-table"><thead><tr><th>SKU</th><th>Product</th><th class="r">Fcst units</th><th class="r">vs last wk</th></tr></thead><tbody>`;
+  sorted.forEach((sk,i)=>{const units=Math.round(sk.dmd*(1+[.08,.15,-.05,.04,-.03][i]||0));const delta=[8,15,-5,4,-3][i];const dClass=delta>=0?'delta-up':'delta-down';html+=`<tr><td style="font-family:monospace;font-size:11.5px;font-weight:600">${sk.id}</td><td style="font-size:11.5px;color:var(--ink2)">${sk.name}</td><td class="r">${units}</td><td class="r"><span class="${dClass}" style="font-size:11.5px">${delta>=0?'↑':'↓'}${Math.abs(delta)}%</span></td></tr>`;});
+  html+=`</tbody></table></div>`;
+  if(stockHealth.length>0){html+=`<div class="drill-section"><div class="drill-section-title">Stock watch — projected end of ${wd.label}</div><div class="stock-rows">`;stockHealth.slice(0,5).forEach(sk=>{const label=sk.risk==='critical'?'Critical':'Watch';const bc=sk.risk==='critical'?'sb-critical':'sb-watch';html+=`<div class="stock-row risk-${sk.risk}"><div class="stock-row-left"><div class="stock-row-sku">${sk.id}</div><div class="stock-row-name">${sk.name}</div></div><div class="stock-row-right"><span style="font-size:11px;color:var(--ink3)">Proj: ${sk.projOH} u · ROP: ${sk.rop}</span><span class="stock-badge ${bc}">${label}</span></div></div>`;});html+=`</div></div>`;}
+  html+=`<div class="drill-section"><div class="drill-section-title">Recommended actions</div><div class="action-list">`;
+  actions.forEach((a,i)=>{html+=`<div class="action-item${a.urgent?' urgent':''}"><span class="action-num">${i+1}</span><span class="action-text">${a.text}</span></div>`;});
+  html+=`</div></div>`;
+  $id('drill-body').innerHTML=html;
+  $id('drill-backdrop').classList.add('open');$id('drill-panel').classList.add('open');
+}
+
+/* ════════ DRILL-DOWN (inventory) ════════ */
+function skuPrice(sk){const n=(sk.name||'').toLowerCase();if(n.includes('pro max')||n.includes('s24 ultra')||n.includes('pixel 8 pro'))return 1199;if(n.includes('iphone 15 pro')||n.includes('s24+')||n.includes('pixel 8a'))return 999;if(n.includes('iphone 15')&&!n.includes('case')&&!n.includes('screen')&&!n.includes('cover'))return 799;if(n.includes('iphone 14')&&!n.includes('case')&&!n.includes('screen'))return 649;if(n.includes('s24')&&!n.includes('cover')&&!n.includes('screen')&&!n.includes('+')&&!n.includes('ultra'))return 799;if(n.includes('a55')||n.includes('a35'))return 449;if(n.includes('airpods pro'))return 229;if(n.includes('airpods'))return 149;if(n.includes('magsafe wallet'))return 59;if(n.includes('power bank 20000'))return 49;if(n.includes('power bank 10000'))return 35;if(n.includes('case')||n.includes('cover'))return 39;if(n.includes('screen protector'))return 19;if(n.includes('charger 65w'))return 29;if(n.includes('charger 45w')||n.includes('magsafe charger'))return 25;if(n.includes('cable'))return 15;if(n.includes('wireless charging')||n.includes('charging pad'))return 35;if(n.includes('earbuds'))return 79;return 25;}
+
+function showInventoryDrillDown(weekIdx){
+  const s=STORES[currentStore],wd=WEEK_DATES[weekIdx]||WEEK_DATES[0];
+  const classified=s.skus.map(sk=>{
+    let oh=sk.oh;for(let w=0;w<weekIdx;w++){oh-=sk.dmd*0.88;if(w===1&&sk.rq>0)oh+=sk.rq;}
+    oh=Math.round(Math.max(0,oh));const wos=sk.dmd>0?oh/sk.dmd:99,dos=Math.round(wos*7);
+    const price=skuPrice(sk),value=oh*price;
+    let cat;if(wos>5||sk.st==='hold')cat='dead';else if(wos>2||sk.st==='redeploy')cat='slow';else cat='fast';
+    return{...sk,projOH:oh,wos:Math.round(wos*10)/10,dos,price,value,cat};
+  });
+  const dead=classified.filter(sk=>sk.cat==='dead'),slow=classified.filter(sk=>sk.cat==='slow'),fast=classified.filter(sk=>sk.cat==='fast');
+  const totalUnits=classified.reduce((a,sk)=>a+sk.projOH,0);
+  const deadValue=dead.reduce((a,sk)=>a+sk.value,0),slowValue=slow.reduce((a,sk)=>a+sk.value,0),fastValue=fast.reduce((a,sk)=>a+sk.value,0);
+  set('dp-week-label',`${wd.label} — Inventory breakdown`);set('dp-meta',`${wd.range} · ${s.name}`);
+  let html=`<div class="drill-section"><div class="drill-section-title">Stock health overview · ${totalUnits} units · $${(deadValue+slowValue+fastValue).toLocaleString()} est. value</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      <div class="drill-stat" style="border-left:3px solid var(--green)"><div class="drill-stat-label">Fast-moving</div><div class="drill-stat-value" style="color:var(--green)">${fast.reduce((a,sk)=>a+sk.projOH,0)}</div><div class="drill-stat-delta" style="color:var(--ink4)">${fast.length} SKUs</div></div>
+      <div class="drill-stat" style="border-left:3px solid var(--amber)"><div class="drill-stat-label">Slow-moving</div><div class="drill-stat-value" style="color:var(--amber)">${slow.reduce((a,sk)=>a+sk.projOH,0)}</div><div class="drill-stat-delta" style="color:var(--ink4)">${slow.length} SKUs</div></div>
+      <div class="drill-stat" style="border-left:3px solid var(--red)"><div class="drill-stat-label">Dead stock</div><div class="drill-stat-value" style="color:var(--red)">${dead.reduce((a,sk)=>a+sk.projOH,0)}</div><div class="drill-stat-delta" style="color:var(--ink4)">${dead.length} SKU${dead.length!==1?'s':''} · $${deadValue.toLocaleString()}</div></div>
+    </div></div>`;
+  if(dead.length){html+=`<div class="drill-section"><div class="drill-section-title" style="color:var(--red)">Dead stock — immediate action needed</div><div class="stock-rows">`;dead.forEach(sk=>{const action=sk.name.toLowerCase().includes('14')?'Return to DC':'Markdown & clear';html+=`<div class="stock-row risk-critical"><div class="stock-row-left"><div class="stock-row-sku">${sk.id}</div><div class="stock-row-name">${sk.name}</div><div style="font-size:11px;color:var(--ink4);margin-top:2px">${sk.projOH} units · ${sk.wos} wks supply · $${sk.value.toLocaleString()} tied up</div></div><div class="stock-row-right" style="flex-direction:column;align-items:flex-end;gap:3px"><span class="stock-badge sb-critical">Dead</span><span style="font-size:10.5px;color:var(--red);font-weight:600">${action}</span></div></div>`;});html+=`</div><div style="margin-top:8px;padding:8px 10px;background:var(--red-light);border-radius:var(--radius);font-size:11.5px;color:var(--red);border:1px solid rgba(220,38,38,.15)">$${deadValue.toLocaleString()} in capital tied up — ${dead.reduce((a,sk)=>a+sk.projOH,0)} shelf units occupied</div></div>`;}
+  if(slow.length){html+=`<div class="drill-section"><div class="drill-section-title" style="color:var(--amber)">Slow-moving stock — monitor &amp; act</div><table class="drill-table"><thead><tr><th>Product</th><th class="r">Units</th><th class="r">Days supply</th><th class="r">Wks supply</th></tr></thead><tbody>`;slow.forEach(sk=>{html+=`<tr><td><div style="font-size:11.5px;font-weight:600;color:var(--ink)">${sk.id}</div><div style="font-size:11px;color:var(--ink3)">${sk.name}</div></td><td class="r">${sk.projOH}</td><td class="r" style="color:${sk.dos>28?'var(--amber)':'var(--ink3)'};font-weight:600">${sk.dos}d</td><td class="r">${sk.wos}w</td></tr>`;});html+=`</tbody></table><div style="margin-top:8px;font-size:11.5px;color:var(--amber);font-weight:500">Consider redeploying excess to higher-demand stores or running a short promotion to clear.</div></div>`;}
+  if(fast.length){html+=`<div class="drill-section"><div class="drill-section-title" style="color:var(--green)">Fast-moving stock — watch for gaps</div><table class="drill-table"><thead><tr><th>Product</th><th class="r">Units</th><th class="r">Days left</th><th class="r">Risk</th></tr></thead><tbody>`;fast.forEach(sk=>{const risk=sk.dos<=5?'Critical':sk.dos<=10?'Watch':'OK';const rc=sk.dos<=5?'var(--red)':sk.dos<=10?'var(--amber)':'var(--green)';html+=`<tr><td><div style="font-size:11.5px;font-weight:600;color:var(--ink)">${sk.id}</div><div style="font-size:11px;color:var(--ink3)">${sk.name}</div></td><td class="r">${sk.projOH}</td><td class="r" style="color:${rc};font-weight:700">${sk.dos}d</td><td class="r" style="color:${rc};font-size:11px;font-weight:600">${risk}</td></tr>`;});html+=`</tbody></table></div>`;}
+  const actions=[];
+  if(dead.length)actions.push({urgent:true,text:`Return ${dead.length} dead stock SKU${dead.length>1?'s':''} to DC. Frees $${deadValue.toLocaleString()} in working capital and ${dead.reduce((a,sk)=>a+sk.projOH,0)} shelf units.`});
+  if(slow.length)actions.push({urgent:false,text:`${slow.length} slow-moving SKUs over 2 weeks of supply. Consider redeployment to ${currentStore==='0142'?'Birmingham':'London'} or a targeted promotion.`});
+  const critFast=fast.filter(sk=>sk.dos<=5);if(critFast.length)actions.push({urgent:true,text:`${critFast.length} fast-moving SKU${critFast.length>1?'s':''} have ≤5 days of supply. Release replenishment order immediately.`});
+  if(actions.length){html+=`<div class="drill-section"><div class="drill-section-title">Recommended actions</div><div class="action-list">`;actions.forEach((a,i)=>{html+=`<div class="action-item${a.urgent?' urgent':''}"><span class="action-num">${i+1}</span><span class="action-text">${a.text}</span></div>`;});html+=`</div></div>`;}
+  $id('drill-body').innerHTML=html;
+  $id('drill-backdrop').classList.add('open');$id('drill-panel').classList.add('open');
+}
+
+function closeDrillDown(){$id('drill-backdrop').classList.remove('open');$id('drill-panel').classList.remove('open');}
+
+/* ════════ AI ADVISOR PANEL ════════ */
+const PANEL_QA={
+  capacity:{
+    q:'Which stores are approaching capacity this cycle?',
+    a:`<strong>Leeds Trinity (#0165)</strong> and <strong>London Oxford St (#0142)</strong> are the two stores to watch this cycle.\n\nLeeds is at 84% capacity with a Festival + Trend uplift of +4.7% still to peak in W4–W5. If the demand signal holds, headroom will close to under 100 units — leaving no room to absorb any expedite stock.\n\n<strong>Recommended action:</strong> Pull forward the Leeds W4 replenishment order by 2 days and cap to open-to-ship headroom of 250 units.\n\nLondon is at 88% — the highest in the network — but stable. The FTL consolidated lane with Manchester is already the right call to avoid overfilling.`
+  },
+  freight:{
+    q:'How much are we saving on freight vs unoptimised dispatch?',
+    a:`This cycle's optimised freight is <strong>£8,690</strong> — saving <strong>£1,298 (13%)</strong> versus an unoptimised baseline of £9,988.\n\nThe biggest single saving comes from consolidating the <strong>Manchester + London lanes onto one FTL truck</strong>, which fills to 87% and avoids two separate part-load journeys (saving ~£720 alone).\n\nThe Edinburgh milk-run is the only lane below 70% fill. If Edinburgh's order volume grows by ~30 units, it would be worth switching to a consolidated Leeds + Edinburgh run — projecting an additional £260/week saving (£13,520 annualised).\n\nOn an annualised basis, the full optimisation strategy saves approximately <strong>£67,500/year</strong> vs unmanaged dispatch.`
+  },
+  risk:{
+    q:'Which SKUs are at stockout risk this week?',
+    a:`<strong>3 SKUs flagged as critical stockout risk within 72 hours:</strong>\n\n🔴 <strong>SKU-4560 — iPhone 15 Screen Protector (London)</strong>\n3 days of supply remaining at current sell-through. This is a fast-moving accessory that spikes when a new iPhone is in promo. Release replenishment today.\n\n🔴 <strong>SKU-3189 — Fresh Milk 1L (Birmingham)</strong>\nStock at 8 units, demand 16/week. Birmingham's service level is already below target — this SKU will push it further. Expedite required.\n\n🟡 <strong>SKU-7345 — Power Bank 20000mAh (Manchester)</strong>\n7 days of supply. Not yet critical but the Trend signal on this SKU is active — sell-through may accelerate. Include in this cycle's order.\n\n<strong>Action:</strong> All three can be resolved by releasing the pending DRP orders on the Stores page.`
+  },
+  deadstock:{
+    q:'Where is dead stock tying up working capital?',
+    a:`<strong>£75,258 of working capital is currently tied up in slow/dead stock</strong> across the London Oxford St store.\n\n<strong>Top 3 items to act on:</strong>\n\n1. <strong>SKU-4471 — iPhone 15 Pro Max 256GB</strong> · 42 units · 5.3 weeks supply · £50,358 at cost. The Pro Max has been superseded by higher sell-through on standard iPhone 15. Recommend returning 30 units to DC for redistribution.\n\n2. <strong>SKU-4588 — AirPods Pro 2nd Gen</strong> · 84 units · 4.7 weeks supply · £19,236. Edinburgh has only 2.1 weeks supply of this SKU — redeploy 40 units via intra-network transfer at zero freight cost.\n\n3. <strong>SKU-4624 — MagSafe Wallet</strong> · 96 units · 4.0 weeks · £5,664. Consider a short-term 10% markdown to accelerate clearance.\n\n<strong>Freeing these 3 SKUs recovers ~168 shelf units</strong> for faster-moving stock.`
+  },
+  action:{
+    q:'What should I action before end of day?',
+    a:`<strong>3 things to do before close of business today:</strong>\n\n<strong>① Release Birmingham DRP order immediately</strong>\nService level at 96.8% — below the 98% target. 4 SKUs are below ROP including Samsung Galaxy S24 and USB-C Cable 2m. Every day of delay costs ~0.2 pts of service level.\n\n<strong>② Approve the London + Manchester consolidated FTL lane</strong>\nThe truck consolidation has been optimised and is ready to release. Approving now locks in the £2,700 freight saving vs separate dispatch. Dispatch window closes at 18:00.\n\n<strong>③ Check iPhone 15 Screen Protector sell-through (London)</strong>\nSKU-4560 is at 3 days of supply. If today's sell-through exceeds 8 units, trigger an emergency top-up order. Monitor the POS feed hourly.\n\n<em>Everything else in the network can wait for tomorrow's planning cycle.</em>`
+  }
+};
+
+/* ════════ ALERTS ════════ */
+let activeAlertCount=3;
+
+function openAlerts(){
+  $id('alert-backdrop').classList.add('open');
+  $id('alert-panel').classList.add('open');
+}
+function closeAlerts(){
+  $id('alert-backdrop').classList.remove('open');
+  $id('alert-panel').classList.remove('open');
+}
+function resolveAlert(id){
+  const card=$id(id);if(!card)return;
+  card.style.opacity='0';card.style.transition='opacity .3s';
+  setTimeout(()=>{card.remove();updateAlertCount(-1);},300);
+  showToast('Alert resolved and removed from queue.');
+}
+function escalateAlert(id,msg){
+  const card=$id(id);if(!card)return;
+  const badge=card.querySelector('.alert-sent-badge');
+  if(badge){badge.textContent='✓ Escalated';badge.className='alert-sent-badge badge-sent';}
+  showToast(msg);
+}
+function toggleAlertAgent(on){
+  const bar=$id('alert-agent-bar');
+  const icon=$id('alert-agent-icon');
+  const statusText=$id('alert-agent-status-text');
+  // Update bar style
+  if(on){
+    bar.style.background='#ECFDF5';
+    bar.style.borderColor='#A7F3D0';
+    icon.style.background='#ECFDF5';
+    icon.style.borderColor='#A7F3D0';
+    icon.querySelector('svg').style.stroke='#16A34A';
+    if(statusText) statusText.textContent='On — alerts sent automatically to executives';
+    // Update all pending badges back to sent
+    document.querySelectorAll('.alert-sent-badge.badge-pending').forEach(b=>{
+      b.textContent='✓ Alert sent';b.className='alert-sent-badge badge-sent';
+    });
+    showToast('Alert Agent activated — executives will be notified automatically.');
+  } else {
+    bar.style.background='var(--surface2)';
+    bar.style.borderColor='var(--border)';
+    icon.style.background='var(--surface3)';
+    icon.style.borderColor='var(--border)';
+    icon.querySelector('svg').style.stroke='var(--ink4)';
+    if(statusText) statusText.textContent='Off — alerts queued, not sent until agent is on';
+    // Update all sent badges to manual
+    document.querySelectorAll('.alert-sent-badge.badge-sent').forEach(b=>{
+      b.textContent='⏸ Queued — not sent';b.className='alert-sent-badge badge-pending';
+    });
+    showToast('Alert Agent off — alerts will queue but not be sent automatically.');
+  }
+}
+
+function updateAlertCount(delta){
+  activeAlertCount=Math.max(0,activeAlertCount+delta);
+  const badge=$id('alert-badge');
+  const countBadge=$id('alert-count-badge');
+  if(badge) badge.textContent=activeAlertCount;
+  if(countBadge) countBadge.textContent=activeAlertCount+' active';
+  if(activeAlertCount===0){
+    if(badge) badge.style.display='none';
+    if(countBadge){countBadge.textContent='All resolved';countBadge.style.background='#ECFDF5';countBadge.style.color='#065F46';countBadge.style.borderColor='#A7F3D0';}
+  }
+}
+
+/* ════════ AI AGENT ════════ */
+let agentActive=false;
+
+function openAIAgent(){
+  $id('ai-agent-backdrop').classList.add('open');
+  $id('ai-agent-panel').classList.add('open');
+}
+function closeAIAgent(){
+  $id('ai-agent-backdrop').classList.remove('open');
+  $id('ai-agent-panel').classList.remove('open');
+}
+
+function toggleAgent(on){
+  agentActive=on;
+  const btn=$id('agent-nav-btn');
+  const statusText=$id('agent-status-text');
+  if(on){
+    btn?.classList.add('agent-active');
+    btn?.classList.add('tnav-ai-btn--agent');
+    if(statusText) statusText.textContent='Agent is active — monitoring network';
+    // Add live log entry
+    addAgentLog('Agent activated — monitoring SL, lanes and dead stock across 5 stores.','var(--green)','now');
+    showToast('AI Agent activated — monitoring your BT network.');
+  } else {
+    btn?.classList.remove('agent-active');
+    btn?.classList.remove('tnav-ai-btn--agent');
+    if(statusText) statusText.textContent='Agent is inactive';
+    addAgentLog('Agent deactivated by planner.','var(--ink4)','now');
+  }
+}
+
+function addAgentLog(text,dotColor,time){
+  const log=$id('agent-log');if(!log)return;
+  const entry=document.createElement('div');
+  entry.className='log-entry fade-in';
+  entry.innerHTML=`<div class="log-dot" style="background:${dotColor}"></div><div class="log-text">${text}</div><div class="log-time">${time}</div>`;
+  log.prepend(entry);
+}
+
+function approveAction(id,msg){
+  const card=$id(id);if(!card)return;
+  card.style.opacity='0';card.style.transition='opacity .3s';
+  setTimeout(()=>card.remove(),300);
+  addAgentLog(msg,'var(--green)','now');
+  showToast(msg);
+}
+function rejectAction(id){
+  const card=$id(id);if(!card)return;
+  card.style.opacity='0';card.style.transition='opacity .3s';
+  setTimeout(()=>card.remove(),300);
+  addAgentLog('Action rejected by planner — no change made.','var(--red)','now');
+}
+
+function openAIAdvisor(){
+  $id('ai-advisor-backdrop').classList.add('open');
+  $id('ai-advisor-panel').classList.add('open');
+}
+function closeAIAdvisor(){
+  $id('ai-advisor-backdrop').classList.remove('open');
+  $id('ai-advisor-panel').classList.remove('open');
+}
+
+function askPanel(key){
+  const qa=PANEL_QA[key];if(!qa)return;
+  const chat=$id('aap-chat');
+  // Disable buttons while "thinking"
+  document.querySelectorAll('.aap-q-btn').forEach(b=>b.disabled=true);
+  // Add user message
+  const userMsg=document.createElement('div');
+  userMsg.className='aap-msg aap-msg-user fade-in';
+  userMsg.innerHTML=`<div class="aap-avatar" style="background:var(--surface3);color:var(--ink3)">You</div><div class="aap-bubble">${qa.q}</div>`;
+  chat.appendChild(userMsg);
+  // Add typing indicator
+  const typingMsg=document.createElement('div');
+  typingMsg.className='aap-msg fade-in';
+  typingMsg.id='aap-typing';
+  typingMsg.innerHTML=`<div class="aap-avatar">AI</div><div class="aap-typing"><span></span><span></span><span></span></div>`;
+  chat.appendChild(typingMsg);
+  chat.scrollTop=chat.scrollHeight;
+  // After delay, replace typing with answer
+  setTimeout(()=>{
+    const t=$id('aap-typing');if(t)t.remove();
+    const aiMsg=document.createElement('div');
+    aiMsg.className='aap-msg fade-in';
+    aiMsg.innerHTML=`<div class="aap-avatar">AI</div><div class="aap-bubble" style="white-space:pre-line">${qa.a}</div>`;
+    chat.appendChild(aiMsg);
+    chat.scrollTop=chat.scrollHeight;
+    document.querySelectorAll('.aap-q-btn').forEach(b=>b.disabled=false);
+  },1200);
+}
+
+/* ════════ INIT ════════ */
+window.addEventListener('load',()=>{
+  // Use rAF to ensure layout/paint is complete before measuring chart widths
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      updateKPIs('0142');
+      renderAllCharts('0142');
+      updateAIStrip('0142');
+      renderStoreDetail('0142');
+      renderUKMap('0142');
+      const ro=new ResizeObserver(()=>{
+        renderAllCharts(currentStore);
+        renderUKMap(currentStore);
+      });
+      ['chart1','chart2','chart3','chart4','uk-map-svg-wrap'].forEach(id=>{
+        const el=$id(id);if(el)ro.observe(el);
+      });
+    });
+  });
+});
+</script>
+</body>
+</html>

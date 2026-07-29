@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decision Intelligence AI Platform — AI Demand Sensing & Replenishment Cockpit</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F5F7;--surface:#FFF;--surface2:#F1F3F6;--surface3:#E8ECF1;
+  --border:#DDE1E7;--border2:#C8CDD6;
+  --ink:#1C2128;--ink2:#3B4150;--ink3:#5A6474;--ink4:#8592A3;--ink5:#B0BAC8;
+  --blue:#2563EB;--blue-light:#EFF4FF;--blue-dark:#1E40AF;
+  --green:#16A34A;--green-light:#ECFDF5;
+  --amber:#D97706;--amber-light:#FFFBEB;
+  --red:#DC2626;--red-light:#FEF2F2;
+  --purple:#5B4FCF;--purple-light:#F0EEFE;
+  --sidebar:#0F1724;--sidebar-hover:#1A2535;
+  --radius:4px;
+  --shadow-xs:0 1px 2px rgba(0,0,0,.06);
+  --shadow-sm:0 1px 4px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:13px}
+body{font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--ink2);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased}
+
+/* ── LAYOUT ── */
+.app{min-height:100vh}
+.sidebar{background:var(--surface);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;width:224px;z-index:50;border-right:1px solid var(--border)}
+.main{margin-left:224px;min-height:100vh;display:flex;flex-direction:column}
+.tab-content{display:none}.tab-content.active{display:block;animation:pgIn .18s ease}
+@keyframes pgIn{from{opacity:.6}to{opacity:1}}
+
+/* ── SIDEBAR ── */
+.sb-brand{padding:18px 16px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border)}
+.sb-logo{width:32px;height:32px;background:var(--blue);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:12px;flex-shrink:0}
+.sb-name{font-size:11px;font-weight:700;color:var(--ink);line-height:1.35}
+.sb-tagline{font-size:9.5px;color:var(--ink4);margin-top:1px}
+.sb-nav{flex:1;padding:6px 8px;overflow-y:auto}
+.sb-section{margin-bottom:16px}
+.sb-section-label{font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--ink5);padding:0 8px;margin-bottom:4px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:var(--radius);cursor:pointer;font-size:12px;color:var(--ink3);transition:background .12s,color .12s;margin-bottom:1px;user-select:none;position:relative}
+.nav-item:hover{background:var(--surface2);color:var(--ink)}
+.nav-item.active{background:var(--blue-light);color:var(--blue);font-weight:600}
+.nav-item.active::before{content:'';position:absolute;left:0;top:22%;bottom:22%;width:2px;background:var(--blue);border-radius:0 2px 2px 0}
+.nav-item svg{width:14px;height:14px;flex-shrink:0;opacity:.55}
+.nav-item.active svg{opacity:1;color:var(--blue)}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:9px;font-weight:600;padding:1px 5px;border-radius:3px}
+.ai-dot{margin-left:auto;width:6px;height:6px;border-radius:50%;background:var(--blue);opacity:.7}
+.nav-ai-tool{margin-bottom:2px}
+.nav-ai-tool:hover{background:var(--surface2);color:var(--ink)}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:48px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:40}
+.breadcrumb{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--ink4)}
+.bc-link{color:var(--blue);cursor:pointer;font-weight:500}.bc-link:hover{text-decoration:underline}
+.bc-sep{color:var(--ink5)}.bc-cur{color:var(--ink3);font-weight:600}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:6px}
+.tb-pill{display:flex;align-items:center;gap:4px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:11px;color:var(--ink3);cursor:pointer;background:var(--surface);transition:border-color .12s;white-space:nowrap;user-select:none}
+.tb-pill:hover{border-color:var(--border2)}
+.seg{display:flex;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.seg-opt{padding:4px 11px;font-size:11px;cursor:pointer;color:var(--ink4);background:var(--surface);transition:background .12s;user-select:none;border-right:1px solid var(--border)}
+.seg-opt:last-child{border-right:none}
+.seg-opt.active{background:var(--blue);color:#fff;font-weight:600}
+.seg-opt:hover:not(.active){background:var(--surface2)}
+.tb-select-wrap{display:flex;align-items:center;gap:5px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);transition:border-color .12s}
+.tb-select-wrap:hover{border-color:var(--border2)}
+.tb-select-wrap svg{width:12px;height:12px;color:var(--ink4);flex-shrink:0}
+.tb-select-wrap select{appearance:none;border:none;outline:none;font-family:'Inter',sans-serif;font-size:11px;color:var(--ink2);background:transparent;cursor:pointer;font-weight:500;max-width:190px}
+.tb-btn{padding:5px 12px;border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:opacity .12s}
+.tb-btn-ghost{background:transparent;border:1px solid var(--border);color:var(--ink3)}.tb-btn-ghost:hover{border-color:var(--border2);background:var(--surface2)}
+.btn-ai{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:6px 14px;border-radius:var(--radius);font-size:12px;font-weight:600;border:none;cursor:pointer;color:#fff;background:var(--blue);font-family:'Inter',sans-serif;transition:opacity .12s}
+.btn-ai:hover{opacity:.88}
+.tb-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius);cursor:pointer;color:var(--ink4);transition:background .12s;position:relative}
+.tb-icon:hover{background:var(--surface2);color:var(--ink2)}
+.search-wrap{display:flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);transition:border-color .12s}
+.search-wrap:focus-within{border-color:var(--blue)}
+.search-wrap input{border:none;outline:none;font-family:'Inter',sans-serif;font-size:12px;color:var(--ink2);width:145px;background:transparent}
+.search-wrap input::placeholder{color:var(--ink5)}
+
+/* ── CONTENT ── */
+.content{flex:1;padding:20px 24px 48px}
+.page-header{margin-bottom:18px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.page-title{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:3px;letter-spacing:-.01em}
+.page-sub{font-size:12px;color:var(--ink3);line-height:1.5}
+
+/* ── NETWORK MAP ── */
+.net-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;margin-bottom:14px}
+.net-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.net-card-title{font-size:12px;font-weight:600;color:var(--ink2)}
+.net-body{display:grid;grid-template-columns:148px 1fr 192px;gap:14px;align-items:center}
+.dc-box{background:var(--blue-dark);border-radius:var(--radius);padding:14px 12px;text-align:center}
+.dc-name{font-size:11px;font-weight:600;color:#E2E8F0;margin-bottom:1px}
+.dc-addr{font-size:10px;color:#94A3B8;margin-bottom:8px}
+.dc-kv{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-top:1px solid rgba(255,255,255,.08);font-size:10px}
+.dc-kv-k{color:#94A3B8}.dc-kv-v{color:#CBD5E1;font-weight:600}
+.net-svg-wrap{min-height:170px}
+.net-summary{display:flex;flex-direction:column;gap:4px}
+.net-sum-row{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--surface2);border-radius:var(--radius);font-size:11.5px;cursor:pointer;transition:background .12s;border:1px solid transparent}
+.net-sum-row:hover{background:var(--surface3);border-color:var(--border)}
+.net-sum-row.sel{background:var(--blue-light);border-color:var(--blue)}
+.net-sum-main{font-weight:600;color:var(--ink)}
+.net-sum-sub{font-size:10.5px;color:var(--ink4);margin-top:1px}
+.net-sum-right{display:flex;align-items:center;gap:6px}
+.sdot-sm{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.sd-g{background:var(--green)}.sd-a{background:var(--amber)}.sd-r{background:var(--red)}
+
+/* ── KPI TILES ── */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;position:relative}
+.kpi:hover{border-color:var(--border2)}
+.kpi.hi{border-left:3px solid var(--blue)}
+.kpi-label{font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:6px}
+.kpi-value{font-size:24px;font-weight:700;color:var(--ink);line-height:1;margin-bottom:4px;font-variant-numeric:tabular-nums}
+.kpi.hi .kpi-value{color:var(--blue-dark)}
+.kpi-delta{font-size:11px;font-weight:500;display:flex;align-items:center;gap:3px}
+.delta-up{color:var(--green)}.delta-down{color:var(--red)}.delta-neu{color:var(--ink4)}
+
+/* ── CHARTS ── */
+.charts-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.chart-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.chart-panel:hover{border-color:var(--border2)}
+.chart-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2px}
+.chart-title{font-size:12px;font-weight:600;color:var(--ink)}
+.chart-sub{font-size:11px;color:var(--ink4);margin-bottom:4px}
+.chart-area{height:140px;position:relative}
+.chart-legend{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--ink4)}
+.leg-line{width:16px;height:2px;border-radius:1px;display:inline-block}
+.leg-bar{width:9px;height:9px;border-radius:2px;display:inline-block}
+#tt{position:fixed;background:rgba(15,23,36,.92);color:#fff;padding:6px 10px;border-radius:var(--radius);font-size:11px;font-weight:500;pointer-events:none;z-index:999;white-space:nowrap;box-shadow:var(--shadow-sm);display:none}
+
+/* ── RECOMMENDATIONS PANEL ── */
+.ai-strip{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.ai-strip-inner{display:flex;gap:20px;align-items:flex-start}
+.ai-strip-left{flex:1;min-width:0}
+.ai-strip-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.ai-tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;background:var(--blue-light);color:var(--blue-dark);white-space:nowrap;flex-shrink:0;border:1px solid rgba(37,99,235,.15)}
+.ai-strip-title{font-size:13px;font-weight:600;color:var(--ink)}
+.ai-strip-sub{font-size:11px;color:var(--ink4)}
+.ai-recs{display:flex;flex-direction:column;gap:2px}
+.ai-rec{display:flex;align-items:flex-start;gap:10px;padding:7px 8px;border-radius:var(--radius);transition:background .1s}
+.ai-rec:hover{background:var(--surface2)}
+.ai-rec-icon{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:6px}
+.icon-order{background:var(--red)}.icon-consol{background:var(--blue)}.icon-redeploy{background:var(--amber)}
+.ai-rec-body{flex:1;min-width:0}
+.ai-rec-text{font-size:12.5px;color:var(--ink2);line-height:1.5}
+.ai-rec-meta{font-size:11px;color:var(--ink4);margin-top:1px}
+.ai-analyzing{display:none;align-items:center;gap:8px;padding:6px 0;color:var(--ink4);font-size:12px}
+.ai-dots span{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--ink4);margin:0 2px;animation:bdots 1.1s infinite}
+.ai-dots span:nth-child(2){animation-delay:.18s}.ai-dots span:nth-child(3){animation-delay:.36s}
+@keyframes bdots{0%,80%,100%{transform:translateY(0);opacity:.3}40%{transform:translateY(-4px);opacity:1}}
+.ai-cta{min-width:196px;max-width:196px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;flex-shrink:0;display:flex;flex-direction:column;align-items:center}
+.saving-label{font-size:10px;font-weight:600;color:var(--ink4);margin-bottom:4px}
+.saving-value{font-size:26px;font-weight:700;color:var(--green);line-height:1;margin-bottom:3px;font-variant-numeric:tabular-nums}
+.saving-sub{font-size:11px;color:var(--ink4);margin-bottom:12px;line-height:1.4}
+
+/* ── SCREEN 2 ── */
+.detail-layout{display:grid;grid-template-columns:260px 1fr;gap:14px}
+.store-sidebar{display:flex;flex-direction:column;gap:10px}
+.store-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.sec-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4);margin-bottom:8px}
+.store-name-lg{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.store-meta{font-size:11.5px;color:var(--ink3);margin-bottom:14px}
+.cap-donut-wrap{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.cap-donut{position:relative;width:64px;height:64px;flex-shrink:0}
+.cap-donut svg{width:64px;height:64px}
+.cap-donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.cap-donut-pct{font-size:14px;font-weight:700;color:var(--ink);line-height:1}
+.cap-donut-lbl{font-size:9px;color:var(--ink4);margin-top:1px}
+.cap-kv{flex:1}
+.cap-kv-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid var(--surface2);font-size:11.5px}
+.cap-kv-row:last-child{border-bottom:none}
+.cap-kv-k{color:var(--ink3)}.cap-kv-v{font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.signal-item{margin-bottom:8px}
+.signal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;font-size:11.5px}
+.signal-name{font-weight:500;color:var(--ink2);display:flex;align-items:center;gap:5px}
+.signal-val{color:var(--ink4)}
+.sig-track{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden}
+.sig-fill{height:100%;border-radius:2px;transition:width .4s ease}
+.sig-promo{background:var(--blue)}.sig-festival{background:var(--amber)}.sig-weather{background:var(--blue)}.sig-trend{background:var(--green)}.sig-event{background:var(--red)}
+.sensing-note{font-size:11.5px;color:var(--ink3);line-height:1.5;padding:9px 12px;background:var(--blue-light);border:1px solid rgba(37,99,235,.15);border-radius:var(--radius);margin-top:6px;display:flex;align-items:flex-start;gap:7px}
+.sf-bar{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.sf-chip{padding:3px 10px;border-radius:var(--radius);font-size:11px;font-weight:500;border:1px solid var(--border);color:var(--ink3);background:var(--surface);cursor:pointer;transition:all .12s;user-select:none;white-space:nowrap}
+.sf-chip:hover{border-color:var(--border2);background:var(--surface2)}
+.sf-chip.f-all.sel{border-color:var(--blue);color:var(--blue);background:var(--blue-light)}
+.sf-chip.f-replenish.sel{border-color:var(--red);color:var(--red);background:var(--red-light)}
+.sf-chip.f-low.sel{border-color:var(--amber);color:var(--amber);background:var(--amber-light)}
+.sf-chip.f-ok.sel{border-color:var(--green);color:var(--green);background:var(--green-light)}
+.sf-chip.f-hold.sel{border-color:var(--ink4);color:var(--ink4);background:var(--surface3)}
+.sf-chip.f-redeploy.sel{border-color:var(--blue);color:var(--blue);background:var(--blue-light)}
+.sf-count{margin-left:3px;font-size:9.5px;padding:0 4px;border-radius:2px;background:var(--surface3);color:var(--ink4)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.card-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.card-title{font-size:12px;font-weight:600;color:var(--ink)}
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table thead th{background:var(--surface2);color:var(--ink3);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;padding:8px 12px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--border)}
+.data-table thead th.r{text-align:right}
+.data-table tbody td{padding:8px 12px;border-bottom:1px solid var(--surface2);color:var(--ink2);font-variant-numeric:tabular-nums;vertical-align:middle;font-size:12.5px}
+.data-table tbody tr:hover td{background:var(--surface2)}
+.data-table tbody tr:last-child td{border-bottom:none}
+.data-table .num{text-align:right;font-weight:600}
+.sku-id{font-weight:600;color:var(--ink);font-size:12px;font-family:monospace}
+.sbadge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:3px;font-size:10.5px;font-weight:600;white-space:nowrap}
+.sbadge::before{content:'';width:5px;height:5px;border-radius:50%}
+.sbadge.replenish{background:var(--red-light);color:var(--red)}.sbadge.replenish::before{background:var(--red)}
+.sbadge.ok{background:var(--green-light);color:var(--green)}.sbadge.ok::before{background:var(--green)}
+.sbadge.hold{background:var(--surface2);color:var(--ink4)}.sbadge.hold::before{background:var(--ink5)}
+.sbadge.low{background:var(--amber-light);color:var(--amber)}.sbadge.low::before{background:var(--amber)}
+.sbadge.redeploy{background:var(--blue-light);color:var(--blue)}.sbadge.redeploy::before{background:var(--blue)}
+.ai-footer{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 16px;display:flex;align-items:center;gap:12px;margin-top:12px}
+.ai-footer-text{flex:1;font-size:12.5px;color:var(--ink2);line-height:1.4}
+
+/* ── SCREEN 3 ── */
+.dispatch-layout{display:grid;grid-template-columns:1fr 300px;gap:14px}
+.rationale-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;height:fit-content}
+.rationale-head{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;background:var(--surface2)}
+.rationale-title{font-size:12px;font-weight:600;color:var(--ink)}
+.qa-item{padding:14px 16px;border-bottom:1px solid var(--surface2)}
+.qa-item:last-child{border-bottom:none}
+.qa-q{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}
+.q-mark{width:18px;height:18px;border-radius:3px;background:var(--surface3);color:var(--ink3);font-size:9.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.q-text{font-size:12px;font-weight:600;color:var(--ink);line-height:1.4}
+.qa-a{font-size:12px;color:var(--ink3);line-height:1.6;padding-left:26px}
+.fill-wrap{display:flex;align-items:center;gap:8px}
+.fill-val{font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;min-width:32px;color:var(--ink2)}
+.fill-track{height:5px;background:var(--surface3);border-radius:2px;overflow:hidden;width:52px}
+.fill-bar{height:100%;border-radius:2px}
+.fill-hi{background:var(--green)}.fill-md{background:var(--blue)}.fill-lo{background:var(--amber)}
+.mode-badge{display:inline-block;padding:2px 7px;border-radius:3px;font-size:10.5px;font-weight:600}
+.mode-badge.ftl{background:var(--blue-light);color:var(--blue-dark)}
+.mode-badge.consol{background:var(--green-light);color:var(--green)}
+.mode-badge.milkrun{background:var(--amber-light);color:var(--amber)}
+.vs-save{color:var(--green);font-weight:600;font-variant-numeric:tabular-nums}
+.total-row td{font-weight:700!important;background:var(--surface2)!important;color:var(--ink)!important;border-top:2px solid var(--border)!important}
+.lane-chk{width:14px;height:14px;accent-color:var(--blue);cursor:pointer}
+.lane-approved td{background:rgba(22,163,74,.04)!important}
+
+/* ── DRILL-DOWN PANEL ── */
+.drill-backdrop{position:fixed;inset:0;background:rgba(15,23,36,.3);z-index:60;opacity:0;pointer-events:none;transition:opacity .22s}
+.drill-backdrop.open{opacity:1;pointer-events:all}
+.drill-panel{position:fixed;top:0;right:0;bottom:0;width:460px;background:var(--surface);z-index:61;box-shadow:-4px 0 24px rgba(0,0,0,.1);transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;border-left:1px solid var(--border)}
+.drill-panel.open{transform:translateX(0)}
+.drill-header{padding:16px 20px;border-bottom:1px solid var(--border);flex-shrink:0}
+.drill-back{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--blue);cursor:pointer;margin-bottom:10px;background:none;border:none;padding:0;font-family:'Inter',sans-serif}
+.drill-back:hover{opacity:.75}
+.drill-week-label{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.drill-meta{font-size:12px;color:var(--ink4)}
+.drill-body{flex:1;overflow-y:auto;padding:0 0 24px}
+.drill-section{padding:16px 20px;border-bottom:1px solid var(--surface2)}
+.drill-section:last-child{border-bottom:none}
+.drill-section-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink4);margin-bottom:12px}
+/* Hero row */
+.drill-hero{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:0}
+.drill-stat{background:var(--surface2);border-radius:var(--radius);padding:12px 14px}
+.drill-stat-label{font-size:10.5px;color:var(--ink3);margin-bottom:3px}
+.drill-stat-value{font-size:20px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.drill-stat-delta{font-size:11px;margin-top:2px}
+/* Signal waterfall */
+.signal-waterfall{display:flex;flex-direction:column;gap:6px}
+.swf-row{display:flex;align-items:center;gap:10px}
+.swf-label{font-size:11.5px;color:var(--ink2);width:130px;flex-shrink:0}
+.swf-bar-wrap{flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.swf-bar{height:100%;border-radius:3px}
+.swf-val{font-size:11.5px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;min-width:42px;text-align:right}
+/* Category mix */
+.cat-rows{display:flex;flex-direction:column;gap:8px}
+.cat-row{display:flex;align-items:center;gap:10px}
+.cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cat-name{font-size:12px;color:var(--ink2);width:130px;flex-shrink:0}
+.cat-bar-wrap{flex:1;height:7px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.cat-bar{height:100%;border-radius:3px}
+.cat-pct{font-size:11.5px;font-weight:600;color:var(--ink3);min-width:32px;text-align:right}
+.cat-units{font-size:11px;color:var(--ink4);min-width:40px;text-align:right}
+/* Top SKUs table */
+.drill-table{width:100%;border-collapse:collapse}
+.drill-table thead th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink4);padding:4px 8px;text-align:left;border-bottom:1px solid var(--border)}
+.drill-table thead th.r{text-align:right}
+.drill-table tbody td{padding:7px 8px;font-size:12px;color:var(--ink2);border-bottom:1px solid var(--surface2);font-variant-numeric:tabular-nums}
+.drill-table tbody tr:last-child td{border-bottom:none}
+.drill-table td.r{text-align:right;font-weight:600}
+/* Stock health */
+.stock-rows{display:flex;flex-direction:column;gap:6px}
+.stock-row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:var(--radius);font-size:12px;border:1px solid transparent}
+.stock-row.risk-critical{background:var(--red-light);border-color:rgba(220,38,38,.15)}
+.stock-row.risk-watch{background:var(--amber-light);border-color:rgba(217,119,6,.15)}
+.stock-row.risk-ok{background:var(--green-light);border-color:rgba(22,163,74,.1)}
+.stock-row-left{flex:1;min-width:0}
+.stock-row-sku{font-weight:600;color:var(--ink);font-size:11.5px}
+.stock-row-name{font-size:11px;color:var(--ink3);margin-top:1px}
+.stock-row-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.stock-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:3px;white-space:nowrap}
+.sb-critical{background:var(--red);color:#fff}
+.sb-watch{background:var(--amber);color:#fff}
+.sb-ok{background:var(--green);color:#fff}
+/* Action list */
+.action-list{display:flex;flex-direction:column;gap:8px}
+.action-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:var(--radius);border-left:3px solid var(--blue)}
+.action-item.urgent{border-left-color:var(--red);background:var(--red-light)}
+.action-num{font-size:11px;font-weight:700;color:var(--blue);flex-shrink:0;margin-top:1px}
+.action-item.urgent .action-num{color:var(--red)}
+.action-text{font-size:12px;color:var(--ink2);line-height:1.5}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,36,.5);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .18s;backdrop-filter:blur(3px)}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border-radius:var(--radius);padding:24px;max-width:420px;width:90%;box-shadow:0 16px 48px rgba(0,0,0,.18);transform:translateY(8px);transition:transform .2s;border:1px solid var(--border)}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-icon{width:40px;height:40px;border-radius:var(--radius);background:var(--blue);display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.modal-title{font-size:16px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.modal-body{font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:18px}
+.modal-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px}
+.mstat{background:var(--surface2);border-radius:var(--radius);padding:10px 12px;border:1px solid var(--border)}
+.mstat-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink4);margin-bottom:2px}
+.mstat-value{font-size:17px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end}
+.modal-cancel{padding:7px 16px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);color:var(--ink3);font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer}
+.modal-cancel:hover{background:var(--surface2)}
+.modal-confirm{padding:7px 18px;border-radius:var(--radius);border:none;background:var(--blue);color:#fff;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .12s}
+.modal-confirm:hover{opacity:.88}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--ink);color:#fff;padding:11px 18px;border-radius:var(--radius);font-size:12.5px;font-weight:500;z-index:200;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-sm);transform:translateY(60px);opacity:0;transition:all .3s ease}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-icon{width:20px;height:20px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.fade-in{animation:fadeIn .2s ease}
+
+
+/* ── FILTER BAR ── */
+.filter-bar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:0;flex-wrap:wrap;row-gap:8px}
+.filter-group{display:flex;align-items:center;gap:6px;padding-right:20px;margin-right:16px;border-right:1px solid var(--border);flex-wrap:wrap}
+.filter-group-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink5);white-space:nowrap;margin-right:2px}
+.fchip{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:20px;font-size:11.5px;font-weight:500;border:1px solid var(--border);color:var(--ink4);background:var(--surface);cursor:pointer;transition:all .15s;user-select:none;white-space:nowrap}
+.fchip:hover{border-color:var(--blue);color:var(--blue)}
+.fchip.on{border-color:var(--blue);color:var(--blue);background:var(--blue-light);font-weight:600}
+.filter-clear{margin-left:auto;display:none;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;color:var(--ink4);background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:all .15s;white-space:nowrap}
+.filter-clear:hover{color:var(--red);border-color:var(--red)}
+.filter-clear.visible{display:inline-flex}
+/* SKU filter */
+.sku-fw{position:relative}
+.sku-net-inp{border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:11.5px;width:178px;outline:none;font-family:'Inter',sans-serif;color:var(--ink2);background:var(--surface);transition:border-color .15s}
+.sku-net-inp:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(46,107,230,.08)}
+.sku-drop{position:absolute;top:calc(100% + 6px);left:0;width:300px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow);z-index:200;max-height:224px;overflow-y:auto;display:none}
+.sku-drop.open{display:block}
+.sku-opt{padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--surface2);transition:background .1s}
+.sku-opt:last-child{border-bottom:none}
+.sku-opt:hover{background:var(--surface2)}
+.sku-opt-store{font-size:9.5px;font-weight:700;padding:2px 6px;border-radius:3px;background:var(--blue-dark);color:#fff;flex-shrink:0}
+.sku-opt-id{font-size:11px;font-weight:700;color:var(--ink);white-space:nowrap}
+.sku-opt-name{font-size:10.5px;color:var(--ink4);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sku-no-res{padding:14px;text-align:center;font-size:11px;color:var(--ink4)}
+.sku-active-tag{display:none;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid var(--blue);color:var(--blue);background:var(--blue-light);cursor:pointer;white-space:nowrap;margin-left:6px}
+.sku-active-tag:hover{opacity:.85}
+
+@media(max-width:1400px){.kpi-row{grid-template-columns:repeat(3,1fr)}.charts-row{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:1100px){.detail-layout,.dispatch-layout,.net-body{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="tt"></div>
+
+<!-- DRILL-DOWN PANEL -->
+<div class="drill-backdrop" id="drill-backdrop" onclick="closeDrillDown()"></div>
+<div class="drill-panel" id="drill-panel">
+  <div class="drill-header">
+    <button class="drill-back" onclick="closeDrillDown()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Back to overview
+    </button>
+    <div class="drill-week-label" id="dp-week-label">W3 · Demand detail</div>
+    <div class="drill-meta" id="dp-meta">18–24 Aug 2025 · London Oxford St</div>
+  </div>
+  <div class="drill-body" id="drill-body"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div class="modal-title">Release DRP orders to DC?</div>
+    <div class="modal-body">This will auto-release Distribution Requirements Planning orders for all approved lanes this cycle. The DC will begin picking and dispatch within 4 hours.</div>
+    <div class="modal-stats">
+      <div class="mstat"><div class="mstat-label">Network lanes</div><div class="mstat-value">5</div></div>
+      <div class="mstat"><div class="mstat-label">Total units</div><div class="mstat-value">1,015</div></div>
+      <div class="mstat"><div class="mstat-label">Freight cost</div><div class="mstat-value" style="color:var(--blue)">£8,690</div></div>
+      <div class="mstat"><div class="mstat-label">Freight saving</div><div class="mstat-value" style="color:var(--green)">£1,300</div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-confirm" onclick="confirmDRP()">Confirm &amp; release</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-icon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+  <span id="toastMsg"></span>
+</div>
+
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo">RA</div>
+    <div>
+      <div class="sb-name">Decision Intelligence AI Platform</div>
+      <div class="sb-tagline">AI-Powered · 5-Store Network</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">
+      <div class="sb-section-label">Planning</div>
+      <div class="nav-item active" id="nav-overview" onclick="showScreen('overview')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Network overview
+      </div>
+      <div class="nav-item" id="nav-store" onclick="showScreen('store')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Stores
+        <span class="nav-badge" id="shortfall-badge">4</span>
+      </div>
+      <div class="nav-item" id="nav-dispatch" onclick="showScreen('dispatch')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        Replenishment
+        <span class="ai-dot"></span>
+      </div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">AI Tools</div>
+      <div class="nav-item nav-ai-tool" onclick="showToast('Generating AI-powered presentation — analysing network data & insights…')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Generate AI Intelligence Report
+        <span class="ai-dot"></span>
+      </div>
+      <div class="nav-item nav-ai-tool" onclick="showToast('AI chatbot initialising — supply chain knowledge base loaded.')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none"/></svg>
+        AI Chatbot
+        <span class="ai-dot"></span>
+      </div>
+    </div>
+  </nav>
+</aside>
+
+<div class="main">
+
+<!-- ═══════ SCREEN 1 — NETWORK OVERVIEW ═══════ -->
+<div class="tab-content active" id="tab-overview">
+  <div class="topbar">
+    <div class="breadcrumb"><span>Network</span><span class="bc-sep">›</span><span class="bc-cur">Overview</span></div>
+    <div class="topbar-right">
+      <div class="seg">
+        <div class="seg-opt active" id="seg-4w" onclick="setHorizon(4)">4W</div>
+        <div class="seg-opt" id="seg-8w" onclick="setHorizon(8)">8W</div>
+      </div>
+      <div class="tb-select-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <select id="weekSelect" onchange="renderAllCharts(currentStore)">
+          <option value="30">Wk 30</option><option value="31">Wk 31</option>
+          <option value="32" selected>Wk 32 (Current)</option><option value="33">Wk 33</option>
+        </select>
+      </div>
+      <div class="tb-select-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        <select id="storeSelect" onchange="selectStore(this.value)">
+          <option value="0142">London Oxford St — #0142</option>
+          <option value="0137">Manchester Arndale — #0137</option>
+          <option value="0151">Birmingham Bullring — #0151</option>
+          <option value="0165">Leeds Trinity — #0165</option>
+          <option value="0188">Edinburgh Princes St — #0188</option>
+        </select>
+      </div>
+      <div class="tb-icon" title="Notifications" onclick="showToast('3 alerts: Store #0151 SL below 97% target — review demand signals.')">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title" id="s1-title">Network demand &amp; inventory cockpit</div>
+        <div class="page-sub">Replenishment plan for Wk 32 — demand outlook, stock position and order recommendations across all 5 stores.</div>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar" id="filter-bar">
+      <!-- Location -->
+      <div class="filter-group">
+        <span class="filter-group-label">Location</span>
+        <span class="fchip loc-chip loc-all on" onclick="setLocationFilter('all')">All stores</span>
+        <span class="fchip loc-chip" data-loc="0142" onclick="setLocationFilter('0142')">Store 1</span>
+        <span class="fchip loc-chip" data-loc="0137" onclick="setLocationFilter('0137')">Store 2</span>
+        <span class="fchip loc-chip" data-loc="0151" onclick="setLocationFilter('0151')">Store 3</span>
+        <span class="fchip loc-chip" data-loc="0165" onclick="setLocationFilter('0165')">Store 4</span>
+        <span class="fchip loc-chip" data-loc="0188" onclick="setLocationFilter('0188')">Store 5</span>
+      </div>
+      <!-- SKU -->
+      <div class="filter-group">
+        <span class="filter-group-label">SKU</span>
+        <div class="sku-fw" id="sku-fw">
+          <input type="text" id="sku-net-inp" class="sku-net-inp" placeholder="Search SKU code…" oninput="onSKUInput(this.value)" onfocus="openSKUDrop()" autocomplete="off">
+          <div class="sku-drop" id="sku-drop"></div>
+        </div>
+        <span class="sku-active-tag" id="sku-active-tag" onclick="clearSKUFilter()"></span>
+      </div>
+      <!-- Time -->
+      <div class="filter-group" style="border-right:none;padding-right:0;margin-right:0">
+        <span class="filter-group-label">Time period</span>
+        <span class="fchip time-chip" data-wk="30" onclick="setTimeFilter('30')">Wk 30</span>
+        <span class="fchip time-chip" data-wk="31" onclick="setTimeFilter('31')">Wk 31</span>
+        <span class="fchip time-chip on" data-wk="32" onclick="setTimeFilter('32')">Wk 32 — Current</span>
+        <span class="fchip time-chip" data-wk="33" onclick="setTimeFilter('33')">Wk 33</span>
+      </div>
+      <span class="filter-clear" id="filter-clear" onclick="clearFilters()">✕ Clear</span>
+    </div>
+
+    <!-- Network map -->
+    <div class="net-card">
+      <div class="net-card-head">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:12px;font-weight:700;color:var(--ink2)">Network topology — DC to store lanes</span>
+          <span class="ai-tag">AI-monitored</span>
+        </div>
+        <div style="font-size:11px;color:var(--ink4)">DC · 5 store lanes · Avg truck fill 85%</div>
+      </div>
+      <div class="net-body">
+        <div class="dc-box">
+          <div class="dc-name">Distribution Centre</div>
+          <div class="dc-kv"><span class="dc-kv-k">Network units</span><span class="dc-kv-v">10,150</span></div>
+          <div class="dc-kv"><span class="dc-kv-k">Active lanes</span><span class="dc-kv-v">5</span></div>
+          <div class="dc-kv"><span class="dc-kv-k">Avg truck fill</span><span class="dc-kv-v">85%</span></div>
+        </div>
+        <div class="net-svg-wrap" id="net-svg-wrap"></div>
+        <div class="net-summary" id="net-summary">
+          <div class="net-sum-row sel" onclick="selectStoreFromMap('0142')">
+            <div><div class="net-sum-main">London Oxford St — #0142</div><div class="net-sum-sub">1,800 cap · 88% · 4 SKU flags</div></div>
+            <div class="net-sum-right"><span class="sdot-sm sd-a"></span></div>
+          </div>
+          <div class="net-sum-row" onclick="selectStoreFromMap('0137')">
+            <div><div class="net-sum-main">Manchester Arndale — #0137</div><div class="net-sum-sub">1,400 cap · 72% · 3 SKU flags</div></div>
+            <div class="net-sum-right"><span class="sdot-sm sd-g"></span></div>
+          </div>
+          <div class="net-sum-row" onclick="selectStoreFromMap('0151')">
+            <div><div class="net-sum-main">Birmingham Bullring — #0151</div><div class="net-sum-sub">1,100 cap · 65% · 4 SKU flags</div></div>
+            <div class="net-sum-right"><span class="sdot-sm sd-r"></span></div>
+          </div>
+          <div class="net-sum-row" onclick="selectStoreFromMap('0165')">
+            <div><div class="net-sum-main">Leeds Trinity — #0165</div><div class="net-sum-sub">1,500 cap · 84% · 4 SKU flags</div></div>
+            <div class="net-sum-right"><span class="sdot-sm sd-a"></span></div>
+          </div>
+          <div class="net-sum-row" onclick="selectStoreFromMap('0188')">
+            <div><div class="net-sum-main">Edinburgh Princes St — #0188</div><div class="net-sum-sub">1,200 cap · 61% · 3 SKU flags</div></div>
+            <div class="net-sum-right"><span class="sdot-sm sd-a"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI tiles -->
+    <div class="kpi-row" id="kpi-row">
+      <div class="kpi">
+        <div class="kpi-label">Service level</div>
+        <div class="kpi-value" id="kpi-sl">97.4%</div>
+        <div class="kpi-delta" id="kpi-sl-d">target 98%</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Fill rate</div>
+        <div class="kpi-value" id="kpi-fr">95.1%</div>
+        <div class="kpi-delta delta-up" id="kpi-fr-d">↑ 1.2 pts w/w</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Capacity utilisation</div>
+        <div class="kpi-value" id="kpi-cu">88%</div>
+        <div class="kpi-delta delta-neu" id="kpi-cu-d">within ceiling</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">In-transit units</div>
+        <div class="kpi-value" id="kpi-it">12.4K</div>
+        <div class="kpi-delta delta-neu" id="kpi-it-d">6 open loads</div>
+      </div>
+      <div class="kpi hi">
+        <div class="kpi-label">Transportation cost <span style="font-weight:400;font-size:9px;text-transform:none;letter-spacing:0">(MTD)</span></div>
+        <div class="kpi-value" id="kpi-tc">£15.3L</div>
+        <div class="kpi-delta delta-up" id="kpi-tc-d">↓ 9% vs plan</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-row">
+      <div class="chart-panel">
+        <div class="chart-head"><div><div class="chart-title">Demand forecast — baseline</div><div class="chart-sub">Units / week · 8-week rolling horizon</div></div></div>
+        <div class="chart-area" id="chart1"></div>
+        <div class="chart-legend"><div class="leg-item"><span class="leg-bar" style="background:var(--blue);opacity:.75"></span>Forecast units/wk</div></div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-head">
+          <div><div class="chart-title">Demand sensing vs baseline</div><div class="chart-sub">AI-adjusted vs forecast baseline</div></div>
+          <span class="ai-tag">AI sensing</span>
+        </div>
+        <div class="chart-area" id="chart2"></div>
+        <div class="chart-legend">
+          <div class="leg-item"><span class="leg-line" style="background:var(--purple)"></span>Sensed dmd</div>
+          <div class="leg-item"><span class="leg-line" style="background:var(--ink5);border-top:1.5px dashed var(--ink4)"></span>Baseline</div>
+          <span id="uplift-badge" class="ai-tag" style="margin-left:auto"></span>
+        </div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-head"><div><div class="chart-title">On-hand inventory — DRP</div><div class="chart-sub">Projected draw-down with replenishment</div></div></div>
+        <div class="chart-area" id="chart3"></div>
+        <div class="chart-legend">
+          <div class="leg-item"><span class="leg-bar" style="background:var(--blue);opacity:.65"></span>On-hand</div>
+          <div class="leg-item"><span class="leg-bar" style="background:var(--amber);opacity:.8"></span>Near ROP</div>
+          <div class="leg-item" style="gap:3px"><span style="border-top:1.5px dashed var(--amber);width:16px;display:inline-block"></span>ROP</div>
+        </div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-head"><div><div class="chart-title">Inventory gap / net requirement</div><div class="chart-sub">Below zero = shortfall · red zone</div></div></div>
+        <div class="chart-area" id="chart4"></div>
+        <div class="chart-legend">
+          <div class="leg-item"><span style="width:10px;height:10px;background:var(--red);opacity:.45;border-radius:2px;display:inline-block"></span>Shortfall</div>
+          <div class="leg-item"><span style="width:10px;height:10px;background:var(--green);opacity:.4;border-radius:2px;display:inline-block"></span>Surplus</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Strip -->
+    <div class="ai-strip">
+      <div class="ai-strip-inner">
+        <div class="ai-strip-left">
+          <div class="ai-strip-head">
+            <span class="ai-tag">AI technology</span>
+            <span class="ai-strip-title">Replenishment recommendations</span>
+            <span class="ai-strip-sub">Based on current stock levels, demand signals and delivery lead times</span>
+          </div>
+          <div class="ai-analyzing" id="ai-analyzing"><span>AI technology is analysing store signals</span><span class="ai-dots"><span></span><span></span><span></span></span></div>
+          <div class="ai-recs" id="ai-recs"></div>
+        </div>
+        <div class="ai-cta">
+          <div class="saving-label">Est. freight saving</div>
+          <div class="saving-value" id="ai-saving">£5.6L</div>
+          <div class="saving-sub">Estimated saving vs unplanned dispatch this cycle</div>
+          <button class="btn-ai" style="width:100%" onclick="showScreen('dispatch')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            Release DRP to DC
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ SCREEN 2 — STORE DETAIL ═══════ -->
+<div class="tab-content" id="tab-store">
+  <div class="topbar">
+    <div class="breadcrumb">
+      <span class="bc-link" onclick="showScreen('overview')">Network</span><span class="bc-sep">›</span>
+      <span class="bc-link" onclick="showScreen('overview')">Stores</span><span class="bc-sep">›</span>
+      <span class="bc-cur" id="s2-bc">Store 1 — #0142</span>
+    </div>
+    <div class="topbar-right">
+      <div class="sf-bar" id="sf-bar">
+        <span class="sf-chip f-all sel" onclick="setFilter('all')">All <span class="sf-count" id="sf-cnt-all">10</span></span>
+        <span class="sf-chip f-replenish" onclick="setFilter('replenish')">Replenish <span class="sf-count" id="sf-cnt-replenish">3</span></span>
+        <span class="sf-chip f-low" onclick="setFilter('low')">Low <span class="sf-count" id="sf-cnt-low">2</span></span>
+        <span class="sf-chip f-ok" onclick="setFilter('ok')">OK <span class="sf-count" id="sf-cnt-ok">3</span></span>
+        <span class="sf-chip f-hold" onclick="setFilter('hold')">Hold <span class="sf-count" id="sf-cnt-hold">1</span></span>
+        <span class="sf-chip f-redeploy" onclick="setFilter('redeploy')">Redeploy <span class="sf-count" id="sf-cnt-redeploy">1</span></span>
+      </div>
+      <div class="search-wrap">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="sku-search" placeholder="Search SKU…" oninput="filterTable()">
+      </div>
+      <button class="tb-btn tb-btn-ghost" onclick="showToast('Export ready — check your downloads.')">Export</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title" id="s2-title">Store #0142 — SKU replenishment detail</div>
+        <div class="page-sub">Stock position and order quantities by SKU. Review, adjust if needed, then release to the DC.</div>
+      </div>
+      <button class="btn-ai" onclick="showScreen('dispatch')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        View dispatch plan
+      </button>
+    </div>
+    <div class="detail-layout">
+      <div class="store-sidebar">
+        <div class="store-card">
+          <div class="store-name-lg" id="s2-store-name">Store #0142</div>
+          <div class="store-meta" id="s2-store-meta">Store 1 · Format L · Lead time 2 days</div>
+          <div class="cap-donut-wrap">
+            <div class="cap-donut">
+              <svg viewBox="0 0 68 68"><circle cx="34" cy="34" r="28" fill="none" stroke="var(--surface3)" stroke-width="7"/><circle id="donut-arc" cx="34" cy="34" r="28" fill="none" stroke="var(--blue)" stroke-width="7" stroke-linecap="round" stroke-dasharray="175.9" stroke-dashoffset="21" transform="rotate(-90 34 34)"/></svg>
+              <div class="cap-donut-center"><div class="cap-donut-pct" id="s2-cap-pct">88%</div><div class="cap-donut-lbl">cap</div></div>
+            </div>
+            <div class="cap-kv">
+              <div class="cap-kv-row"><span class="cap-kv-k">On-hand</span><span class="cap-kv-v" id="s2-onhand">12,320 u</span></div>
+              <div class="cap-kv-row"><span class="cap-kv-k">In-transit</span><span class="cap-kv-v" id="s2-intransit">2,480 u</span></div>
+              <div class="cap-kv-row"><span class="cap-kv-k">Open-to-ship</span><span class="cap-kv-v" id="s2-ots">1,680 u</span></div>
+              <div class="cap-kv-row"><span class="cap-kv-k">Target SL</span><span class="cap-kv-v">98%</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="store-card">
+          <div class="sec-label">Active demand signals</div>
+          <div id="s2-signals"></div>
+          <div class="sensing-note" id="s2-sensing-note">
+            <span id="s2-sensing-text">AI technology detects <strong>+6.4%</strong> demand uplift vs baseline this horizon</span>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">SKU replenishment plan — net requirement &amp; order quantity</div>
+            <span class="ai-tag">AI-scored</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="data-table">
+              <thead><tr>
+                <th>SKU</th><th>Product</th><th class="r">On-hand</th><th class="r">In-transit</th>
+                <th class="r">Sensed dmd/wk</th><th class="r">Safety stock</th><th class="r">ROP</th>
+                <th class="r">Net req.</th><th class="r">Replen qty</th><th>Status</th>
+              </tr></thead>
+              <tbody id="sku-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="ai-footer">
+          <span class="ai-tag">AI technology</span>
+          <span class="ai-footer-text" id="s2-footer-text"><strong>4 SKUs flagged for replenishment</strong> · Consolidated lane DC → #0142 · Projected truck fill 92%</span>
+          <button class="btn-ai" onclick="openModal()">Auto-release to DC</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ SCREEN 3 — DISPATCH ═══════ -->
+<div class="tab-content" id="tab-dispatch">
+  <div class="topbar">
+    <div class="breadcrumb">
+      <span>Network</span><span class="bc-sep">›</span>
+      <span class="bc-cur">AI replenishment &amp; DC dispatch</span>
+      <span class="bc-sep">·</span><span style="color:var(--ink4);font-size:12px">Cycle Wk 32</span>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-ai" onclick="openModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Approve all lanes
+      </button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">AI replenishment &amp; DC dispatch</div>
+        <div class="page-sub">Consolidated delivery plan for Wk 32. Review lane allocations and truck fill, then release to the DC when ready.</div>
+      </div>
+    </div>
+    <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+      <div class="kpi hi"><div class="kpi-label">Transportation cost <span style="font-weight:400;font-size:9px;text-transform:none;letter-spacing:0">(weekly)</span></div><div class="kpi-value">£8,690</div><div class="kpi-delta delta-up">↓ 13% vs un-optimised</div></div>
+      <div class="kpi"><div class="kpi-label">Avg truck utilisation</div><div class="kpi-value">85%</div><div class="kpi-delta delta-up">↑ 14 pts vs baseline</div></div>
+      <div class="kpi"><div class="kpi-label">LTL / expedite loads</div><div class="kpi-value">1</div><div class="kpi-delta delta-up">↓ 7 loads vs baseline</div></div>
+      <div class="kpi"><div class="kpi-label">Capacity-feasible</div><div class="kpi-value">100%</div><div class="kpi-delta delta-neu">all 5 stores within cap</div></div>
+    </div>
+    <div class="dispatch-layout">
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Consolidated replenishment plan — DC dispatch cycle Wk 32</div>
+            <span class="ai-tag">AI-optimised</span>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="data-table">
+              <thead><tr><th style="width:32px"></th><th>Lane (DC → store)</th><th class="r">SKUs</th><th class="r">Units</th><th>Truck fill</th><th>Mode</th><th class="r">Freight</th><th class="r">vs baseline</th></tr></thead>
+              <tbody>
+                <tr id="lane-0142"><td><input type="checkbox" class="lane-chk" onchange="toggleLane('0142',this)"></td><td><strong>DC → London Oxford St</strong> <span style="font-size:10.5px;color:var(--ink4)">#0142</span></td><td class="num">18</td><td class="num">320</td><td><div class="fill-wrap"><span class="fill-val">91%</span><div class="fill-track"><div class="fill-bar fill-hi" style="width:91%"></div></div></div></td><td><span class="mode-badge ftl">FTL</span></td><td class="num">£2,100</td><td class="num vs-save">↓ 14%</td></tr>
+                <tr id="lane-0137"><td><input type="checkbox" class="lane-chk" onchange="toggleLane('0137',this)"></td><td><strong>DC → Manchester · London</strong> <span style="font-size:10.5px;color:var(--ink4)">#0137 · #0142</span></td><td class="num">22</td><td class="num">275</td><td><div class="fill-wrap"><span class="fill-val">87%</span><div class="fill-track"><div class="fill-bar fill-hi" style="width:87%"></div></div></div></td><td><span class="mode-badge consol">FTL (consol.)</span></td><td class="num">£2,500</td><td class="num vs-save">↓ 18%</td></tr>
+                <tr id="lane-0151"><td><input type="checkbox" class="lane-chk" onchange="toggleLane('0151',this)"></td><td><strong>DC → Birmingham Bullring</strong> <span style="font-size:10.5px;color:var(--ink4)">#0151</span></td><td class="num">9</td><td class="num">128</td><td><div class="fill-wrap"><span class="fill-val">74%</span><div class="fill-track"><div class="fill-bar fill-md" style="width:74%"></div></div></div></td><td><span class="mode-badge ftl">FTL</span></td><td class="num">£1,450</td><td class="num vs-save">↓ 9%</td></tr>
+                <tr id="lane-0165"><td><input type="checkbox" class="lane-chk" onchange="toggleLane('0165',this)"></td><td><strong>DC → Leeds Trinity</strong> <span style="font-size:10.5px;color:var(--ink4)">#0165</span></td><td class="num">11</td><td class="num">198</td><td><div class="fill-wrap"><span class="fill-val">88%</span><div class="fill-track"><div class="fill-bar fill-hi" style="width:88%"></div></div></div></td><td><span class="mode-badge ftl">FTL</span></td><td class="num">£1,760</td><td class="num vs-save">↓ 11%</td></tr>
+                <tr id="lane-0188"><td><input type="checkbox" class="lane-chk" onchange="toggleLane('0188',this)"></td><td><strong>DC → Edinburgh Princes St</strong> <span style="font-size:10.5px;color:var(--ink4)">#0188</span></td><td class="num">7</td><td class="num">94</td><td><div class="fill-wrap"><span class="fill-val">61%</span><div class="fill-track"><div class="fill-bar fill-lo" style="width:61%"></div></div></div></td><td><span class="mode-badge milkrun">Milk-run</span></td><td class="num">£880</td><td class="num vs-save">↓ 21%</td></tr>
+                <tr class="total-row"><td></td><td>Network total</td><td class="num">67</td><td class="num">1,015</td><td><div class="fill-wrap"><span class="fill-val" style="color:var(--green)">85%</span><div class="fill-track"><div class="fill-bar fill-hi" style="width:85%"></div></div></div></td><td>—</td><td class="num">£8,690</td><td class="num vs-save">↓ 13%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="rationale-panel">
+        <div class="rationale-head">
+          <span class="ai-tag">AI technology</span>
+          <span class="rationale-title">Decision rationale</span>
+        </div>
+        <div class="qa-item">
+          <div class="qa-q"><span class="q-mark">Q</span><span class="q-text">How does the plan stay within each store's capacity?</span></div>
+          <div class="qa-a">Each order is capped at the physical space available in the store. When space is tight, higher-demand SKUs are prioritised so every shelf metre is used productively.</div>
+        </div>
+        <div class="qa-item">
+          <div class="qa-q"><span class="q-mark">Q</span><span class="q-text">How much stock should each store hold?</span></div>
+          <div class="qa-a">Enough to cover sales during the 2-day delivery window, plus a safety buffer to maintain 98% service level. This is recalculated each week as demand signals — promo, weather, events — change.</div>
+        </div>
+        <div class="qa-item">
+          <div class="qa-q"><span class="q-mark">Q</span><span class="q-text">How is freight cost being cut this week?</span></div>
+          <div class="qa-a">By combining smaller store orders onto shared trucks, average truck fill has gone from 71% to 85%. That brings the per-unit freight cost down by 13% — a saving of £1,300 compared to dispatching each store separately.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+/* ════════ DATA ════════ */
+const STORES = {
+  '0142':{
+    name:'London Oxford St',format:'L',maxCap:1800,onHand:1584,inTransit:320,ots:216,lead:2,capPct:88,
+    signals:[{t:'Promo',pct:4.2,on:true},{t:'Festival',pct:2.8,on:true},{t:'Weather',pct:1.1,on:true},{t:'Trend',pct:0,on:false},{t:'Event',pct:0,on:false}],
+    uplift:6.4,
+    kpis:{sl:'97.4%',slD:'↓ 0.6 pts vs target',slC:'delta-down',fr:'95.1%',frD:'↑ 1.2 pts w/w',frC:'delta-up',cu:'88%',cuD:'within ceiling',cuC:'delta-neu',it:'320',itD:'2 open loads',itC:'delta-neu',tc:'£12,400',tcD:'↓ 9% vs plan',tcC:'delta-up'},
+    forecast:[420,520,480,600,560,680,640,720],
+    sensed: [452,562,518,645,603,732,688,775],
+    gap:    [20,0,-42,-182,-71,-254,-144,-352],
+    rop:350,
+    aiRecs:[
+      {icon:'📦',type:'order',text:'Order 320 units across 18 SKUs — stock is running low and this fits within available headroom.',meta:'Ready to release to DC this cycle'},
+      {icon:'🚛',type:'consol',text:'Consolidate with Manchester Arndale on the same truck — fills to 92% and avoids a part-load surcharge.',meta:'Saves £2,700 vs running two separate deliveries'},
+      {icon:'↔️',type:'redeploy',text:'SKU-4471 has excess stock here. Move 54 units to Birmingham which is running short.',meta:'No freight cost — internal transfer'}
+    ],
+    saving:'£4,500',
+    skus:[
+      {id:'SKU-4471',name:'iPhone 15 Pro Max 256GB',oh:42,it:0,dmd:8,ss:12,rop:22,nr:0,rq:0,st:'hold'},
+      {id:'SKU-4490',name:'Samsung Galaxy S24 Ultra 512GB',oh:14,it:6,dmd:12,ss:18,rop:34,nr:18,rq:20,st:'replenish'},
+      {id:'SKU-4512',name:'USB-C Fast Charger 65W',oh:28,it:12,dmd:38,ss:28,rop:62,nr:48,rq:54,st:'replenish'},
+      {id:'SKU-4533',name:'iPhone 15 Pro Case — MagSafe',oh:124,it:0,dmd:28,ss:22,rop:48,nr:0,rq:0,st:'ok'},
+      {id:'SKU-4560',name:'iPhone 15 Screen Protector',oh:18,it:8,dmd:45,ss:36,rop:74,nr:48,rq:54,st:'low'},
+      {id:'SKU-4588',name:'AirPods Pro 2nd Gen',oh:84,it:0,dmd:18,ss:14,rop:30,nr:0,rq:0,st:'redeploy'},
+      {id:'SKU-4601',name:'Samsung S24 Clear Cover',oh:38,it:24,dmd:32,ss:24,rop:50,nr:24,rq:28,st:'replenish'},
+      {id:'SKU-4624',name:'MagSafe Wallet — Leather',oh:96,it:16,dmd:24,ss:18,rop:38,nr:0,rq:0,st:'ok'},
+      {id:'SKU-4647',name:'Google Pixel 8 Pro 128GB',oh:8,it:0,dmd:6,ss:10,rop:18,nr:16,rq:18,st:'low'},
+      {id:'SKU-4671',name:'USB-C to Lightning Cable 1m',oh:145,it:36,dmd:32,ss:22,rop:46,nr:0,rq:0,st:'ok'},
+    ]
+  },
+  '0137':{
+    name:'Manchester Arndale',format:'M',maxCap:1400,onHand:1008,inTransit:235,ots:392,lead:2,capPct:72,
+    signals:[{t:'Promo',pct:3.1,on:true},{t:'Festival',pct:0,on:false},{t:'Weather',pct:0,on:false},{t:'Trend',pct:1.8,on:true},{t:'Event',pct:0,on:false}],
+    uplift:3.1,
+    kpis:{sl:'98.2%',slD:'↑ 0.4 pts w/w',slC:'delta-up',fr:'96.4%',frD:'↑ 0.8 pts w/w',frC:'delta-up',cu:'72%',cuD:'within ceiling',cuC:'delta-neu',it:'235',itD:'2 open loads',itC:'delta-neu',tc:'£9,800',tcD:'↓ 7% vs plan',tcC:'delta-up'},
+    forecast:[310,380,350,420,400,460,430,490],
+    sensed: [320,392,361,433,413,475,444,505],
+    gap:    [10,0,0,-22,0,-78,-32,-164],
+    rop:280,
+    aiRecs:[
+      {icon:'📦',type:'order',text:'Order 275 units across 14 SKUs — headroom is comfortable at 392 units.',meta:'Ready to release to DC this cycle'},
+      {icon:'🚛',type:'consol',text:'Combine with London Oxford St on the same truck — saves £960 in freight this week.',meta:'Combined truck fills to 87%'},
+      {icon:'📈',type:'order',text:'SKU-7312 and SKU-7345 are selling faster than planned. Increase safety stock by 15% before next cycle.',meta:'Risk of stockout in 2 weeks if not acted on'}
+    ],
+    saving:'£2,600',
+    skus:[
+      {id:'SKU-7290',name:'iPhone 15 128GB',oh:68,it:16,dmd:18,ss:14,rop:30,nr:0,rq:0,st:'ok'},
+      {id:'SKU-7312',name:'Samsung Galaxy A55 5G',oh:22,it:8,dmd:28,ss:20,rop:42,nr:28,rq:32,st:'replenish'},
+      {id:'SKU-7334',name:'iPhone 15 Case — Silicone',oh:86,it:0,dmd:12,ss:14,rop:28,nr:0,rq:0,st:'hold'},
+      {id:'SKU-7345',name:'Power Bank 20000mAh USB-C',oh:18,it:6,dmd:24,ss:18,rop:38,nr:28,rq:32,st:'low'},
+      {id:'SKU-7378',name:'Samsung A55 Screen Protector',oh:56,it:0,dmd:16,ss:14,rop:30,nr:0,rq:0,st:'ok'},
+      {id:'SKU-7401',name:'Google Pixel 8 128GB',oh:18,it:8,dmd:22,ss:16,rop:34,nr:22,rq:26,st:'replenish'},
+      {id:'SKU-7423',name:'Wireless Charging Pad 15W',oh:104,it:0,dmd:10,ss:12,rop:22,nr:0,rq:0,st:'redeploy'},
+      {id:'SKU-7445',name:'iPhone 15 Pro Case — Clear',oh:28,it:12,dmd:18,ss:14,rop:30,nr:0,rq:0,st:'ok'},
+    ]
+  },
+  '0151':{
+    name:'Birmingham Bullring',format:'S',maxCap:1100,onHand:715,inTransit:110,ots:385,lead:2,capPct:65,
+    signals:[{t:'Promo',pct:0,on:false},{t:'Festival',pct:0,on:false},{t:'Weather',pct:1.8,on:true},{t:'Trend',pct:0,on:false},{t:'Event',pct:0,on:false}],
+    uplift:1.8,
+    kpis:{sl:'96.8%',slD:'↓ 1.2 pts vs target',slC:'delta-down',fr:'93.6%',frD:'↓ 0.4 pts w/w',frC:'delta-down',cu:'65%',cuD:'within ceiling',cuC:'delta-neu',it:'110',itD:'1 open load',itC:'delta-neu',tc:'£6,800',tcD:'↓ 5% vs plan',tcC:'delta-up'},
+    forecast:[220,260,240,290,270,310,290,330],
+    sensed: [224,265,245,295,275,316,295,336],
+    gap:    [0,0,0,-25,0,-45,-25,-110],
+    rop:180,
+    aiRecs:[
+      {icon:'🚨',type:'order',text:'Service level is below 98% target. 7 SKUs need ordering this cycle — do not defer.',meta:'Expedite this week and review safety stock levels'},
+      {icon:'↔️',type:'redeploy',text:'Accept 54 units of SKU-4471 from London. Covers the W4 gap with no freight cost.',meta:'Internal transfer — no PO needed'},
+      {icon:'🌧️',type:'order',text:'Rain forecast this week is lifting accessory demand by 1.8%. Prioritise cases and cables.',meta:'Pull forward accessories to W3'}
+    ],
+    saving:'£1,400',
+    skus:[
+      {id:'SKU-3110',name:'iPhone 15 256GB',oh:44,it:8,dmd:14,ss:10,rop:24,nr:0,rq:0,st:'ok'},
+      {id:'SKU-3145',name:'Samsung Galaxy S24 128GB',oh:12,it:4,dmd:18,ss:14,rop:30,nr:20,rq:24,st:'replenish'},
+      {id:'SKU-3167',name:'iPhone 14 Case — Black',oh:62,it:0,dmd:8,ss:10,rop:20,nr:0,rq:0,st:'hold'},
+      {id:'SKU-3189',name:'USB-C Cable 2m Braided',oh:8,it:2,dmd:16,ss:14,rop:28,nr:24,rq:28,st:'low'},
+      {id:'SKU-3201',name:'iPhone 14 Screen Protector',oh:38,it:0,dmd:12,ss:10,rop:22,nr:0,rq:0,st:'ok'},
+      {id:'SKU-3224',name:'AirPods 3rd Gen',oh:14,it:6,dmd:16,ss:12,rop:26,nr:12,rq:14,st:'replenish'},
+      {id:'SKU-3246',name:'MagSafe Charger 15W',oh:54,it:0,dmd:8,ss:8,rop:16,nr:0,rq:0,st:'redeploy'},
+    ]
+  },
+  '0165':{
+    name:'Leeds Trinity',format:'M',maxCap:1500,onHand:1260,inTransit:240,ots:250,lead:2,capPct:84,
+    signals:[{t:'Promo',pct:0,on:false},{t:'Festival',pct:3.4,on:true},{t:'Weather',pct:0,on:false},{t:'Trend',pct:2.1,on:true},{t:'Event',pct:0,on:false}],
+    uplift:4.7,
+    kpis:{sl:'97.9%',slD:'↑ 0.2 pts w/w',slC:'delta-up',fr:'95.8%',frD:'↑ 1.6 pts w/w',frC:'delta-up',cu:'84%',cuD:'near ceiling',cuC:'delta-neu',it:'240',itD:'2 open loads',itC:'delta-neu',tc:'£11,000',tcD:'↓ 11% vs plan',tcC:'delta-up'},
+    forecast:[360,420,390,480,450,520,490,560],
+    sensed: [377,440,409,503,472,545,513,587],
+    gap:    [0,0,0,-112,0,-222,-102,-312],
+    rop:320,
+    aiRecs:[
+      {icon:'📦',type:'order',text:'198 units needed across 11 SKUs. Very little headroom left — order now, do not wait.',meta:'Release to DC this cycle'},
+      {icon:'📅',type:'order',text:'Festival and trend activity is pushing demand up by 4.7%. Order W3 stock early to avoid a W4 gap.',meta:'W4 shortfall of 112 units if deferred'},
+      {icon:'🚛',type:'consol',text:'Volume is large enough for a dedicated full truck. Fills to 88% and cheaper than splitting the load.',meta:'Freight estimated at £1,760'}
+    ],
+    saving:'£3,300',
+    skus:[
+      {id:'SKU-9001',name:'iPhone 15 Pro 256GB',oh:52,it:12,dmd:22,ss:16,rop:36,nr:0,rq:0,st:'ok'},
+      {id:'SKU-9045',name:'Samsung Galaxy S24+ 256GB',oh:16,it:4,dmd:30,ss:22,rop:46,nr:28,rq:32,st:'replenish'},
+      {id:'SKU-9067',name:'iPhone 15 Pro Case — Titanium',oh:22,it:6,dmd:26,ss:20,rop:42,nr:28,rq:32,st:'low'},
+      {id:'SKU-9089',name:'Google Pixel 8a 128GB',oh:78,it:0,dmd:14,ss:16,rop:30,nr:0,rq:0,st:'hold'},
+      {id:'SKU-9112',name:'USB-C Fast Charger 45W',oh:34,it:10,dmd:24,ss:18,rop:38,nr:8,rq:12,st:'replenish'},
+      {id:'SKU-9134',name:'Samsung S24+ Screen Protector',oh:118,it:0,dmd:12,ss:14,rop:26,nr:0,rq:0,st:'redeploy'},
+      {id:'SKU-9156',name:'Power Bank 10000mAh',oh:22,it:4,dmd:20,ss:16,rop:32,nr:16,rq:18,st:'replenish'},
+      {id:'SKU-9178',name:'iPhone 15 Case — Natural',oh:56,it:8,dmd:16,ss:12,rop:26,nr:0,rq:0,st:'ok'},
+    ]
+  },
+  '0188':{
+    name:'Edinburgh Princes St',format:'S',maxCap:1200,onHand:732,inTransit:96,ots:465,lead:2,capPct:61,
+    signals:[{t:'Promo',pct:0,on:false},{t:'Festival',pct:0,on:false},{t:'Weather',pct:0,on:false},{t:'Trend',pct:0,on:false},{t:'Event',pct:2.2,on:true}],
+    uplift:2.2,
+    kpis:{sl:'97.1%',slD:'↓ 0.9 pts vs target',slC:'delta-neu',fr:'94.3%',frD:'↑ 0.5 pts w/w',frC:'delta-up',cu:'61%',cuD:'within ceiling',cuC:'delta-neu',it:'96',itD:'1 open load',itC:'delta-neu',tc:'£6,300',tcD:'↓ 6% vs plan',tcC:'delta-up'},
+    forecast:[180,210,195,240,220,270,250,290],
+    sensed: [184,215,199,246,225,277,256,297],
+    gap:    [0,0,0,6,0,-29,-9,-99],
+    rop:150,
+    aiRecs:[
+      {icon:'📦',type:'order',text:'94 units needed across 7 SKUs. Volume is small — a milk run is the right call here.',meta:'Milk run saves on part-load freight charges'},
+      {icon:'🎪',type:'order',text:'Local event is lifting demand by 2.2%. Keep an eye on sell-through daily — trigger a top-up if it crosses 80%.',meta:'Watch sell-through this week'},
+      {icon:'↔️',type:'redeploy',text:'This store has spare capacity. Can absorb 60–80 units from stores sitting on excess stock.',meta:'Potential sources: London or Leeds'}
+    ],
+    saving:'£960',
+    skus:[
+      {id:'SKU-6010',name:'iPhone 15 128GB',oh:52,it:6,dmd:14,ss:10,rop:22,nr:0,rq:0,st:'ok'},
+      {id:'SKU-6034',name:'Samsung Galaxy A35 5G',oh:10,it:4,dmd:20,ss:14,rop:30,nr:22,rq:26,st:'replenish'},
+      {id:'SKU-6056',name:'iPhone 15 Case — Pink',oh:78,it:0,dmd:8,ss:10,rop:18,nr:0,rq:0,st:'hold'},
+      {id:'SKU-6078',name:'USB-C Cable 1m',oh:9,it:2,dmd:14,ss:12,rop:24,nr:16,rq:18,st:'low'},
+      {id:'SKU-6101',name:'iPhone 15 Screen Protector',oh:34,it:0,dmd:12,ss:10,rop:20,nr:0,rq:0,st:'ok'},
+      {id:'SKU-6123',name:'AirPods Case — Clear',oh:14,it:4,dmd:14,ss:12,rop:24,nr:10,rq:12,st:'replenish'},
+      {id:'SKU-6145',name:'Wireless Earbuds — BT Sport',oh:68,it:0,dmd:6,ss:8,rop:14,nr:0,rq:0,st:'redeploy'},
+    ]
+  }
+};
+
+let currentStore='0142', currentHorizon=4, skuFilter='all';
+
+/* ════════ UTILS ════════ */
+function fmt(v){return Math.abs(v)>=1000?(v/1000).toFixed(1)+'K':Math.round(v).toLocaleString('en-IN')}
+function niceStep(r){const e=Math.pow(10,Math.floor(Math.log10(r||1)));return r/e>=5?5*e:r/e>=2?2*e:e}
+function $id(id){return document.getElementById(id)}
+function set(id,val){const el=$id(id);if(el)el.textContent=val}
+function setDelta(id,val,cls){const el=$id(id);if(!el)return;el.textContent=val;el.className='kpi-delta '+cls}
+function showTT(e,msg){const tt=$id('tt');tt.textContent=msg;tt.style.display='block';tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY-10)+'px'}
+function hideTT(){$id('tt').style.display='none'}
+document.addEventListener('mousemove',e=>{const tt=$id('tt');if(tt.style.display==='block'){tt.style.left=(e.clientX+14)+'px';tt.style.top=(e.clientY-10)+'px'}});
+
+/* ════════ NAVIGATION ════════ */
+function showScreen(name){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  $id('tab-'+name).classList.add('active');
+  const nav=$id('nav-'+name);if(nav)nav.classList.add('active');
+  if(name==='store')renderStoreDetail(currentStore);
+  window.scrollTo(0,0);
+}
+
+/* ════════ STORE SELECT ════════ */
+function selectStore(id){
+  currentStore=id;
+  $id('storeSelect').value=id;
+  const row=$id('kpi-row');
+  row.style.opacity='0.3';row.style.transform='translateY(6px)';row.style.transition='none';
+  $id('ai-analyzing').style.display='flex';
+  $id('ai-recs').style.opacity='0';
+  setTimeout(()=>{
+    updateKPIs(id);
+    row.style.transition='opacity .3s ease,transform .3s ease';
+    row.style.opacity='1';row.style.transform='translateY(0)';
+    renderAllCharts(id);
+    renderNetSVG();
+  },200);
+  setTimeout(()=>{
+    $id('ai-analyzing').style.display='none';
+    updateAIStrip(id);
+    const r=$id('ai-recs');r.style.transition='opacity .35s';r.style.opacity='1';
+  },1100);
+  syncNetSel(id);
+}
+
+function selectStoreFromMap(id){selectStore(id);$id('storeSelect').value=id}
+
+function syncNetSel(id){
+  const ids=['0142','0137','0151','0165','0188'];
+  document.querySelectorAll('.net-sum-row').forEach((r,i)=>r.classList.toggle('sel',ids[i]===id));
+}
+
+function updateKPIs(id){
+  const k=STORES[id].kpis;
+  set('kpi-sl',k.sl);setDelta('kpi-sl-d',k.slD,k.slC);
+  set('kpi-fr',k.fr);setDelta('kpi-fr-d',k.frD,k.frC);
+  set('kpi-cu',k.cu);setDelta('kpi-cu-d',k.cuD,k.cuC);
+  set('kpi-it',k.it);setDelta('kpi-it-d',k.itD,k.itC);
+  set('kpi-tc',k.tc);setDelta('kpi-tc-d',k.tcD,k.tcC);
+}
+
+function updateAIStrip(id){
+  const s=STORES[id];
+  $id('ai-recs').innerHTML=s.aiRecs.map(r=>`
+    <div class="ai-rec fade-in">
+      <div class="ai-rec-icon icon-${r.type}"></div>
+      <div class="ai-rec-body">
+        <div class="ai-rec-text">${r.text}</div>
+        <div class="ai-rec-meta">${r.meta}</div>
+      </div>
+    </div>`).join('');
+  set('ai-saving',s.saving);
+}
+
+/* ════════ SPARKLINES ════════ */
+
+/* ════════ HORIZON ════════ */
+function setHorizon(n){
+  currentHorizon=n;
+  $id('seg-4w').classList.toggle('active',n===4);
+  $id('seg-8w').classList.toggle('active',n===8);
+  renderAllCharts(currentStore);
+}
+
+/* ════════ CHARTS ════════ */
+function renderAllCharts(id){
+  const s=STORES[id],n=currentHorizon;
+  const wk=Array.from({length:n},(_,i)=>'W'+(i+1));
+  renderBarChart('chart1',s.forecast.slice(0,n),{color:'#2E6BE6',labels:wk});
+  renderDualLine('chart2',s.sensed.slice(0,n),s.forecast.slice(0,n),{labels:wk,uplift:s.uplift});
+  renderOnHand('chart3',computeOH(s).slice(0,n),s.rop,{labels:wk});
+  renderGap('chart4',s.gap.slice(0,n),{labels:wk});
+  set('uplift-badge','+'+s.uplift+'% vs baseline');
+}
+
+function computeOH(s){
+  let oh=s.onHand;const r=[];
+  for(let i=0;i<8;i++){r.push(Math.max(0,oh));oh-=s.forecast[i]*0.82;if(i===3)oh+=s.onHand*0.44;}
+  return r;
+}
+
+function svgBase(cid,W,H){
+  const el=$id(cid);if(!el)return null;
+  return {el,W:el.clientWidth||W,H:el.clientHeight||H};
+}
+
+function renderBarChart(cid,data,opts){
+  const b=svgBase(cid,260,140);if(!b)return;
+  const {el,W,H}=b,pad={t:8,b:20,l:36,r:6},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  const n=data.length,max=Math.max(...data)*1.1||1;
+  const yS=niceStep(max/4),yM=Math.ceil(max/yS)*yS;
+  const gap=cw*0.06/(n+1),bw=(cw-gap*(n+1))/n;
+  let s=`<svg width="${W}" height="${H}"><defs><linearGradient id="bg${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${opts.color}" stop-opacity=".9"/><stop offset="100%" stop-color="${opts.color}" stop-opacity=".3"/></linearGradient></defs>`;
+  for(let i=0;i<=4;i++){const yv=(i/4)*yM,y=pad.t+ch-(yv/yM)*ch;s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#E8ECF1" stroke-width="1"/><text x="${pad.l-4}" y="${y+4}" font-size="8.5" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;}
+  data.forEach((v,i)=>{const bh=Math.max(3,(v/yM)*ch),x=pad.l+gap+i*(bw+gap),y=pad.t+ch-bh;const isFC=(cid==='chart1');s+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="url(#bg${cid})" onmouseenter="showTT(event,'${opts.labels[i]}: ${fmt(v)} units${isFC?' — click to drill down':''}')" onmouseleave="hideTT()" onclick="${isFC?`showDrillDown(${i})`:'void(0)'}" style="cursor:${isFC?'pointer':'default'}"/>${isFC?`<text x="${x+bw/2}" y="${y-4}" font-size="7.5" fill="var(--blue)" text-anchor="middle" opacity=".7">▼</text>`:''}<text x="${x+bw/2}" y="${H-3}" font-size="8.5" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;});
+  s+='</svg>';el.innerHTML=s;
+}
+
+function renderDualLine(cid,sensed,baseline,opts){
+  const b=svgBase(cid,260,140);if(!b)return;
+  const {el,W,H}=b,pad={t:8,b:20,l:36,r:6},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b,n=sensed.length;
+  const all=[...sensed,...baseline],mx=Math.max(...all)*1.06,mn=Math.min(...all)*0.95,rng=mx-mn||1;
+  const pt=(v,i)=>[pad.l+(i/(n-1))*cw,pad.t+ch-((v-mn)/rng)*ch];
+  const yS=niceStep((mx-mn)/4),yB=Math.floor(mn/yS)*yS;
+  let s=`<svg width="${W}" height="${H}"><defs><linearGradient id="area${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6C5CE7" stop-opacity=".15"/><stop offset="100%" stop-color="#6C5CE7" stop-opacity=".01"/></linearGradient></defs>`;
+  for(let i=0;i<=4;i++){const yv=yB+i*yS,y=pad.t+ch-((yv-mn)/rng)*ch;if(y<pad.t-2||y>pad.t+ch+2)continue;s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#E8ECF1" stroke-width="1"/><text x="${pad.l-4}" y="${y+4}" font-size="8.5" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;}
+  const aPts=[...sensed.map(pt),...baseline.map(pt).reverse()];
+  s+=`<polygon points="${aPts.map(p=>p.join(',')).join(' ')}" fill="url(#area${cid})"/>`;
+  s+=`<polyline points="${baseline.map(pt).map(p=>p.join(',')).join(' ')}" fill="none" stroke="#B0B8C4" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  s+=`<polyline points="${sensed.map(pt).map(p=>p.join(',')).join(' ')}" fill="none" stroke="#6C5CE7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  sensed.forEach((v,i)=>{const [x,y]=pt(v,i);s+=`<circle cx="${x}" cy="${y}" r="3" fill="#6C5CE7" onmouseenter="showTT(event,'${opts.labels[i]} sensed: ${fmt(v)} u (+${opts.uplift}%)')" onmouseleave="hideTT()" style="cursor:pointer"/>`;});
+  sensed.forEach((_,i)=>{const[x]=pt(0,i);s+=`<text x="${x}" y="${H-3}" font-size="8.5" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;});
+  s+='</svg>';el.innerHTML=s;
+}
+
+function renderOnHand(cid,data,rop,opts){
+  const b=svgBase(cid,260,140);if(!b)return;
+  const {el,W,H}=b,pad={t:8,b:20,l:40,r:6},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b,n=data.length;
+  const mx=Math.max(...data,rop)*1.1||1,yS=niceStep(mx/4),yM=Math.ceil(mx/yS)*yS;
+  const gap=cw*0.06/(n+1),bw=(cw-gap*(n+1))/n;
+  let s=`<svg width="${W}" height="${H}"><defs><linearGradient id="boh${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2E6BE6" stop-opacity=".85"/><stop offset="100%" stop-color="#2E6BE6" stop-opacity=".28"/></linearGradient><linearGradient id="blo${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D97706" stop-opacity=".9"/><stop offset="100%" stop-color="#D97706" stop-opacity=".38"/></linearGradient></defs>`;
+  for(let i=0;i<=4;i++){const yv=(i/4)*yM,y=pad.t+ch-(yv/yM)*ch;s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#E8ECF1" stroke-width="1"/><text x="${pad.l-4}" y="${y+4}" font-size="8.5" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;}
+  const ropy=pad.t+ch-(rop/yM)*ch;
+  s+=`<line x1="${pad.l}" y1="${ropy}" x2="${W-pad.r}" y2="${ropy}" stroke="#D97706" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${W-pad.r-2}" y="${ropy-3}" font-size="8" fill="#D97706" text-anchor="end">ROP</text>`;
+  data.forEach((v,i)=>{const bh=Math.max(3,(v/yM)*ch),x=pad.l+gap+i*(bw+gap),y=pad.t+ch-bh,lo=v<rop*1.15;s+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="url(#${lo?'blo':'boh'}${cid})" onmouseenter="showTT(event,'${opts.labels[i]} on-hand: ${fmt(v)} u — click to drill down')" onmouseleave="hideTT()" onclick="showInventoryDrillDown(${i})" style="cursor:pointer"/><text x="${x+bw/2}" y="${y-4}" font-size="7.5" fill="var(--blue)" text-anchor="middle" opacity=".7">▼</text><text x="${x+bw/2}" y="${H-3}" font-size="8.5" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;});
+  s+='</svg>';el.innerHTML=s;
+}
+
+function renderGap(cid,data,opts){
+  const b=svgBase(cid,260,140);if(!b)return;
+  const {el,W,H}=b,pad={t:8,b:20,l:40,r:6},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b,n=data.length;
+  const mx=Math.max(...data,200),mn=Math.min(...data,-200),rng=mx-mn||1;
+  const pt=(v,i)=>[pad.l+(i/(n-1))*cw,pad.t+ch-((v-mn)/rng)*ch];
+  const zY=pad.t+ch-((0-mn)/rng)*ch;
+  const yS=niceStep((mx-mn)/4),yB=Math.floor(mn/yS)*yS;
+  let s=`<svg width="${W}" height="${H}"><defs>
+    <linearGradient id="gneg${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#C93B3B" stop-opacity=".22"/><stop offset="100%" stop-color="#C93B3B" stop-opacity=".03"/></linearGradient>
+    <linearGradient id="gpos${cid}" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#1A8754" stop-opacity=".18"/><stop offset="100%" stop-color="#1A8754" stop-opacity=".02"/></linearGradient>
+    <clipPath id="cneg${cid}"><rect x="${pad.l}" y="${zY}" width="${cw}" height="${pad.t+ch-zY}"/></clipPath>
+    <clipPath id="cpos${cid}"><rect x="${pad.l}" y="${pad.t}" width="${cw}" height="${Math.max(0,zY-pad.t)}"/></clipPath>
+  </defs>`;
+  for(let i=0;i<=4;i++){const yv=yB+i*yS,y=pad.t+ch-((yv-mn)/rng)*ch;if(y<pad.t-2||y>pad.t+ch+2)continue;s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="${Math.abs(yv)<1?'#C8D0DB':'#E8ECF1'}" stroke-width="${Math.abs(yv)<1?1.5:1}"/><text x="${pad.l-4}" y="${y+4}" font-size="8.5" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;}
+  const lPts=data.map(pt),pathD=`M${lPts[0].join(',')} ${lPts.slice(1).map(p=>`L${p.join(',')}`).join(' ')} L${lPts[n-1][0]},${zY} L${lPts[0][0]},${zY}Z`;
+  s+=`<path d="${pathD}" fill="url(#gpos${cid})" clip-path="url(#cpos${cid})"/>`;
+  s+=`<path d="${pathD}" fill="url(#gneg${cid})" clip-path="url(#cneg${cid})"/>`;
+  s+=`<line x1="${pad.l}" y1="${zY}" x2="${W-pad.r}" y2="${zY}" stroke="#1A1D23" stroke-width="1" stroke-dasharray="3 3" opacity=".2"/>`;
+  s+=`<polyline points="${lPts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#6C5CE7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  data.forEach((v,i)=>{const [x,y]=pt(v,i),col=v<0?'#C93B3B':'#1A8754';s+=`<circle cx="${x}" cy="${y}" r="3.5" fill="${col}" onmouseenter="showTT(event,'${opts.labels[i]} net req: ${fmt(v)} u')" onmouseleave="hideTT()" style="cursor:pointer"/>`;});
+  data.forEach((_,i)=>{const[x]=pt(0,i);s+=`<text x="${x}" y="${H-3}" font-size="8.5" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;});
+  s+='</svg>';el.innerHTML=s;
+}
+
+/* ════════ NETWORK SVG ════════ */
+function renderNetSVG(matched){
+  if(!matched) matched=getFilteredStores();
+  const hasFilt=locationFilter!=='all'||!!selectedSKU;
+  const wrap=$id('net-svg-wrap');if(!wrap)return;
+  const W=wrap.clientWidth||560,H=170;
+  const storePos=[
+    {id:'0142',x:0.56*W,y:0.16*H,status:'amber',sl:'97.4%'},
+    {id:'0137',x:0.72*W,y:0.36*H,status:'green',sl:'98.2%'},
+    {id:'0151',x:0.80*W,y:0.62*H,status:'red',sl:'96.8%'},
+    {id:'0165',x:0.70*W,y:0.84*H,status:'amber',sl:'97.9%'},
+    {id:'0188',x:0.50*W,y:0.82*H,status:'amber',sl:'97.1%'},
+  ];
+  const names={'0142':'London','0137':'Manchester','0151':'Birmingham','0165':'Leeds','0188':'Edinburgh'};
+  const scol={green:'#1A8754',amber:'#D97706',red:'#C93B3B'};
+  const dcX=0.1*W,dcY=H/2;
+  let svg=`<svg width="${W}" height="${H}">`;
+  // subtle bg lines
+  for(let x=60;x<W;x+=70)svg+=`<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="#F1F3F6" stroke-width="0.8"/>`;
+  for(let y=25;y<H;y+=35)svg+=`<line x1="${dcX}" y1="${y}" x2="${W}" y2="${y}" stroke="#F1F3F6" stroke-width="0.8"/>`;
+  // animated lanes
+  storePos.forEach(st=>{
+    const sel=st.id===currentStore;
+    const col=scol[st.status];
+    const dim=hasFilt&&!matched.has(st.id);
+    const mid_x=(dcX+st.x)/2+20, mid_y=dcY+(st.y-dcY)*0.2;
+    svg+=`<path d="M${dcX+30},${dcY} Q${mid_x},${mid_y} ${st.x-16},${st.y}" fill="none" stroke="${col}" stroke-width="${sel?3:1.8}" stroke-dasharray="9 6" opacity="${dim?0.1:sel?1:0.5}">
+      ${dim?'':` <animate attributeName="stroke-dashoffset" values="60;0" dur="${sel?1.2:1.8}s" repeatCount="indefinite"/>`}
+    </path>`;
+  });
+  // DC node
+  svg+=`<rect x="${dcX-28}" y="${dcY-24}" width="57" height="48" rx="4" fill="#1E40AF" stroke="#1D4ED8" stroke-width="1"/>`;
+  svg+=`<text x="${dcX+0.5}" y="${dcY-8}" font-size="9.5" font-weight="700" fill="#EFF4FF" text-anchor="middle" font-family="Inter,sans-serif">DC</text>`;
+  svg+=`<text x="${dcX+0.5}" y="${dcY+12}" font-size="7.5" fill="#93C5FD" text-anchor="middle" font-family="Inter,sans-serif">Central DC</text>`;
+  // store nodes
+  storePos.forEach(st=>{
+    const sel=st.id===currentStore,col=scol[st.status],r=sel?22:18;
+    const dim=hasFilt&&!matched.has(st.id);
+    const op=dim?'0.2':'1';
+    svg+=`<g opacity="${op}">`;
+    svg+=`<circle cx="${st.x}" cy="${st.y}" r="${r+5}" fill="${col}" opacity="0.08"/>`;
+    svg+=`<circle cx="${st.x}" cy="${st.y}" r="${r}" fill="${sel?'#1B2537':col+'15'}" stroke="${col}" stroke-width="${sel?2.5:1.5}" style="cursor:${dim?'default':'pointer'}" ${dim?'':` onclick="selectStoreFromMap('${st.id}')"`} onmouseenter="showTT(event,'Store #${st.id} ${names[st.id]} · SL ${st.sl}')" onmouseleave="hideTT()"/>`;
+    svg+=`<text x="${st.x}" y="${st.y-3}" font-size="${sel?9:8.5}" font-weight="800" fill="${sel?'#E2E8F0':col}" text-anchor="middle" font-family="Inter,sans-serif" style="pointer-events:none">#${st.id}</text>`;
+    svg+=`<text x="${st.x}" y="${st.y+9}" font-size="7.5" fill="${sel?'#94A3B8':col}" text-anchor="middle" font-family="Inter,sans-serif" font-weight="700" style="pointer-events:none">${st.sl}</text>`;
+    svg+=`<text x="${st.x}" y="${st.y+r+12}" font-size="8" fill="var(--ink4)" text-anchor="middle" font-family="Inter,sans-serif" style="pointer-events:none">${names[st.id]}</text>`;
+    svg+=`</g>`;
+  });
+  svg+='</svg>';
+  wrap.innerHTML=svg;
+}
+
+/* ════════ STORE DETAIL ════════ */
+function renderStoreDetail(id){
+  const s=STORES[id];
+  set('s2-title',`Store #${id} — SKU replenishment detail`);
+  set('s2-bc',`Store #${id} — ${s.name}`);
+  set('s2-store-name',`Store #${id}`);
+  set('s2-store-meta',`${s.name} · Format ${s.format} · Lead time ${s.lead} days`);
+  set('s2-onhand',s.onHand.toLocaleString('en-IN')+' u');
+  set('s2-intransit',s.inTransit.toLocaleString('en-IN')+' u');
+  set('s2-ots',s.ots.toLocaleString('en-IN')+' u');
+  set('s2-cap-pct',s.capPct+'%');
+  // Donut
+  const circ=2*Math.PI*28,arc=$id('donut-arc');
+  if(arc){arc.setAttribute('stroke-dasharray',circ);arc.setAttribute('stroke-dashoffset',circ*(1-s.capPct/100));arc.setAttribute('stroke',s.capPct>=85?'var(--amber)':'var(--blue)');}
+  // Signals
+  const sigCls={Promo:'sig-promo',Festival:'sig-festival',Weather:'sig-weather',Trend:'sig-trend',Event:'sig-event'};
+  const sigEl=$id('s2-signals');
+  if(sigEl)sigEl.innerHTML=s.signals.map(sig=>`
+    <div class="signal-item">
+      <div class="signal-header">
+        <div class="signal-name"><span style="width:7px;height:7px;border-radius:50%;background:${sig.on?'var(--purple)':'var(--ink5)'};display:inline-block"></span>${sig.t}</div>
+        <span class="signal-val">${sig.on?`+${sig.pct}% uplift`:'Inactive'}</span>
+      </div>
+      <div class="sig-track"><div class="sig-fill ${sigCls[sig.t]}" style="width:${sig.on?Math.min(100,(sig.pct/6)*100):0}%;opacity:${sig.on?1:0.25}"></div></div>
+    </div>`).join('');
+  const stEl=$id('s2-sensing-text');if(stEl)stEl.innerHTML=`Demand is tracking <strong>+${s.uplift}%</strong> above forecast this week, driven by active signals below.`;
+  // Counts
+  const cnt={all:s.skus.length,replenish:0,low:0,ok:0,hold:0,redeploy:0};
+  s.skus.forEach(sk=>cnt[sk.st]++);
+  ['all','replenish','low','ok','hold','redeploy'].forEach(f=>set('sf-cnt-'+f,cnt[f]));
+  // Footer
+  const flags=cnt.replenish+cnt.low;
+  const fill={'0142':'92','0137':'87','0151':'74','0165':'88','0188':'61'};
+  const ftEl=$id('s2-footer-text');
+  if(ftEl)ftEl.innerHTML=`<strong>${flags} SKUs flagged for replenishment</strong> · Consolidated lane DC → #${id} · Projected truck fill ${fill[id]||'85'}%`;
+  renderSKUTable(id,skuFilter);
+}
+
+function renderSKUTable(id,filter){
+  const s=STORES[id],search=($id('sku-search')?.value||'').toLowerCase();
+  const tbody=$id('sku-tbody');if(!tbody)return;
+  const rows=s.skus.filter(sk=>(filter==='all'||sk.st===filter)&&(sk.id.toLowerCase().includes(search)||(sk.name||'').toLowerCase().includes(search)));
+  tbody.innerHTML=rows.length?rows.map(sk=>`<tr>
+    <td><div class="sku-id">${sk.id}</div></td>
+    <td style="color:var(--ink2);max-width:200px">${sk.name||'—'}</td>
+    <td class="num">${sk.oh.toLocaleString('en-IN')}</td>
+    <td class="num">${sk.it?sk.it.toLocaleString('en-IN'):'-'}</td>
+    <td class="num">${sk.dmd.toLocaleString('en-IN')}</td>
+    <td class="num">${sk.ss.toLocaleString('en-IN')}</td>
+    <td class="num">${sk.rop.toLocaleString('en-IN')}</td>
+    <td class="num" style="color:${sk.nr>0?'var(--red)':'var(--ink4)'}">${sk.nr||'-'}</td>
+    <td class="num" style="font-weight:${sk.rq?800:400};color:${sk.rq?'var(--ink)':'var(--ink4)'}">${sk.rq||'-'}</td>
+    <td><span class="sbadge ${sk.st}">${sk.st.charAt(0).toUpperCase()+sk.st.slice(1)}</span></td>
+  </tr>`).join(''):`<tr><td colspan="9" style="text-align:center;padding:28px 0;color:var(--ink4);font-size:12px">No SKUs match this filter</td></tr>`;
+}
+
+/* ════════ FILTER ════════ */
+function setFilter(f){
+  skuFilter=f;
+  document.querySelectorAll('.sf-chip').forEach(c=>c.classList.remove('sel'));
+  document.querySelector('.sf-chip.f-'+f)?.classList.add('sel');
+  renderSKUTable(currentStore,f);
+}
+function filterTable(){renderSKUTable(currentStore,skuFilter);}
+
+/* ════════ DISPATCH ════════ */
+function toggleLane(id,cb){
+  const row=$id('lane-'+id);if(row)row.classList.toggle('lane-approved',cb.checked);
+}
+
+/* ════════ MODAL / TOAST ════════ */
+function openModal(){$id('modal').classList.add('open')}
+function closeModal(){$id('modal').classList.remove('open')}
+function confirmDRP(){
+  closeModal();
+  document.querySelectorAll('.lane-chk').forEach(cb=>{cb.checked=true;const tr=cb.closest('tr');if(tr)tr.classList.add('lane-approved');});
+  showToast('DRP orders released to DC. Dispatch in ~4 hours.');
+}
+function showToast(msg){
+  const t=$id('toast');$id('toastMsg').textContent=msg;
+  t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);
+}
+
+/* ════════ FILTERS ════════ */
+let locationFilter = 'all';   // 'all' | store id
+let selectedSKU = null;       // { id, storeId, status }
+let skuQuery = '';
+let timeFilter = '32';        // current week
+
+function getFilteredStores(){
+  const all=['0142','0137','0151','0165','0188'];
+  let result = all;
+  if(locationFilter !== 'all') result = result.filter(id => id === locationFilter);
+  if(selectedSKU) result = result.filter(id => id === selectedSKU.storeId);
+  return new Set(result);
+}
+
+function setLocationFilter(val){
+  locationFilter = val;
+  document.querySelectorAll('.loc-chip').forEach(c => c.classList.remove('on'));
+  const sel = val==='all'
+    ? document.querySelector('.loc-all')
+    : document.querySelector(`.loc-chip[data-loc="${val}"]`);
+  if(sel) sel.classList.add('on');
+  applyFilters();
+  // Also switch store selector & charts when a single store is picked
+  if(val !== 'all'){ selectStore(val); }
+}
+
+function setTimeFilter(wk){
+  timeFilter = wk;
+  document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('on'));
+  document.querySelector(`.time-chip[data-wk="${wk}"]`)?.classList.add('on');
+  // Sync with the topbar week select
+  const ws = $id('weekSelect'); if(ws) ws.value = wk;
+  renderAllCharts(currentStore);
+  updateClearBtn();
+}
+
+function clearFilters(){
+  locationFilter='all';
+  document.querySelectorAll('.loc-chip').forEach(c=>c.classList.remove('on'));
+  document.querySelector('.loc-all')?.classList.add('on');
+  timeFilter='32';
+  document.querySelectorAll('.time-chip').forEach(c=>c.classList.remove('on'));
+  document.querySelector('.time-chip[data-wk="32"]')?.classList.add('on');
+  const ws=$id('weekSelect');if(ws)ws.value='32';
+  selectedSKU=null;skuQuery='';
+  const inp=$id('sku-net-inp');if(inp)inp.value='';
+  const tag=$id('sku-active-tag');if(tag)tag.style.display='none';
+  $id('sku-drop')?.classList.remove('open');
+  renderAllCharts(currentStore);
+  applyFilters();
+}
+
+function updateClearBtn(){
+  const active = locationFilter!=='all' || !!selectedSKU || timeFilter!=='32';
+  $id('filter-clear')?.classList.toggle('visible', active);
+}
+
+function applyFilters(){
+  const matched = getFilteredStores();
+  const hasFilt = locationFilter!=='all' || !!selectedSKU;
+  const ids=['0142','0137','0151','0165','0188'];
+  document.querySelectorAll('.net-sum-row').forEach((row,i)=>{
+    const match = matched.has(ids[i]);
+    row.style.opacity = match||!hasFilt ? '1' : '0.28';
+    row.style.pointerEvents = match||!hasFilt ? 'auto' : 'none';
+  });
+  renderNetSVG(matched);
+  updateClearBtn();
+}
+
+/* ════════ SKU FILTER ════════ */
+const STORE_LABELS={'0142':'S1','0137':'S2','0151':'S3','0165':'S4','0188':'S5'};
+
+function getSKUList(){
+  const list=[];
+  Object.keys(STORES).forEach(sid=>STORES[sid].skus.forEach(sk=>list.push({...sk,storeId:sid})));
+  return list;
+}
+
+function onSKUInput(val){
+  skuQuery=val.trim().toLowerCase();
+  if(!skuQuery){$id('sku-drop').classList.remove('open');return;}
+  renderSKUDrop();
+}
+
+function openSKUDrop(){
+  if(skuQuery) renderSKUDrop();
+}
+
+function renderSKUDrop(){
+  const drop=$id('sku-drop');
+  const matches=getSKUList().filter(s=>s.id.toLowerCase().includes(skuQuery)||(s.name||'').toLowerCase().includes(skuQuery));
+  if(!matches.length){
+    drop.innerHTML=`<div class="sku-no-res">No SKUs match "<strong>${skuQuery}</strong>"</div>`;
+  } else {
+    drop.innerHTML=matches.slice(0,12).map(m=>`
+      <div class="sku-opt" onclick="selectSKU('${m.id}','${m.storeId}','${m.st}')">
+        <span class="sku-opt-store">${STORE_LABELS[m.storeId]}</span>
+        <div style="flex:1;min-width:0">
+          <div class="sku-opt-id">${m.id}</div>
+          <div style="font-size:10.5px;color:var(--ink4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.name||''}</div>
+        </div>
+        <span class="sbadge ${m.st}" style="font-size:9px;padding:1px 6px;flex-shrink:0">${m.st.charAt(0).toUpperCase()+m.st.slice(1)}</span>
+      </div>`).join('');
+  }
+  drop.classList.add('open');
+}
+
+function selectSKU(id,storeId,status){
+  selectedSKU={id,storeId,status};
+  skuQuery='';
+  const inp=$id('sku-net-inp');if(inp)inp.value='';
+  $id('sku-drop').classList.remove('open');
+  const tag=$id('sku-active-tag');
+  if(tag){tag.innerHTML=`${id} &nbsp;✕`;tag.style.display='inline-flex';}
+  applyFilters();
+}
+
+function clearSKUFilter(){
+  selectedSKU=null;skuQuery='';
+  const inp=$id('sku-net-inp');if(inp)inp.value='';
+  const tag=$id('sku-active-tag');if(tag)tag.style.display='none';
+  $id('sku-drop')?.classList.remove('open');
+  applyFilters();
+}
+
+// Close SKU dropdown on outside click
+document.addEventListener('click',e=>{if(!e.target.closest('#sku-fw'))$id('sku-drop')?.classList.remove('open');});
+
+/* ════════ DRILL-DOWN ════════ */
+const WEEK_DATES=[
+  {label:'W1',range:'4–10 Aug 2025'},{label:'W2',range:'11–17 Aug 2025'},
+  {label:'W3',range:'18–24 Aug 2025'},{label:'W4',range:'25–31 Aug 2025'},
+  {label:'W5',range:'1–7 Sep 2025'}, {label:'W6',range:'8–14 Sep 2025'},
+  {label:'W7',range:'15–21 Sep 2025'},{label:'W8',range:'22–28 Sep 2025'}
+];
+
+// Category mix varies slightly week to week — handsets spike on promo/festival weeks
+const CAT_MIX=[
+  [32,26,25,17],[35,24,24,17],[33,27,24,16],[38,22,23,17],
+  [31,28,24,17],[36,25,23,16],[34,26,24,16],[35,25,24,16]
+];
+const CAT_COLORS=['var(--blue)','var(--green)','var(--amber)','var(--ink4)'];
+const CAT_NAMES=['Handsets','Cases & Covers','Charging & Cables','Audio & Other'];
+
+function showDrillDown(weekIdx){
+  const s=STORES[currentStore];
+  const wd=WEEK_DATES[weekIdx]||WEEK_DATES[0];
+  const baseline=s.forecast[weekIdx]||0;
+  const sensed=s.sensed[weekIdx]||0;
+  const uplift=sensed-baseline;
+  const prevBaseline=weekIdx>0?(s.forecast[weekIdx-1]||0):baseline;
+  const wowPct=prevBaseline>0?Math.round(((baseline-prevBaseline)/prevBaseline)*100):0;
+
+  // Update header
+  set('dp-week-label',`${wd.label} — Demand detail`);
+  set('dp-meta',`${wd.range} · ${s.name}`);
+
+  // Active signals for waterfall
+  const activeSignals=s.signals.filter(sg=>sg.on);
+  let signalUnits=activeSignals.map(sg=>({name:sg.t,units:Math.round(baseline*(sg.pct/100))}));
+
+  // Category mix for this week
+  const mix=CAT_MIX[weekIdx]||CAT_MIX[0];
+
+  // Top 5 SKUs by weekly demand
+  const sorted=[...s.skus].sort((a,b)=>b.dmd-a.dmd).slice(0,5);
+  const wkVariation=[1.0,1.12,0.95,1.08,0.92,1.15,1.05,1.08];
+  const mult=wkVariation[weekIdx]||1;
+
+  // Stock health: project on-hand at end of this week
+  const stockHealth=s.skus.map(sk=>{
+    let oh=sk.oh;
+    for(let w=0;w<=weekIdx;w++){
+      oh-=sk.dmd*0.88;
+      if(w===1&&sk.rq>0) oh+=sk.rq;
+    }
+    oh=Math.round(Math.max(0,oh));
+    const ratio=sk.rop>0?oh/sk.rop:1;
+    const risk=ratio<0.5?'critical':ratio<1.2?'watch':'ok';
+    return{...sk,projOH:oh,risk};
+  }).filter(sk=>sk.risk!=='ok').sort((a,b)=>(a.risk==='critical'?-1:1));
+
+  // Recommended actions
+  const critCount=stockHealth.filter(s=>s.risk==='critical').length;
+  const watchCount=stockHealth.filter(s=>s.risk==='watch').length;
+  const actions=[];
+  if(critCount>0) actions.push({urgent:true,text:`${critCount} SKU${critCount>1?'s':''} projected to fall below ROP by end of ${wd.label} — release replenishment order before ${wd.range.split('–')[0]} ${wd.range.split(' ')[1]}.`});
+  if(watchCount>0) actions.push({urgent:false,text:`${watchCount} SKU${watchCount>1?'s':''} approaching reorder point — monitor daily sell-through and front-load if demand signals strengthen.`});
+  if(uplift>baseline*0.04) actions.push({urgent:false,text:`Demand sensing shows +${((uplift/baseline)*100).toFixed(1)}% uplift vs baseline this week. Consider pulling forward W${weekIdx+2} order by 2–3 days to avoid a mid-week gap.`});
+  if(actions.length===0) actions.push({urgent:false,text:`Stock position is healthy for ${wd.label}. No immediate action required — continue monitoring daily sell-through.`});
+
+  // Build HTML
+  let html='';
+
+  // Hero stats
+  html+=`<div class="drill-section">
+    <div class="drill-section-title">At a glance</div>
+    <div class="drill-hero">
+      <div class="drill-stat">
+        <div class="drill-stat-label">Forecast demand</div>
+        <div class="drill-stat-value">${baseline.toLocaleString()}</div>
+        <div class="drill-stat-delta ${wowPct>=0?'delta-up':'delta-down'}">${wowPct>=0?'↑':'↓'} ${Math.abs(wowPct)}% vs ${weekIdx>0?WEEK_DATES[weekIdx-1].label:'prior week'}</div>
+      </div>
+      <div class="drill-stat">
+        <div class="drill-stat-label">Sensed demand</div>
+        <div class="drill-stat-value">${sensed.toLocaleString()}</div>
+        <div class="drill-stat-delta delta-up">+${((uplift/baseline)*100).toFixed(1)}% above baseline</div>
+      </div>
+    </div>
+  </div>`;
+
+  // Signal waterfall
+  html+=`<div class="drill-section">
+    <div class="drill-section-title">What's driving demand this week</div>
+    <div class="signal-waterfall">
+      <div class="swf-row">
+        <span class="swf-label">Base forecast</span>
+        <div class="swf-bar-wrap"><div class="swf-bar" style="width:100%;background:var(--blue);opacity:.6"></div></div>
+        <span class="swf-val">${baseline.toLocaleString()} u</span>
+      </div>`;
+  const maxSigUnits=Math.max(...signalUnits.map(s=>s.units),1);
+  signalUnits.forEach(sg=>{
+    const sigColMap={Promo:'var(--purple)',Festival:'var(--amber)',Weather:'var(--blue)',Trend:'var(--green)',Event:'var(--red)'};
+    const col=sigColMap[sg.name]||'var(--ink4)';
+    html+=`<div class="swf-row">
+        <span class="swf-label">${sg.name} signal</span>
+        <div class="swf-bar-wrap"><div class="swf-bar" style="width:${Math.round((sg.units/maxSigUnits)*100)}%;background:${col}"></div></div>
+        <span class="swf-val" style="color:${col}">+${sg.units.toLocaleString()} u</span>
+      </div>`;
+  });
+  html+=`<div class="swf-row" style="margin-top:4px;padding-top:8px;border-top:1px solid var(--border)">
+      <span class="swf-label" style="font-weight:600;color:var(--ink)">Sensed total</span>
+      <div class="swf-bar-wrap"><div class="swf-bar" style="width:100%;background:var(--ink)"></div></div>
+      <span class="swf-val" style="font-weight:700;color:var(--ink)">${sensed.toLocaleString()} u</span>
+    </div>
+    </div>
+  </div>`;
+
+  // Category mix
+  html+=`<div class="drill-section">
+    <div class="drill-section-title">Category breakdown</div>
+    <div class="cat-rows">`;
+  mix.forEach((pct,ci)=>{
+    const units=Math.round(sensed*pct/100);
+    html+=`<div class="cat-row">
+        <span class="cat-dot" style="background:${CAT_COLORS[ci]}"></span>
+        <span class="cat-name">${CAT_NAMES[ci]}</span>
+        <div class="cat-bar-wrap"><div class="cat-bar" style="width:${pct*2.5}%;background:${CAT_COLORS[ci]};opacity:.75"></div></div>
+        <span class="cat-pct">${pct}%</span>
+        <span class="cat-units">${units} u</span>
+      </div>`;
+  });
+  html+=`</div></div>`;
+
+  // Top 5 SKUs
+  html+=`<div class="drill-section">
+    <div class="drill-section-title">Top 5 SKUs by demand</div>
+    <table class="drill-table">
+      <thead><tr><th>SKU</th><th>Product</th><th class="r">Fcst units</th><th class="r">vs last wk</th></tr></thead>
+      <tbody>`;
+  sorted.forEach((sk,i)=>{
+    const units=Math.round(sk.dmd*mult);
+    const delta=[8,15,-5,4,-3,11,2,6][i%8];
+    const dClass=delta>=0?'delta-up':'delta-down';
+    html+=`<tr>
+        <td style="font-family:monospace;font-size:11.5px;font-weight:600">${sk.id}</td>
+        <td style="font-size:11.5px;color:var(--ink2)">${sk.name}</td>
+        <td class="r">${units}</td>
+        <td class="r"><span class="${dClass}" style="font-size:11.5px">${delta>=0?'↑':'↓'}${Math.abs(delta)}%</span></td>
+      </tr>`;
+  });
+  html+=`</tbody></table></div>`;
+
+  // Stock health
+  if(stockHealth.length>0){
+    html+=`<div class="drill-section">
+      <div class="drill-section-title">Stock watch — projected end of ${wd.label}</div>
+      <div class="stock-rows">`;
+    stockHealth.slice(0,5).forEach(sk=>{
+      const label=sk.risk==='critical'?'Critical':sk.risk==='watch'?'Watch':'OK';
+      const badgeCls=sk.risk==='critical'?'sb-critical':sk.risk==='watch'?'sb-watch':'sb-ok';
+      html+=`<div class="stock-row risk-${sk.risk}">
+          <div class="stock-row-left">
+            <div class="stock-row-sku">${sk.id}</div>
+            <div class="stock-row-name">${sk.name}</div>
+          </div>
+          <div class="stock-row-right">
+            <span style="font-size:11.5px;color:var(--ink3)">Proj: ${sk.projOH} u · ROP: ${sk.rop}</span>
+            <span class="stock-badge ${badgeCls}">${label}</span>
+          </div>
+        </div>`;
+    });
+    html+=`</div></div>`;
+  }
+
+  // Actions
+  html+=`<div class="drill-section">
+    <div class="drill-section-title">Recommended actions</div>
+    <div class="action-list">`;
+  actions.forEach((a,i)=>{
+    html+=`<div class="action-item${a.urgent?' urgent':''}">
+        <span class="action-num">${i+1}</span>
+        <span class="action-text">${a.text}</span>
+      </div>`;
+  });
+  html+=`</div></div>`;
+
+  $id('drill-body').innerHTML=html;
+  $id('drill-backdrop').classList.add('open');
+  $id('drill-panel').classList.add('open');
+}
+
+function closeDrillDown(){
+  $id('drill-backdrop').classList.remove('open');
+  $id('drill-panel').classList.remove('open');
+}
+
+/* ════════ INVENTORY DRILL-DOWN ════════ */
+
+function skuPrice(sk){
+  const n=(sk.name||'').toLowerCase();
+  if(n.includes('pro max')||n.includes('s24 ultra')||n.includes('pixel 8 pro')) return 1199;
+  if(n.includes('iphone 15 pro')||n.includes('s24+')||n.includes('pixel 8a')) return 999;
+  if(n.includes('iphone 15')&&!n.includes('case')&&!n.includes('screen')&&!n.includes('cover')) return 799;
+  if(n.includes('iphone 14')&&!n.includes('case')&&!n.includes('screen')) return 649;
+  if(n.includes('s24')&&!n.includes('cover')&&!n.includes('screen')&&!n.includes('+')&&!n.includes('ultra')) return 799;
+  if(n.includes('a55')||n.includes('a35')) return 449;
+  if(n.includes('airpods pro')) return 229;
+  if(n.includes('airpods')) return 149;
+  if(n.includes('magsafe wallet')) return 59;
+  if(n.includes('power bank 20000')) return 49;
+  if(n.includes('power bank 10000')) return 35;
+  if(n.includes('case')||n.includes('cover')) return 39;
+  if(n.includes('screen protector')) return 19;
+  if(n.includes('charger 65w')) return 29;
+  if(n.includes('charger 45w')||n.includes('magsafe charger')) return 25;
+  if(n.includes('cable')) return 15;
+  if(n.includes('wireless charging')||n.includes('charging pad')) return 35;
+  if(n.includes('earbuds')) return 79;
+  return 25;
+}
+
+function projectedOH(sk, weekIdx){
+  let oh=sk.oh;
+  for(let w=0;w<weekIdx;w++){
+    oh-=sk.dmd*0.88;
+    if(w===1&&sk.rq>0) oh+=sk.rq;
+  }
+  return Math.max(0,Math.round(oh));
+}
+
+function classifySkus(skus, weekIdx){
+  return skus.map(sk=>{
+    const oh=weekIdx>0?projectedOH(sk,weekIdx):sk.oh;
+    const wos=sk.dmd>0?oh/sk.dmd:99;
+    const dos=Math.round(wos*7);
+    const price=skuPrice(sk);
+    const value=oh*price;
+    // Dead: > 5 weeks supply OR hold status
+    // Slow: 2-5 weeks supply OR redeploy
+    // Fast: < 2 weeks supply
+    let cat;
+    if(wos>5||sk.st==='hold') cat='dead';
+    else if(wos>2||sk.st==='redeploy') cat='slow';
+    else cat='fast';
+    return{...sk,projOH:oh,wos:Math.round(wos*10)/10,dos,price,value,cat};
+  });
+}
+
+function showInventoryDrillDown(weekIdx){
+  const s=STORES[currentStore];
+  const wd=WEEK_DATES[weekIdx]||WEEK_DATES[0];
+  const classified=classifySkus(s.skus,weekIdx);
+
+  const dead=classified.filter(sk=>sk.cat==='dead');
+  const slow=classified.filter(sk=>sk.cat==='slow');
+  const fast=classified.filter(sk=>sk.cat==='fast');
+
+  const totalUnits=classified.reduce((a,sk)=>a+sk.projOH,0);
+  const deadUnits=dead.reduce((a,sk)=>a+sk.projOH,0);
+  const slowUnits=slow.reduce((a,sk)=>a+sk.projOH,0);
+  const fastUnits=fast.reduce((a,sk)=>a+sk.projOH,0);
+  const deadValue=dead.reduce((a,sk)=>a+sk.value,0);
+  const slowValue=slow.reduce((a,sk)=>a+sk.value,0);
+  const fastValue=fast.reduce((a,sk)=>a+sk.value,0);
+  const totalValue=deadValue+slowValue+fastValue;
+
+  // Update header
+  set('dp-week-label',`${wd.label} — Inventory breakdown`);
+  set('dp-meta',`${wd.range} · ${s.name}`);
+
+  let html='';
+
+  // Summary hero tiles
+  html+=`<div class="drill-section">
+    <div class="drill-section-title">Stock health overview · ${totalUnits} units · £${totalValue.toLocaleString()} est. value</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      <div class="drill-stat" style="border-left:3px solid var(--green)">
+        <div class="drill-stat-label">Fast-moving</div>
+        <div class="drill-stat-value" style="color:var(--green)">${fastUnits}</div>
+        <div class="drill-stat-delta" style="color:var(--ink4)">${fast.length} SKUs · ${Math.round(fastUnits/totalUnits*100)}%</div>
+      </div>
+      <div class="drill-stat" style="border-left:3px solid var(--amber)">
+        <div class="drill-stat-label">Slow-moving</div>
+        <div class="drill-stat-value" style="color:var(--amber)">${slowUnits}</div>
+        <div class="drill-stat-delta" style="color:var(--ink4)">${slow.length} SKUs · ${Math.round(slowUnits/totalUnits*100)}%</div>
+      </div>
+      <div class="drill-stat" style="border-left:3px solid var(--red)">
+        <div class="drill-stat-label">Dead stock</div>
+        <div class="drill-stat-value" style="color:var(--red)">${deadUnits}</div>
+        <div class="drill-stat-delta" style="color:var(--ink4)">${dead.length} SKU${dead.length!==1?'s':''} · £${deadValue.toLocaleString()}</div>
+      </div>
+    </div>
+  </div>`;
+
+  // Dead stock
+  if(dead.length>0){
+    html+=`<div class="drill-section">
+      <div class="drill-section-title" style="color:var(--red)">Dead stock — immediate action needed</div>
+      <div style="font-size:11.5px;color:var(--ink3);margin-bottom:10px">No meaningful movement. Carrying costs rising. Freeing this space allows faster-moving stock in.</div>
+      <div class="stock-rows">`;
+    dead.forEach(sk=>{
+      const action=sk.name.toLowerCase().includes('iphone 14')||sk.name.toLowerCase().includes('14 case')?'Return to DC':'Markdown & clear';
+      html+=`<div class="stock-row risk-critical">
+          <div class="stock-row-left">
+            <div class="stock-row-sku">${sk.id}</div>
+            <div class="stock-row-name">${sk.name}</div>
+            <div style="font-size:11px;color:var(--ink4);margin-top:3px">${sk.projOH} units · ${sk.wos} wks supply · £${sk.value.toLocaleString()} tied up</div>
+          </div>
+          <div class="stock-row-right" style="flex-direction:column;align-items:flex-end;gap:4px">
+            <span class="stock-badge sb-critical">Dead</span>
+            <span style="font-size:10.5px;color:var(--red);font-weight:600">${action}</span>
+          </div>
+        </div>`;
+    });
+    html+=`</div>
+      <div style="margin-top:10px;padding:8px 10px;background:var(--red-light);border-radius:var(--radius);font-size:11.5px;color:var(--red);border:1px solid rgba(220,38,38,.15)">
+        £${deadValue.toLocaleString()} in capital tied up · ${dead.reduce((a,sk)=>a+sk.projOH,0)} shelf units occupied that fast-moving stock needs
+      </div>
+    </div>`;
+  }
+
+  // Slow-moving
+  if(slow.length>0){
+    html+=`<div class="drill-section">
+      <div class="drill-section-title" style="color:var(--amber)">Slow-moving stock — monitor & act</div>
+      <div style="font-size:11.5px;color:var(--ink3);margin-bottom:10px">Selling below expected pace. At risk of becoming dead stock if not addressed.</div>
+      <table class="drill-table">
+        <thead><tr><th>Product</th><th class="r">Units</th><th class="r">DoS</th><th class="r">Wks supply</th></tr></thead>
+        <tbody>`;
+    slow.forEach(sk=>{
+      const dosColor=sk.dos>28?'var(--amber)':'var(--ink3)';
+      html+=`<tr>
+          <td>
+            <div style="font-size:11.5px;font-weight:600;color:var(--ink)">${sk.id}</div>
+            <div style="font-size:11px;color:var(--ink3)">${sk.name}</div>
+          </td>
+          <td class="r">${sk.projOH}</td>
+          <td class="r" style="color:${dosColor};font-weight:600">${sk.dos}d</td>
+          <td class="r">${sk.wos}w</td>
+        </tr>`;
+    });
+    html+=`</tbody></table>
+      <div style="margin-top:10px;font-size:11.5px;color:var(--amber);font-weight:500">💡 Consider redeploying excess to stores with higher demand, or a short-term price promotion to clear.</div>
+    </div>`;
+  }
+
+  // Fast-moving
+  if(fast.length>0){
+    html+=`<div class="drill-section">
+      <div class="drill-section-title" style="color:var(--green)">Fast-moving stock — watch for gaps</div>
+      <div style="font-size:11.5px;color:var(--ink3);margin-bottom:10px">Selling well. Low days of supply — act before shelves run empty.</div>
+      <table class="drill-table">
+        <thead><tr><th>Product</th><th class="r">Units</th><th class="r">Days left</th><th class="r">Risk</th></tr></thead>
+        <tbody>`;
+    fast.forEach(sk=>{
+      const risk=sk.dos<=5?'🔴 Critical':sk.dos<=10?'🟡 Watch':'🟢 OK';
+      const riskColor=sk.dos<=5?'var(--red)':sk.dos<=10?'var(--amber)':'var(--green)';
+      html+=`<tr>
+          <td>
+            <div style="font-size:11.5px;font-weight:600;color:var(--ink)">${sk.id}</div>
+            <div style="font-size:11px;color:var(--ink3)">${sk.name}</div>
+          </td>
+          <td class="r">${sk.projOH}</td>
+          <td class="r" style="color:${riskColor};font-weight:700">${sk.dos}d</td>
+          <td class="r" style="color:${riskColor};font-size:11px">${risk}</td>
+        </tr>`;
+    });
+    html+=`</tbody></table>
+    </div>`;
+  }
+
+  // Capital summary
+  html+=`<div class="drill-section">
+    <div class="drill-section-title">Capital tied up by stock category</div>
+    <div style="display:flex;flex-direction:column;gap:8px">`;
+  const bars=[
+    {label:'Fast-moving',val:fastValue,col:'var(--green)'},
+    {label:'Slow-moving',val:slowValue,col:'var(--amber)'},
+    {label:'Dead stock',val:deadValue,col:'var(--red)'},
+  ];
+  const maxVal=Math.max(...bars.map(b=>b.val),1);
+  bars.forEach(b=>{
+    html+=`<div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;color:var(--ink2);width:110px;flex-shrink:0">${b.label}</span>
+        <div style="flex:1;height:6px;background:var(--surface3);border-radius:3px;overflow:hidden">
+          <div style="width:${Math.round((b.val/maxVal)*100)}%;height:100%;background:${b.col};border-radius:3px"></div>
+        </div>
+        <span style="font-size:12px;font-weight:700;color:var(--ink);min-width:65px;text-align:right">£${b.val.toLocaleString()}</span>
+      </div>`;
+  });
+  html+=`</div></div>`;
+
+  // Actions
+  const actions=[];
+  if(dead.length>0) actions.push({urgent:true,text:`Return ${dead.length} dead stock SKU${dead.length>1?'s':''} to DC. Frees £${deadValue.toLocaleString()} in working capital and ${deadUnits} shelf units for faster-moving products.`});
+  if(slow.length>0) actions.push({urgent:false,text:`Review slow-moving SKUs — ${slow.length} products over 2 weeks of supply. Consider redeployment to ${currentStore==='0142'?'Birmingham':'London'} or a targeted promotion to accelerate clearance.`});
+  const critFast=fast.filter(sk=>sk.dos<=5);
+  if(critFast.length>0) actions.push({urgent:true,text:`${critFast.length} fast-moving SKU${critFast.length>1?'s':''} have ≤5 days of supply remaining. Release replenishment order immediately to avoid stockout.`});
+
+  if(actions.length>0){
+    html+=`<div class="drill-section">
+      <div class="drill-section-title">Recommended actions</div>
+      <div class="action-list">`;
+    actions.forEach((a,i)=>{
+      html+=`<div class="action-item${a.urgent?' urgent':''}">
+          <span class="action-num">${i+1}</span>
+          <span class="action-text">${a.text}</span>
+        </div>`;
+    });
+    html+=`</div></div>`;
+  }
+
+  $id('drill-body').innerHTML=html;
+  $id('drill-backdrop').classList.add('open');
+  $id('drill-panel').classList.add('open');
+}
+
+/* ════════ INIT ════════ */
+window.addEventListener('load',()=>{
+  updateKPIs('0142');
+  renderAllCharts('0142');
+  updateAIStrip('0142');
+  renderStoreDetail('0142');
+  // Resize observer keeps charts & network map fluid
+  const ro=new ResizeObserver(()=>{renderAllCharts(currentStore);renderNetSVG();});
+  ['chart1','chart2','chart3','chart4','net-svg-wrap'].forEach(id=>{const el=$id(id);if(el)ro.observe(el);});
+});
+</script>
+</body>
+</html>

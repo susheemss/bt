@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReplenishAI — Demand Sensing & Replenishment Cockpit</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F7F8FA;--surface:#FFF;--surface2:#F1F3F6;--surface3:#E8ECF1;
+  --border:#E2E6EB;--border2:#D0D5DC;
+  --ink:#1A1D23;--ink2:#3B4150;--ink3:#5F6B7A;--ink4:#8B95A5;--ink5:#B0B8C4;
+  --blue:#2E6BE6;--blue-light:#EBF1FD;--blue-dark:#1D4FA0;
+  --green:#1A8754;--green-light:#E6F5ED;
+  --amber:#D97706;--amber-light:#FEF3E2;
+  --red:#C93B3B;--red-light:#FDE8E8;
+  --purple:#6C5CE7;--purple-light:#F0EEFE;
+  --sidebar:#1B2537;--sidebar-hover:#253245;
+  --radius:6px;--radius-lg:10px;
+  --shadow:0 1px 3px rgba(27,37,55,.06),0 1px 2px rgba(27,37,55,.04);
+  --shadow-md:0 4px 14px rgba(27,37,55,.09);
+}
+html{font-size:14px}
+body{font-family:'Inter',system-ui,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased}
+
+/* ── LAYOUT ── */
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.sidebar{background:var(--sidebar);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;width:220px;z-index:50}
+.main{margin-left:220px;min-height:100vh;display:flex;flex-direction:column}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* ── SIDEBAR ── */
+.sb-brand{padding:18px 16px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sb-logo{width:34px;height:34px;background:linear-gradient(135deg,var(--blue),var(--purple));border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:11px;flex-shrink:0}
+.sb-name{font-size:13px;font-weight:700;color:#E2E8F0;line-height:1.2}
+.sb-ver{font-size:10px;color:#4A5568;margin-top:1px}
+.sb-nav{flex:1;padding:10px 8px;overflow-y:auto}
+.sb-section{margin-bottom:18px}
+.sb-section-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#374151;padding:0 10px;margin-bottom:5px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius);cursor:pointer;font-size:12.5px;color:#94A3B8;transition:all .15s;margin-bottom:2px;user-select:none}
+.nav-item:hover{background:var(--sidebar-hover);color:#CBD5E1}
+.nav-item.active{background:rgba(46,107,230,.2);color:#93B4F5;font-weight:600}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.6}
+.nav-item.active svg{opacity:1}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px}
+.ai-dot{margin-left:auto;width:6px;height:6px;background:var(--purple);border-radius:50%;box-shadow:0 0 6px rgba(108,92,231,.6)}
+.sb-footer{padding:12px 14px;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:9px}
+.sb-avatar{width:30px;height:30px;border-radius:50%;background:#2D3748;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#94A3B8;flex-shrink:0}
+.sb-user-name{font-size:12px;font-weight:600;color:#CBD5E1}
+.sb-user-role{font-size:10px;color:#4A5568}
+.online-dot{width:7px;height:7px;border-radius:50%;background:var(--green);margin-left:auto;box-shadow:0 0 5px rgba(26,135,84,.5)}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:40;box-shadow:var(--shadow)}
+.breadcrumb{display:flex;align-items:center;gap:5px;font-size:12.5px;color:var(--ink4)}
+.bc-link{color:var(--blue);cursor:pointer}.bc-link:hover{text-decoration:underline}
+.bc-sep{color:var(--ink5)}
+.bc-cur{color:var(--ink3);font-weight:500}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px}
+
+/* Pills, selects, segments */
+.tb-pill{display:flex;align-items:center;gap:5px;padding:5px 11px;border:1px solid var(--border);border-radius:20px;font-size:11.5px;color:var(--ink3);cursor:pointer;background:var(--surface);transition:all .15s;white-space:nowrap;user-select:none}
+.tb-pill:hover{border-color:var(--border2);color:var(--ink2)}
+.tb-pill.on{border-color:var(--green);color:var(--green);background:var(--green-light)}
+.tb-pill.ai-on{border-color:var(--purple);color:var(--purple);background:var(--purple-light)}
+.sdot{width:7px;height:7px;border-radius:50%}
+.sdot.g{background:var(--green)}.sdot.a{background:var(--amber)}
+.seg{display:flex;border:1px solid var(--border);border-radius:20px;overflow:hidden}
+.seg-opt{padding:5px 12px;font-size:11.5px;cursor:pointer;color:var(--ink4);background:var(--surface);transition:all .15s;user-select:none;border-right:1px solid var(--border)}
+.seg-opt:last-child{border-right:none}
+.seg-opt.active{background:var(--blue);color:#fff}
+.seg-opt:hover:not(.active){background:var(--surface2)}
+.tb-select-wrap{display:flex;align-items:center;gap:6px;padding:5px 12px;border:1px solid var(--border);border-radius:20px;background:var(--surface);cursor:pointer;transition:all .15s}
+.tb-select-wrap:hover{border-color:var(--border2)}
+.tb-select-wrap svg{width:13px;height:13px;color:var(--ink4);flex-shrink:0}
+.tb-select-wrap select{appearance:none;border:none;outline:none;font-family:'Inter',sans-serif;font-size:11.5px;color:var(--ink2);background:transparent;cursor:pointer;font-weight:500}
+.tb-btn{padding:6px 14px;border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .15s}
+.tb-btn-ghost{background:transparent;border:1px solid var(--border);color:var(--ink3)}.tb-btn-ghost:hover{border-color:var(--border2);background:var(--surface2)}
+.btn-ai{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 16px;border-radius:var(--radius);font-size:12px;font-weight:700;border:none;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--purple),var(--blue));font-family:'Inter',sans-serif;transition:all .15s}
+.btn-ai:hover{opacity:.88;transform:translateY(-1px);box-shadow:0 4px 16px rgba(108,92,231,.3)}
+.tb-icon{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius);cursor:pointer;color:var(--ink4);transition:all .15s;position:relative}
+.tb-icon:hover{background:var(--surface2);color:var(--ink2)}
+.notif-dot{position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:var(--red);border:2px solid var(--surface)}
+.search-wrap{display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);transition:all .15s}
+.search-wrap:focus-within{border-color:var(--blue)}
+.search-wrap input{border:none;outline:none;font-family:'Inter',sans-serif;font-size:12px;color:var(--ink2);width:130px;background:transparent}
+.search-wrap input::placeholder{color:var(--ink5)}
+
+/* ── CONTENT ── */
+.content{flex:1;padding:22px 24px 40px}
+.page-header{margin-bottom:20px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.page-title{font-size:19px;font-weight:800;color:var(--ink);margin-bottom:2px;letter-spacing:-.015em}
+.page-sub{font-size:12.5px;color:var(--ink4);line-height:1.5}
+.refresh-tag{font-size:10px;color:var(--ink5);display:flex;align-items:center;gap:4px;margin-top:6px}
+.pulse{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* ── KPI TILES ── */
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;transition:all .2s;position:relative;overflow:hidden}
+.kpi:hover{border-color:var(--border2);box-shadow:var(--shadow)}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--surface3)}
+.kpi.hi::after{background:linear-gradient(90deg,var(--blue),var(--blue-dark))}
+.kpi-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink4);margin-bottom:8px}
+.kpi-value{font-size:26px;font-weight:800;color:var(--ink);line-height:1;margin-bottom:5px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.kpi-delta{font-size:11px;font-weight:600;display:flex;align-items:center;gap:3px}
+.delta-up{color:var(--green)}.delta-down{color:var(--red)}.delta-neu{color:var(--ink4)}
+.kpi.hi{border-color:var(--blue);background:linear-gradient(150deg,var(--blue-light) 0%,var(--surface) 60%)}
+.kpi.hi .kpi-label{color:var(--blue-dark)}.kpi.hi .kpi-value{color:var(--blue-dark)}
+
+/* ── CHARTS ── */
+.charts-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.chart-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;transition:all .2s}
+.chart-panel:hover{border-color:var(--border2);box-shadow:var(--shadow)}
+.chart-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.chart-title{font-size:11.5px;font-weight:600;color:var(--ink)}
+.chart-area{height:150px;position:relative;margin-top:8px}
+.chart-legend{display:flex;align-items:center;gap:10px;margin-top:9px;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--ink4)}
+.leg-line{width:16px;height:2px;border-radius:1px;display:inline-block}
+.leg-bar{width:10px;height:10px;border-radius:2px;display:inline-block}
+
+/* Tooltip */
+#tt{position:fixed;background:rgba(26,29,35,.93);color:#fff;padding:6px 10px;border-radius:var(--radius);font-size:11px;font-weight:500;pointer-events:none;z-index:999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.25);display:none}
+
+/* ── AI STRIP ── */
+.ai-strip{background:var(--surface);border:1px solid var(--purple);border-radius:var(--radius-lg);padding:16px 20px;position:relative;overflow:hidden;box-shadow:0 2px 12px rgba(108,92,231,.07)}
+.ai-strip::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--purple),var(--blue),var(--purple))}
+.ai-strip-inner{display:flex;gap:20px;align-items:flex-start}
+.ai-strip-left{flex:1;min-width:0}
+.ai-strip-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ai-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:10px;font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;background:var(--purple-light);color:var(--purple);white-space:nowrap;flex-shrink:0}
+.ai-strip-title{font-size:13.5px;font-weight:700;color:var(--ink)}
+.ai-strip-sub{font-size:10.5px;color:var(--ink4)}
+.ai-recs{display:flex;flex-direction:column;gap:1px}
+.ai-rec{display:flex;align-items:flex-start;gap:8px;padding:5px 0;font-size:12.5px;color:var(--ink2);line-height:1.5}
+.rec-dot{width:5px;height:5px;border-radius:50%;background:var(--purple);margin-top:8px;flex-shrink:0}
+.ai-cta{min-width:196px;max-width:196px;background:var(--surface2);border-radius:var(--radius);padding:14px 16px;text-align:center;border:1px solid var(--border);flex-shrink:0}
+.saving-label{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4);margin-bottom:3px}
+.saving-value{font-size:24px;font-weight:800;color:var(--green);margin-bottom:2px;font-variant-numeric:tabular-nums}
+.saving-sub{font-size:10px;color:var(--ink4);margin-bottom:12px;line-height:1.4}
+
+/* AI analyzing dots */
+.ai-analyzing{display:flex;align-items:center;gap:8px;padding:6px 0;color:var(--purple);font-size:12px;font-weight:500;display:none}
+.dots span{display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--purple);margin:0 2px;animation:bdots 1.1s infinite}
+.dots span:nth-child(2){animation-delay:.18s}.dots span:nth-child(3){animation-delay:.36s}
+@keyframes bdots{0%,80%,100%{transform:translateY(0);opacity:.35}40%{transform:translateY(-5px);opacity:1}}
+
+/* ── SCREEN 2 ── */
+.detail-layout{display:grid;grid-template-columns:256px 1fr;gap:16px}
+.store-sidebar{display:flex;flex-direction:column;gap:12px}
+.store-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px}
+.sec-label{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ink4);margin-bottom:10px}
+.store-name-lg{font-size:17px;font-weight:800;color:var(--ink);margin-bottom:2px}
+.store-meta{font-size:11px;color:var(--ink4);margin-bottom:14px}
+.cap-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.cap-bar-track{height:18px;background:var(--surface2);border-radius:9px;overflow:hidden;margin-bottom:5px}
+.cap-bar-fill{height:100%;border-radius:9px;display:flex;align-items:center;padding-left:10px;font-size:10px;font-weight:700;color:#fff;transition:width .7s cubic-bezier(.4,0,.2,1);background:linear-gradient(90deg,var(--blue),var(--blue-dark))}
+.cap-bar-fill.warn{background:linear-gradient(90deg,var(--amber),#B45309)}
+.cap-note{font-size:10px;color:var(--ink4);text-align:right;font-variant-numeric:tabular-nums}
+.stat-grid{margin-top:14px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--surface2)}
+.stat-row:last-child{border-bottom:none}
+.stat-label{font-size:12px;color:var(--ink3)}
+.stat-value{font-size:12px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.signal-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.chip{padding:3px 9px;border-radius:10px;font-size:10.5px;font-weight:600;border:1px solid var(--border);color:var(--ink4);background:var(--surface);transition:all .15s}
+.chip.on{border-color:var(--purple);color:var(--purple);background:var(--purple-light)}
+.sensing-note{font-size:10.5px;color:var(--purple);line-height:1.5;padding:8px 10px;background:var(--purple-light);border:1px solid rgba(108,92,231,.2);border-radius:var(--radius)}
+
+/* Status filter chips */
+.sf-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sf-chip{padding:4px 10px;border-radius:10px;font-size:11px;font-weight:600;border:1px solid var(--border);color:var(--ink4);background:var(--surface);cursor:pointer;transition:all .15s;user-select:none;white-space:nowrap}
+.sf-chip:hover{border-color:var(--border2)}
+.sf-chip.f-all.sel{border-color:var(--blue);color:var(--blue);background:var(--blue-light)}
+.sf-chip.f-replenish.sel{border-color:var(--red);color:var(--red);background:var(--red-light)}
+.sf-chip.f-low.sel{border-color:var(--amber);color:var(--amber);background:var(--amber-light)}
+.sf-chip.f-ok.sel{border-color:var(--green);color:var(--green);background:var(--green-light)}
+.sf-chip.f-hold.sel{border-color:var(--ink4);color:var(--ink4);background:var(--surface3)}
+.sf-chip.f-redeploy.sel{border-color:var(--blue);color:var(--blue);background:var(--blue-light)}
+.sf-count{margin-left:4px;font-size:9px;font-weight:700;padding:0 5px;border-radius:8px;background:var(--surface3);color:var(--ink4)}
+
+/* Card + Table */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.card-title{font-size:12.5px;font-weight:700;color:var(--ink)}
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table thead th{background:#1B2537;color:#C8D4E0;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.05em;padding:9px 12px;text-align:left;white-space:nowrap}
+.data-table thead th.r{text-align:right}
+.data-table tbody td{padding:9px 12px;border-bottom:1px solid var(--surface2);color:var(--ink2);font-variant-numeric:tabular-nums;vertical-align:middle}
+.data-table tbody tr:hover td{background:var(--surface2);cursor:default}
+.data-table tbody tr:last-child td{border-bottom:none}
+.data-table .num{text-align:right;font-weight:600}
+.sku-id{font-weight:700;color:var(--ink);font-size:11.5px;letter-spacing:.03em}
+.sbadge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;white-space:nowrap}
+.sbadge::before{content:'';width:5px;height:5px;border-radius:50%}
+.sbadge.replenish{background:var(--red-light);color:var(--red)}.sbadge.replenish::before{background:var(--red)}
+.sbadge.ok{background:var(--green-light);color:var(--green)}.sbadge.ok::before{background:var(--green)}
+.sbadge.hold{background:var(--surface2);color:var(--ink4)}.sbadge.hold::before{background:var(--ink5)}
+.sbadge.low{background:var(--amber-light);color:var(--amber)}.sbadge.low::before{background:var(--amber)}
+.sbadge.redeploy{background:var(--blue-light);color:var(--blue)}.sbadge.redeploy::before{background:var(--blue)}
+.ai-footer{background:var(--surface);border:1px solid var(--purple);border-radius:var(--radius-lg);padding:12px 16px;display:flex;align-items:center;gap:12px;margin-top:14px;box-shadow:0 2px 8px rgba(108,92,231,.07)}
+.ai-footer-text{flex:1;font-size:12.5px;color:var(--ink2);line-height:1.4}
+
+/* ── SCREEN 3 ── */
+.dispatch-layout{display:grid;grid-template-columns:1fr 320px;gap:16px}
+.rationale-panel{background:var(--surface);border:1px dashed var(--purple);border-radius:var(--radius-lg);overflow:hidden;height:fit-content}
+.rationale-head{padding:14px 16px;border-bottom:1px solid rgba(108,92,231,.12);display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,var(--purple-light),var(--surface))}
+.rationale-title{font-size:13px;font-weight:700;color:var(--ink)}
+.qa-item{padding:14px 16px;border-bottom:1px solid var(--surface2)}
+.qa-item:last-child{border-bottom:none}
+.qa-q{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}
+.q-mark{width:20px;height:20px;border-radius:50%;background:var(--purple-light);color:var(--purple);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.q-text{font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.4}
+.qa-a{font-size:11.5px;color:var(--ink3);line-height:1.6;padding-left:28px}
+.truck-fill-wrap{display:flex;align-items:center;gap:8px}
+.truck-fill-val{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;min-width:32px}
+.fill-bar-track{height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;width:50px}
+.fill-bar-fill{height:100%;border-radius:3px}
+.fill-bar-fill.hi{background:var(--green)}.fill-bar-fill.md{background:var(--blue)}.fill-bar-fill.lo{background:var(--amber)}
+.mode-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.02em;background:var(--surface2);color:var(--ink3)}
+.mode-badge.ftl{background:var(--blue-light);color:var(--blue)}
+.mode-badge.consol{background:var(--green-light);color:var(--green)}
+.mode-badge.milkrun{background:var(--amber-light);color:var(--amber)}
+.vs-save{color:var(--green);font-weight:700;font-variant-numeric:tabular-nums}
+.total-row td{font-weight:700!important;background:var(--surface2)!important;color:var(--ink)!important;border-top:2px solid var(--border)!important}
+.lane-chk{width:15px;height:15px;accent-color:var(--blue);cursor:pointer}
+.lane-approved td{background:rgba(26,135,84,.05)!important}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(27,37,55,.5);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(4px)}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border-radius:12px;padding:28px;max-width:430px;width:90%;box-shadow:0 24px 60px rgba(27,37,55,.2);transform:translateY(10px);transition:transform .25s}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-icon{width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,var(--purple),var(--blue));display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+.modal-title{font-size:17px;font-weight:800;color:var(--ink);margin-bottom:8px}
+.modal-body{font-size:13px;color:var(--ink3);line-height:1.6;margin-bottom:18px}
+.modal-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px}
+.mstat{background:var(--surface2);border-radius:var(--radius);padding:10px 12px}
+.mstat-label{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink4);margin-bottom:2px}
+.mstat-value{font-size:16px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end}
+.modal-cancel{padding:9px 18px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);color:var(--ink3);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer}
+.modal-cancel:hover{background:var(--surface2)}
+.modal-confirm{padding:9px 20px;border-radius:var(--radius);border:none;background:linear-gradient(135deg,var(--purple),var(--blue));color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
+.modal-confirm:hover{opacity:.88;transform:translateY(-1px);box-shadow:0 4px 12px rgba(108,92,231,.3)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:var(--radius-lg);font-size:12.5px;font-weight:500;z-index:200;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);transform:translateY(80px);opacity:0;transition:all .35s cubic-bezier(.4,0,.2,1)}
+.toast.show{transform:translateY(0);opacity:1}
+.toast-icon{width:20px;height:20px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* Fade animation */
+@keyframes fadeIn{from{opacity:.3;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+.fade-in{animation:fadeIn .25s ease}
+
+/* Responsive */
+@media(max-width:1380px){.kpi-row{grid-template-columns:repeat(3,1fr)}.charts-row{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:960px){.detail-layout,.dispatch-layout{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div id="tt"></div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-icon">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="modal-title">Release DRP orders to DC?</div>
+    <div class="modal-body">This will auto-release Distribution Requirements Planning orders for all approved lanes in this cycle. The DC will begin picking and dispatch within 4 hours.</div>
+    <div class="modal-stats">
+      <div class="mstat"><div class="mstat-label">Network lanes</div><div class="mstat-value">5</div></div>
+      <div class="mstat"><div class="mstat-label">Total units</div><div class="mstat-value">10,150</div></div>
+      <div class="mstat"><div class="mstat-label">Freight cost</div><div class="mstat-value" style="color:var(--blue)">₹10.8L</div></div>
+      <div class="mstat"><div class="mstat-label">Freight saving</div><div class="mstat-value" style="color:var(--green)">₹1.6L</div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-confirm" onclick="confirmDRP()">Confirm &amp; release</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <div class="toast-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div>
+  <span id="toastMsg">DRP orders released to DC successfully.</span>
+</div>
+
+<div class="app">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo">RC</div>
+    <div>
+      <div class="sb-name">ReplenishAI</div>
+      <div class="sb-ver">Cockpit v2.5 · Bengaluru</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">
+      <div class="sb-section-label">Planning</div>
+      <div class="nav-item active" id="nav-overview" onclick="showScreen('overview')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Network overview
+      </div>
+      <div class="nav-item" id="nav-store" onclick="showScreen('store')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Stores
+        <span class="nav-badge" id="shortfall-badge">3</span>
+      </div>
+      <div class="nav-item" id="nav-dispatch" onclick="showScreen('dispatch')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        Replenishment
+        <span class="ai-dot"></span>
+      </div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Intelligence</div>
+      <div class="nav-item" onclick="showToast('Demand sensing module — coming soon.')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Demand sensing
+        <span class="ai-dot"></span>
+      </div>
+      <div class="nav-item" onclick="showToast('Forecast accuracy module — coming soon.')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg>
+        Forecast accuracy
+      </div>
+      <div class="nav-item" onclick="showToast('POS sell-through module — coming soon.')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        POS sell-through
+      </div>
+    </div>
+    <div class="sb-section">
+      <div class="sb-section-label">Configuration</div>
+      <div class="nav-item" onclick="showToast('Store settings — coming soon.')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Store settings
+      </div>
+      <div class="nav-item" onclick="showToast('Users & roles — coming soon.')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4-4v-2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Users &amp; roles
+      </div>
+    </div>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-avatar">RK</div>
+    <div>
+      <div class="sb-user-name">Rajiv Krishnan</div>
+      <div class="sb-user-role">SC Planner · Bengaluru</div>
+    </div>
+    <div class="online-dot" title="Online"></div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 1 — NETWORK OVERVIEW
+════════════════════════════════════════════ -->
+<div class="tab-content active" id="tab-overview">
+  <div class="topbar">
+    <div class="breadcrumb">
+      <span>Network</span><span class="bc-sep">›</span><span class="bc-cur">Overview</span>
+    </div>
+    <div class="topbar-right">
+      <div class="tb-pill on"><span class="sdot g"></span>Sensing: Active</div>
+      <div class="seg">
+        <div class="seg-opt active" id="seg-4w" onclick="setHorizon(4)">4W</div>
+        <div class="seg-opt" id="seg-8w" onclick="setHorizon(8)">8W</div>
+      </div>
+      <div class="tb-select-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <select id="weekSelect" onchange="setWeek(this.value)">
+          <option value="30">Wk 30</option>
+          <option value="31">Wk 31</option>
+          <option value="32" selected>Wk 32 (Current)</option>
+          <option value="33">Wk 33</option>
+          <option value="34">Wk 34</option>
+        </select>
+      </div>
+      <div class="tb-select-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/></svg>
+        <select id="storeSelect" onchange="selectStore(this.value)">
+          <option value="0142">Store #0142 — Indiranagar</option>
+          <option value="0137">Store #0137 — Koramangala</option>
+          <option value="0151">Store #0151 — HSR Layout</option>
+          <option value="0165">Store #0165 — Whitefield</option>
+          <option value="0188">Store #0188 — Jayanagar</option>
+        </select>
+      </div>
+      <div class="tb-icon" title="Notifications">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+        <span class="notif-dot"></span>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title" id="s1-title">Network demand &amp; inventory</div>
+        <div class="page-sub">Store-level forecast, demand sensing, on-hand inventory and net requirement — store selector drives all panels.</div>
+        <div class="refresh-tag"><span class="pulse"></span>Live · Last refreshed 2 min ago · Planning cycle Wk 32</div>
+      </div>
+    </div>
+
+    <!-- KPI row -->
+    <div class="kpi-row" id="kpi-row">
+      <div class="kpi"><div class="kpi-label">Service level</div><div class="kpi-value" id="kpi-sl">97.4%</div><div class="kpi-delta delta-neu" id="kpi-sl-d">target 98%</div></div>
+      <div class="kpi"><div class="kpi-label">Fill rate</div><div class="kpi-value" id="kpi-fr">95.1%</div><div class="kpi-delta delta-up" id="kpi-fr-d">↑ 1.2 pts w/w</div></div>
+      <div class="kpi"><div class="kpi-label">Capacity utilisation</div><div class="kpi-value" id="kpi-cu">88%</div><div class="kpi-delta delta-neu" id="kpi-cu-d">within ceiling</div></div>
+      <div class="kpi"><div class="kpi-label">In-transit units</div><div class="kpi-value" id="kpi-it">12.4K</div><div class="kpi-delta delta-neu" id="kpi-it-d">6 open loads</div></div>
+      <div class="kpi hi"><div class="kpi-label">Transportation cost <span style="font-size:9px;text-transform:none;letter-spacing:0;font-weight:400">(MTD)</span></div><div class="kpi-value" id="kpi-tc">₹15.3L</div><div class="kpi-delta delta-up" id="kpi-tc-d">↓ 9% vs plan</div></div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="charts-row">
+      <div class="chart-panel">
+        <div class="chart-head">
+          <div class="chart-title">Demand forecast — baseline</div>
+        </div>
+        <div class="chart-area" id="chart1"></div>
+        <div class="chart-legend">
+          <div class="leg-item"><span class="leg-bar" style="background:var(--blue);opacity:.7"></span>Units / week</div>
+        </div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-head">
+          <div class="chart-title">Demand sensing vs baseline</div>
+          <span class="ai-tag">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            AI sensing
+          </span>
+        </div>
+        <div class="chart-area" id="chart2"></div>
+        <div class="chart-legend">
+          <div class="leg-item"><span class="leg-line" style="background:var(--purple)"></span>Sensed dmd</div>
+          <div class="leg-item"><span class="leg-line" style="background:var(--ink5);border-top:1.5px dashed var(--ink4)"></span>Baseline</div>
+          <span id="uplift-badge" class="ai-tag" style="margin-left:auto"></span>
+        </div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-head">
+          <div class="chart-title">On-hand inventory — DRP</div>
+        </div>
+        <div class="chart-area" id="chart3"></div>
+        <div class="chart-legend">
+          <div class="leg-item"><span class="leg-bar" style="background:var(--blue);opacity:.6"></span>On-hand</div>
+          <div class="leg-item"><span class="leg-bar" style="background:var(--amber);opacity:.8"></span>Near ROP</div>
+          <div class="leg-item"><span class="leg-line" style="background:var(--amber);border-top:1.5px dashed var(--amber)"></span>ROP</div>
+        </div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-head">
+          <div class="chart-title">Inventory gap / net requirement</div>
+        </div>
+        <div class="chart-area" id="chart4"></div>
+        <div class="chart-legend">
+          <div class="leg-item" style="color:var(--red);font-weight:600">Below zero = shortfall</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Strip -->
+    <div class="ai-strip">
+      <div class="ai-strip::before"></div>
+      <div class="ai-strip-inner">
+        <div class="ai-strip-left">
+          <div class="ai-strip-head">
+            <span class="ai-tag">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              AI technology
+            </span>
+            <span class="ai-strip-title">Replenishment recommendation</span>
+            <span class="ai-strip-sub">capacity-aware · freight-optimised</span>
+          </div>
+          <div class="ai-analyzing" id="ai-analyzing">
+            <span>AI technology is analysing store signals</span>
+            <span class="dots"><span></span><span></span><span></span></span>
+          </div>
+          <div class="ai-recs" id="ai-recs"></div>
+        </div>
+        <div class="ai-cta">
+          <div class="saving-label">Est. freight saving</div>
+          <div class="saving-value" id="ai-saving">₹5.6L</div>
+          <div class="saving-sub">AI-optimised lane consolidation · this cycle</div>
+          <button class="btn-ai" onclick="showScreen('dispatch')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Release DRP order to DC
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 2 — STORE DETAIL
+════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-store">
+  <div class="topbar">
+    <div class="breadcrumb">
+      <span class="bc-link" onclick="showScreen('overview')">Network</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-link" onclick="showScreen('overview')">Stores</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-cur" id="s2-breadcrumb">Store #0142 — Indiranagar</span>
+    </div>
+    <div class="topbar-right">
+      <div class="sf-bar" id="sf-bar">
+        <span class="sf-chip f-all sel" onclick="setFilter('all')">All <span class="sf-count" id="sf-cnt-all">10</span></span>
+        <span class="sf-chip f-replenish" onclick="setFilter('replenish')">Replenish <span class="sf-count" id="sf-cnt-replenish">3</span></span>
+        <span class="sf-chip f-low" onclick="setFilter('low')">Low <span class="sf-count" id="sf-cnt-low">2</span></span>
+        <span class="sf-chip f-ok" onclick="setFilter('ok')">OK <span class="sf-count" id="sf-cnt-ok">3</span></span>
+        <span class="sf-chip f-hold" onclick="setFilter('hold')">Hold <span class="sf-count" id="sf-cnt-hold">1</span></span>
+        <span class="sf-chip f-redeploy" onclick="setFilter('redeploy')">Redeploy <span class="sf-count" id="sf-cnt-redeploy">1</span></span>
+      </div>
+      <div class="search-wrap">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="text" id="sku-search" placeholder="Search SKU..." oninput="filterTable()">
+      </div>
+      <button class="tb-btn tb-btn-ghost" onclick="showToast('Export ready — check your downloads.')">Export</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title" id="s2-title">Store #0142 — SKU replenishment detail</div>
+        <div class="page-sub">SKU-level net requirement and replenishment quantities. AI technology identifies shortfalls and proposes lane consolidation.</div>
+      </div>
+    </div>
+    <div class="detail-layout">
+      <!-- Left: store summary -->
+      <div class="store-sidebar">
+        <div class="store-card">
+          <div class="store-name-lg" id="s2-store-name">Store #0142</div>
+          <div class="store-meta" id="s2-store-meta">Indiranagar · Format L · Lead time 2 days</div>
+          <div class="cap-header">
+            <div class="sec-label" style="margin-bottom:0">Capacity utilisation</div>
+            <span style="font-size:11px;font-weight:700;color:var(--ink2)" id="s2-cap-pct">88%</span>
+          </div>
+          <div class="cap-bar-track"><div class="cap-bar-fill" id="s2-cap-bar" style="width:88%">88%</div></div>
+          <div class="cap-note" id="s2-cap-note">12,320 of 14,000 units</div>
+          <div class="stat-grid">
+            <div class="stat-row"><span class="stat-label">On-hand</span><span class="stat-value" id="s2-onhand">12,320 u</span></div>
+            <div class="stat-row"><span class="stat-label">In-transit</span><span class="stat-value" id="s2-intransit">2,480 u</span></div>
+            <div class="stat-row"><span class="stat-label">Open-to-ship headroom</span><span class="stat-value" id="s2-ots">1,680 u</span></div>
+            <div class="stat-row"><span class="stat-label">Target service level</span><span class="stat-value">98%</span></div>
+          </div>
+        </div>
+        <div class="store-card">
+          <div class="sec-label">Active demand signals</div>
+          <div class="signal-chips" id="s2-signals">
+            <span class="chip on">Promo ↑</span>
+            <span class="chip on">Festival</span>
+            <span class="chip on">Weather</span>
+            <span class="chip">Trend</span>
+            <span class="chip">Event</span>
+          </div>
+          <div class="sensing-note" id="s2-sensing-note">
+            AI technology detects +6.4% demand uplift vs baseline this horizon
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: SKU table -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">SKU replenishment — net requirement &amp; order quantity</div>
+            <span class="ai-tag">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              AI-scored
+            </span>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="data-table" id="sku-table">
+              <thead><tr>
+                <th>SKU</th>
+                <th class="r">On-hand</th>
+                <th class="r">In-transit</th>
+                <th class="r">Sensed dmd/wk</th>
+                <th class="r">Safety stock</th>
+                <th class="r">ROP</th>
+                <th class="r">Net req.</th>
+                <th class="r">Replen qty</th>
+                <th>Status</th>
+              </tr></thead>
+              <tbody id="sku-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="ai-footer">
+          <span class="ai-tag">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            AI technology
+          </span>
+          <span class="ai-footer-text" id="s2-ai-footer-text">
+            <strong>4 SKUs flagged for replenishment</strong> · Consolidated lane DC → #0142 · Projected truck fill 92%
+          </span>
+          <button class="btn-ai" onclick="openModal()">Auto-release to DC</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 3 — REPLENISHMENT & DISPATCH
+════════════════════════════════════════════ -->
+<div class="tab-content" id="tab-dispatch">
+  <div class="topbar">
+    <div class="breadcrumb">
+      <span>Network</span><span class="bc-sep">›</span>
+      <span class="bc-cur">Replenishment &amp; DC dispatch</span>
+      <span class="bc-sep">·</span>
+      <span style="color:var(--ink4);font-size:12px">Cycle Wk 32</span>
+    </div>
+    <div class="topbar-right">
+      <div class="tb-pill ai-on">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        AI optimiser: Active
+      </div>
+      <button class="btn-ai" onclick="openModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Approve all lanes
+      </button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">AI replenishment &amp; DC dispatch</div>
+        <div class="page-sub">Network-level consolidation powered by AI technology to minimise transportation cost within store capacity constraints.</div>
+      </div>
+    </div>
+
+    <!-- Dispatch KPIs -->
+    <div class="kpi-row" style="grid-template-columns:repeat(4,1fr)">
+      <div class="kpi hi"><div class="kpi-label">Transportation cost <span style="font-size:9px;text-transform:none;letter-spacing:0;font-weight:400">(weekly)</span></div><div class="kpi-value">₹10.8L</div><div class="kpi-delta delta-up">↓ 13% vs un-optimised</div></div>
+      <div class="kpi"><div class="kpi-label">Avg truck utilisation</div><div class="kpi-value">85%</div><div class="kpi-delta delta-up">↑ 14 pts vs baseline</div></div>
+      <div class="kpi"><div class="kpi-label">LTL / expedite loads</div><div class="kpi-value">1</div><div class="kpi-delta delta-up">↓ 7 loads vs baseline</div></div>
+      <div class="kpi"><div class="kpi-label">Capacity-feasible</div><div class="kpi-value">100%</div><div class="kpi-delta delta-neu">all stores within cap</div></div>
+    </div>
+
+    <div class="dispatch-layout">
+      <!-- Lane table -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Consolidated replenishment plan</div>
+            <span class="ai-tag">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              AI-optimised
+            </span>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="data-table" id="lane-table">
+              <thead><tr>
+                <th style="width:32px"></th>
+                <th>Lane (DC → store)</th>
+                <th class="r">SKUs</th>
+                <th class="r">Units</th>
+                <th>Truck fill</th>
+                <th>Mode</th>
+                <th class="r">Freight</th>
+                <th class="r">vs baseline</th>
+              </tr></thead>
+              <tbody id="lane-tbody">
+                <tr id="lane-0142">
+                  <td><input type="checkbox" class="lane-chk" onchange="toggleLane('0142',this)"></td>
+                  <td><strong>DC → #0142</strong> <span style="font-size:10.5px;color:var(--ink4)">Indiranagar</span></td>
+                  <td class="num">18</td><td class="num">3,200</td>
+                  <td><div class="truck-fill-wrap"><span class="truck-fill-val">92%</span><div class="fill-bar-track"><div class="fill-bar-fill hi" style="width:92%"></div></div></div></td>
+                  <td><span class="mode-badge ftl">FTL</span></td>
+                  <td class="num">₹2.8L</td><td class="num vs-save">↓ 12%</td>
+                </tr>
+                <tr id="lane-0137">
+                  <td><input type="checkbox" class="lane-chk" onchange="toggleLane('0137',this)"></td>
+                  <td><strong>DC → #0137</strong> <span style="font-size:10.5px;color:var(--ink4)">Koramangala</span></td>
+                  <td class="num">14</td><td class="num">2,750</td>
+                  <td><div class="truck-fill-wrap"><span class="truck-fill-val">92%</span><div class="fill-bar-track"><div class="fill-bar-fill hi" style="width:92%"></div></div></div></td>
+                  <td><span class="mode-badge consol">FTL (consol.)</span></td>
+                  <td class="num">₹2.6L</td><td class="num vs-save">↓ 18%</td>
+                </tr>
+                <tr id="lane-0151">
+                  <td><input type="checkbox" class="lane-chk" onchange="toggleLane('0151',this)"></td>
+                  <td><strong>DC → #0151</strong> <span style="font-size:10.5px;color:var(--ink4)">HSR Layout</span></td>
+                  <td class="num">9</td><td class="num">1,280</td>
+                  <td><div class="truck-fill-wrap"><span class="truck-fill-val">74%</span><div class="fill-bar-track"><div class="fill-bar-fill md" style="width:74%"></div></div></div></td>
+                  <td><span class="mode-badge ftl">FTL</span></td>
+                  <td class="num">₹1.8L</td><td class="num vs-save">↓ 6%</td>
+                </tr>
+                <tr id="lane-0165">
+                  <td><input type="checkbox" class="lane-chk" onchange="toggleLane('0165',this)"></td>
+                  <td><strong>DC → #0165</strong> <span style="font-size:10.5px;color:var(--ink4)">Whitefield</span></td>
+                  <td class="num">11</td><td class="num">1,980</td>
+                  <td><div class="truck-fill-wrap"><span class="truck-fill-val">88%</span><div class="fill-bar-track"><div class="fill-bar-fill hi" style="width:88%"></div></div></div></td>
+                  <td><span class="mode-badge ftl">FTL</span></td>
+                  <td class="num">₹2.2L</td><td class="num vs-save">↓ 9%</td>
+                </tr>
+                <tr id="lane-0188">
+                  <td><input type="checkbox" class="lane-chk" onchange="toggleLane('0188',this)"></td>
+                  <td><strong>DC → #0188</strong> <span style="font-size:10.5px;color:var(--ink4)">Jayanagar</span></td>
+                  <td class="num">7</td><td class="num">940</td>
+                  <td><div class="truck-fill-wrap"><span class="truck-fill-val">61%</span><div class="fill-bar-track"><div class="fill-bar-fill lo" style="width:61%"></div></div></div></td>
+                  <td><span class="mode-badge milkrun">Milk-run</span></td>
+                  <td class="num">₹1.4L</td><td class="num vs-save">↓ 21%</td>
+                </tr>
+                <tr class="total-row">
+                  <td></td>
+                  <td>Network total</td>
+                  <td class="num">59</td><td class="num">10,150</td>
+                  <td><div class="truck-fill-wrap"><span class="truck-fill-val" style="color:var(--green)">85%</span><div class="fill-bar-track"><div class="fill-bar-fill hi" style="width:85%"></div></div></div></td>
+                  <td>—</td>
+                  <td class="num">₹10.8L</td><td class="num vs-save">↓ 13%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rationale panel -->
+      <div class="rationale-panel">
+        <div class="rationale-head">
+          <span class="ai-tag">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            AI technology
+          </span>
+          <span class="rationale-title">AI rationale</span>
+        </div>
+        <div class="qa-item">
+          <div class="qa-q"><span class="q-mark">Q</span><span class="q-text">How does the system maximise capacity vs the demand forecast?</span></div>
+          <div class="qa-a">Each store's replenishment order is capped at open-to-ship headroom. When capacity is constrained, AI technology allocates scarce units to the highest sensed-demand, highest-margin SKUs first — ensuring the most productive fill across the network.</div>
+        </div>
+        <div class="qa-item">
+          <div class="qa-q"><span class="q-mark">Q</span><span class="q-text">What is the ideal inventory for each store?</span></div>
+          <div class="qa-a">Sensed demand over lead time + safety stock sized for the 98% service level target, clamped to physical capacity. AI technology recomputes this every sensing cycle as signals shift — promo, festival, weather, and trend are all live inputs.</div>
+        </div>
+        <div class="qa-item">
+          <div class="qa-q"><span class="q-mark">Q</span><span class="q-text">How is transportation cost reduced?</span></div>
+          <div class="qa-a">AI technology consolidates store orders onto shared DC→store lanes, replacing LTL and expedite loads with full truckloads and milk-runs. This lifts network truck fill from 71% to 85%, cutting per-unit freight cost by 13% this cycle.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+/* ══════════════════════════════════════
+   DATA STORE — all 5 stores
+══════════════════════════════════════ */
+const STORES = {
+  '0142': {
+    name:'Indiranagar', format:'L', maxCap:14000, onHand:12320, inTransit:2480, ots:1680, lead:2,
+    signals:['Promo ↑','Festival','Weather'],
+    uplift:6.4,
+    kpis:{sl:'97.4%',slD:'target 98%',slClass:'delta-neu',fr:'95.1%',frD:'↑ 1.2 pts w/w',frClass:'delta-up',cu:'88%',cuD:'within ceiling',cuClass:'delta-neu',it:'12.4K',itD:'6 open loads',itClass:'delta-neu',tc:'₹15.3L',tcD:'↓ 9% vs plan',tcClass:'delta-up'},
+    forecast:[4200,5500,4900,6300,5800,7100,6600,7400],
+    sensed: [4515,5950,5285,6785,6248,7640,7095,7985],
+    gap:    [0,0,-420,-1820,-710,-2540,-1440,-3520],
+    rop:3500,
+    aiRecs:[
+      'Net requirement 3,200 units across 18 SKUs — all feasible within open-to-ship headroom of 1,680 u.',
+      'Consolidate DC→#0142 with DC→#0137 to lift combined truck fill to 92% — eliminates LTL premium.',
+      'SKU-4471 in overstock vs sensed demand — redeploy 540 u to Store #0151 to cover W4 shortfall.'
+    ],
+    saving:'₹5.6L',
+    skus:[
+      {id:'SKU-4471',oh:1860,it:0,dmd:240,ss:320,rop:560,nr:0,rq:0,st:'hold'},
+      {id:'SKU-4490',oh:640,it:180,dmd:410,ss:300,rop:620,nr:360,rq:400,st:'replenish'},
+      {id:'SKU-4512',oh:220,it:120,dmd:380,ss:280,rop:540,nr:420,rq:480,st:'replenish'},
+      {id:'SKU-4533',oh:980,it:0,dmd:210,ss:260,rop:480,nr:0,rq:0,st:'ok'},
+      {id:'SKU-4560',oh:140,it:60,dmd:350,ss:260,rop:500,nr:380,rq:420,st:'low'},
+      {id:'SKU-4588',oh:1540,it:0,dmd:180,ss:220,rop:420,nr:0,rq:0,st:'redeploy'},
+      {id:'SKU-4601',oh:310,it:240,dmd:300,ss:240,rop:460,nr:210,rq:240,st:'replenish'},
+      {id:'SKU-4624',oh:760,it:120,dmd:290,ss:200,rop:400,nr:0,rq:0,st:'ok'},
+      {id:'SKU-4647',oh:80,it:0,dmd:320,ss:280,rop:560,nr:480,rq:480,st:'low'},
+      {id:'SKU-4671',oh:1200,it:300,dmd:260,ss:180,rop:360,nr:0,rq:0,st:'ok'},
+    ]
+  },
+  '0137': {
+    name:'Koramangala', format:'M', maxCap:11000, onHand:7920, inTransit:1840, ots:3080, lead:2,
+    signals:['Promo ↑','Trend'],
+    uplift:3.1,
+    kpis:{sl:'98.2%',slD:'↑ 0.4 pts w/w',slClass:'delta-up',fr:'96.4%',frD:'↑ 0.8 pts w/w',frClass:'delta-up',cu:'72%',cuD:'within ceiling',cuClass:'delta-neu',it:'9.8K',itD:'4 open loads',itClass:'delta-neu',tc:'₹12.1L',tcD:'↓ 7% vs plan',tcClass:'delta-up'},
+    forecast:[3100,3800,3500,4200,4000,4600,4300,4900],
+    sensed: [3196,3920,3610,4332,4130,4745,4436,5052],
+    gap:    [0,0,0,-218,0,-778,-318,-1642],
+    rop:2800,
+    aiRecs:[
+      'Net requirement 2,750 units across 14 SKUs — capacity headroom available at 3,080 u.',
+      'Consolidate DC→#0137 with #0142 lane for shared FTL dispatch — reduces per-unit freight cost by 18%.',
+      'Trend signal on SKU-7312 and SKU-7345 suggests demand acceleration — raise safety stock buffer 15%.'
+    ],
+    saving:'₹3.2L',
+    skus:[
+      {id:'SKU-7290',oh:920,it:200,dmd:280,ss:220,rop:480,nr:0,rq:0,st:'ok'},
+      {id:'SKU-7312',oh:340,it:80,dmd:390,ss:280,rop:580,nr:320,rq:360,st:'replenish'},
+      {id:'SKU-7334',oh:1180,it:0,dmd:160,ss:190,rop:380,nr:0,rq:0,st:'hold'},
+      {id:'SKU-7345',oh:180,it:60,dmd:340,ss:250,rop:510,nr:380,rq:400,st:'low'},
+      {id:'SKU-7378',oh:780,it:0,dmd:220,ss:200,rop:430,nr:0,rq:0,st:'ok'},
+      {id:'SKU-7401',oh:260,it:120,dmd:300,ss:230,rop:460,nr:280,rq:320,st:'replenish'},
+      {id:'SKU-7423',oh:1450,it:0,dmd:140,ss:160,rop:310,nr:0,rq:0,st:'redeploy'},
+      {id:'SKU-7445',oh:390,it:160,dmd:260,ss:200,rop:420,nr:0,rq:0,st:'ok'},
+    ]
+  },
+  '0151': {
+    name:'HSR Layout', format:'S', maxCap:8500, onHand:5525, inTransit:840, ots:2975, lead:2,
+    signals:['Weather'],
+    uplift:1.8,
+    kpis:{sl:'96.8%',slD:'↓ 0.2 pts w/w',slClass:'delta-down',fr:'93.6%',frD:'↓ 0.4 pts w/w',frClass:'delta-down',cu:'65%',cuD:'within ceiling',cuClass:'delta-neu',it:'5.2K',itD:'3 open loads',itClass:'delta-neu',tc:'₹8.4L',tcD:'↓ 5% vs plan',tcClass:'delta-up'},
+    forecast:[2200,2600,2400,2900,2700,3100,2900,3300],
+    sensed: [2240,2647,2445,2953,2749,3158,2953,3360],
+    gap:    [0,0,0,-245,0,-445,-245,-1095],
+    rop:1800,
+    aiRecs:[
+      'Net requirement 1,280 units across 9 SKUs — well within capacity headroom of 2,975 u.',
+      'Weather signal (rain) drives +1.8% uplift on home & comfort SKUs — prioritise in this replen cycle.',
+      'Accept redeployment of SKU-4471 (540 u) from Store #0142 — offsets the W4 inventory shortfall gap.'
+    ],
+    saving:'₹1.8L',
+    skus:[
+      {id:'SKU-3110',oh:620,it:100,dmd:190,ss:160,rop:340,nr:0,rq:0,st:'ok'},
+      {id:'SKU-3145',oh:180,it:40,dmd:260,ss:200,rop:420,nr:280,rq:320,st:'replenish'},
+      {id:'SKU-3167',oh:860,it:0,dmd:120,ss:140,rop:280,nr:0,rq:0,st:'hold'},
+      {id:'SKU-3189',oh:120,it:20,dmd:230,ss:190,rop:400,nr:330,rq:360,st:'low'},
+      {id:'SKU-3201',oh:540,it:0,dmd:170,ss:140,rop:300,nr:0,rq:0,st:'ok'},
+      {id:'SKU-3224',oh:200,it:80,dmd:220,ss:180,rop:370,nr:170,rq:200,st:'replenish'},
+      {id:'SKU-3246',oh:760,it:0,dmd:100,ss:120,rop:240,nr:0,rq:0,st:'redeploy'},
+    ]
+  },
+  '0165': {
+    name:'Whitefield', format:'M', maxCap:12000, onHand:10080, inTransit:1920, ots:2000, lead:2,
+    signals:['Festival','Trend'],
+    uplift:4.7,
+    kpis:{sl:'97.9%',slD:'↑ 0.2 pts w/w',slClass:'delta-up',fr:'95.8%',frD:'↑ 1.6 pts w/w',frClass:'delta-up',cu:'84%',cuD:'near ceiling',cuClass:'delta-neu',it:'11.2K',itD:'5 open loads',itClass:'delta-neu',tc:'₹13.6L',tcD:'↓ 11% vs plan',tcClass:'delta-up'},
+    forecast:[3600,4200,3900,4800,4500,5200,4900,5600],
+    sensed: [3770,4400,4085,5030,4715,5448,5130,5866],
+    gap:    [0,0,0,-1120,0,-2220,-1020,-3120],
+    rop:3200,
+    aiRecs:[
+      'Net requirement 1,980 units across 11 SKUs — capacity headroom tight at 2,000 u; no excess room.',
+      'Festival + Trend signals drive +4.7% uplift — advance pull-forward to W3 recommended to avoid W4 gap.',
+      'Dedicated FTL lane DC→#0165 optimal given load volume — projected truck fill 88%.'
+    ],
+    saving:'₹4.1L',
+    skus:[
+      {id:'SKU-9001',oh:1240,it:300,dmd:310,ss:240,rop:500,nr:0,rq:0,st:'ok'},
+      {id:'SKU-9045',oh:380,it:100,dmd:420,ss:310,rop:640,nr:380,rq:420,st:'replenish'},
+      {id:'SKU-9067',oh:280,it:80,dmd:380,ss:290,rop:580,nr:400,rq:440,st:'low'},
+      {id:'SKU-9089',oh:1100,it:0,dmd:200,ss:220,rop:440,nr:0,rq:0,st:'hold'},
+      {id:'SKU-9112',oh:460,it:140,dmd:350,ss:270,rop:550,nr:120,rq:160,st:'replenish'},
+      {id:'SKU-9134',oh:1680,it:0,dmd:170,ss:190,rop:380,nr:0,rq:0,st:'redeploy'},
+      {id:'SKU-9156',oh:310,it:60,dmd:290,ss:220,rop:450,nr:230,rq:260,st:'replenish'},
+      {id:'SKU-9178',oh:790,it:120,dmd:240,ss:180,rop:380,nr:0,rq:0,st:'ok'},
+    ]
+  },
+  '0188': {
+    name:'Jayanagar', format:'S', maxCap:9000, onHand:5490, inTransit:720, ots:3510, lead:2,
+    signals:['Event'],
+    uplift:2.2,
+    kpis:{sl:'97.1%',slD:'target 98%',slClass:'delta-neu',fr:'94.3%',frD:'↑ 0.5 pts w/w',frClass:'delta-up',cu:'61%',cuD:'within ceiling',cuClass:'delta-neu',it:'6.4K',itD:'3 open loads',itClass:'delta-neu',tc:'₹7.8L',tcD:'↓ 6% vs plan',tcClass:'delta-up'},
+    forecast:[1800,2100,1950,2400,2200,2700,2500,2900],
+    sensed: [1840,2148,1994,2455,2250,2765,2565,2968],
+    gap:    [0,0,0,0,0,-285,-85,-985],
+    rop:1500,
+    aiRecs:[
+      'Net requirement 940 units across 7 SKUs — milk-run route optimal given smaller load volume.',
+      'Local event signal (tech fest) drives uplift on electronics & accessories SKUs — flag for spot replen if sell-through exceeds 80%.',
+      'Low capacity utilisation at 61% — redeployment candidate; accept inbound units from excess stores if needed.'
+    ],
+    saving:'₹1.2L',
+    skus:[
+      {id:'SKU-6010',oh:740,it:80,dmd:210,ss:170,rop:360,nr:0,rq:0,st:'ok'},
+      {id:'SKU-6034',oh:160,it:40,dmd:280,ss:210,rop:440,nr:320,rq:360,st:'replenish'},
+      {id:'SKU-6056',oh:1100,it:0,dmd:130,ss:150,rop:300,nr:0,rq:0,st:'hold'},
+      {id:'SKU-6078',oh:140,it:20,dmd:200,ss:170,rop:360,nr:240,rq:280,st:'low'},
+      {id:'SKU-6101',oh:480,it:0,dmd:160,ss:140,rop:300,nr:0,rq:0,st:'ok'},
+      {id:'SKU-6123',oh:200,it:60,dmd:190,ss:160,rop:340,nr:140,rq:160,st:'replenish'},
+      {id:'SKU-6145',oh:980,it:0,dmd:100,ss:110,rop:220,nr:0,rq:0,st:'redeploy'},
+    ]
+  }
+};
+
+let currentStore = '0142';
+let currentHorizon = 4;
+let skuFilter = 'all';
+
+/* ══════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════ */
+function showScreen(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'store') renderStoreDetail(currentStore);
+  window.scrollTo(0, 0);
+}
+
+/* ══════════════════════════════════════
+   STORE SELECTION
+══════════════════════════════════════ */
+function selectStore(id) {
+  currentStore = id;
+  // Sync store select with Screen 2
+  document.getElementById('storeSelect').value = id;
+
+  // Animate KPIs out then in
+  const row = document.getElementById('kpi-row');
+  row.style.opacity = '0.4';
+  row.style.transform = 'translateY(4px)';
+
+  // Show AI analyzing
+  document.getElementById('ai-analyzing').style.display = 'flex';
+  document.getElementById('ai-recs').style.opacity = '0';
+
+  setTimeout(() => {
+    updateKPIs(id);
+    row.style.transition = 'opacity .3s ease, transform .3s ease';
+    row.style.opacity = '1';
+    row.style.transform = 'translateY(0)';
+  }, 200);
+
+  renderAllCharts(id);
+
+  setTimeout(() => {
+    updateAIStrip(id);
+    document.getElementById('ai-analyzing').style.display = 'none';
+    document.getElementById('ai-recs').style.opacity = '1';
+  }, 1100);
+}
+
+function updateKPIs(id) {
+  const s = STORES[id];
+  const k = s.kpis;
+  set('kpi-sl', k.sl); setDelta('kpi-sl-d', k.slD, k.slClass);
+  set('kpi-fr', k.fr); setDelta('kpi-fr-d', k.frD, k.frClass);
+  set('kpi-cu', k.cu); setDelta('kpi-cu-d', k.cuD, k.cuClass);
+  set('kpi-it', k.it); setDelta('kpi-it-d', k.itD, k.itClass);
+  set('kpi-tc', k.tc); setDelta('kpi-tc-d', k.tcD, k.tcClass);
+}
+
+function updateAIStrip(id) {
+  const s = STORES[id];
+  const recsEl = document.getElementById('ai-recs');
+  recsEl.innerHTML = s.aiRecs.map(r =>
+    `<div class="ai-rec fade-in"><span class="rec-dot"></span>${r}</div>`
+  ).join('');
+  document.getElementById('ai-saving').textContent = s.saving;
+}
+
+function set(id, val) { document.getElementById(id).textContent = val; }
+function setDelta(id, val, cls) {
+  const el = document.getElementById(id);
+  el.textContent = val;
+  el.className = 'kpi-delta ' + cls;
+}
+
+/* ══════════════════════════════════════
+   HORIZON / WEEK FILTERS
+══════════════════════════════════════ */
+function setHorizon(n) {
+  currentHorizon = n;
+  document.getElementById('seg-4w').classList.toggle('active', n === 4);
+  document.getElementById('seg-8w').classList.toggle('active', n === 8);
+  renderAllCharts(currentStore);
+}
+function setWeek(w) {
+  // Minor data variation per week (±5%)
+  renderAllCharts(currentStore);
+}
+
+/* ══════════════════════════════════════
+   CHARTS
+══════════════════════════════════════ */
+function renderAllCharts(id) {
+  const s = STORES[id];
+  const n = currentHorizon;
+  const fc = s.forecast.slice(0, n);
+  const se = s.sensed.slice(0, n);
+  const bl = s.forecast.slice(0, n);
+  const gp = s.gap.slice(0, n);
+  const oh = computeOnHand(s).slice(0, n);
+
+  renderBarChart('chart1', fc, {color:'#2E6BE6', labels:weekLabels(n)});
+  renderDualLineChart('chart2', se, bl, {labels:weekLabels(n), uplift:s.uplift});
+  renderOnHandChart('chart3', oh, s.rop, {labels:weekLabels(n)});
+  renderGapChart('chart4', gp, {labels:weekLabels(n)});
+  document.getElementById('uplift-badge').textContent = '+' + s.uplift + '% vs baseline';
+}
+
+function weekLabels(n) {
+  return Array.from({length:n}, (_,i) => 'W'+(i+1));
+}
+
+function computeOnHand(s) {
+  // Simple draw-down model
+  const weekly = s.forecast[0];
+  let oh = s.onHand;
+  const result = [];
+  for (let i = 0; i < 8; i++) {
+    result.push(Math.max(0, oh));
+    oh -= s.forecast[i] * 0.85;
+    if (i === 3) oh += s.onHand * 0.45; // simulated replenishment
+  }
+  return result;
+}
+
+function fmt(v) {
+  if (Math.abs(v) >= 1000) return (v/1000).toFixed(1)+'K';
+  return Math.round(v).toString();
+}
+
+function renderBarChart(cid, data, opts) {
+  const el = document.getElementById(cid);
+  if (!el) return;
+  const W = el.clientWidth || 260, H = el.clientHeight || 150;
+  const pad = {t:10,b:22,l:38,r:8};
+  const cw = W - pad.l - pad.r, ch = H - pad.t - pad.b;
+  const n = data.length;
+  const max = Math.max(...data) * 1.12 || 1;
+  const min = 0;
+  const range = max - min;
+  const gap = cw * 0.08 / (n+1);
+  const bw = (cw - gap*(n+1)) / n;
+
+  const yTicks = 4;
+  const yStep = niceStep(max / yTicks);
+  const yMax = Math.ceil(max / yStep) * yStep;
+
+  let s = `<svg width="${W}" height="${H}" style="overflow:visible">`;
+  s += `<defs><linearGradient id="bg${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${opts.color}" stop-opacity=".85"/><stop offset="100%" stop-color="${opts.color}" stop-opacity=".45"/></linearGradient></defs>`;
+
+  // Grid lines & Y labels
+  for (let i = 0; i <= yTicks; i++) {
+    const yv = (i / yTicks) * yMax;
+    const y = pad.t + ch - (yv / yMax) * ch;
+    s += `<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#E8ECF1" stroke-width="1"/>`;
+    s += `<text x="${pad.l-5}" y="${y+4}" font-size="9" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;
+  }
+
+  // Bars
+  data.forEach((v, i) => {
+    const bh = Math.max(4, (v / yMax) * ch);
+    const x = pad.l + gap + i*(bw+gap);
+    const y = pad.t + ch - bh;
+    s += `<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="url(#bg${cid})" class="chart-bar" style="cursor:pointer" onmouseenter="showTT(event,'${opts.labels[i]}: ${fmt(v)} units')" onmouseleave="hideTT()"/>`;
+    // X label
+    s += `<text x="${x+bw/2}" y="${H-4}" font-size="9" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;
+  });
+
+  s += '</svg>';
+  el.innerHTML = s;
+}
+
+function renderDualLineChart(cid, sensed, baseline, opts) {
+  const el = document.getElementById(cid);
+  if (!el) return;
+  const W = el.clientWidth || 260, H = el.clientHeight || 150;
+  const pad = {t:10,b:22,l:38,r:8};
+  const cw = W-pad.l-pad.r, ch = H-pad.t-pad.b;
+  const n = sensed.length;
+  const allVals = [...sensed,...baseline];
+  const max = Math.max(...allVals)*1.08, min = Math.min(...allVals)*0.94;
+  const range = max - min || 1;
+
+  const pt = (v, i) => {
+    const x = pad.l + (i/(n-1))*cw;
+    const y = pad.t + ch - ((v-min)/range)*ch;
+    return [x,y];
+  };
+
+  const yTicks = 4;
+  const yStep = niceStep((max-min)/yTicks);
+  const yBase = Math.floor(min/yStep)*yStep;
+
+  let s = `<svg width="${W}" height="${H}">`;
+  s += `<defs><linearGradient id="area${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#6C5CE7" stop-opacity=".12"/><stop offset="100%" stop-color="#6C5CE7" stop-opacity=".01"/></linearGradient></defs>`;
+
+  // Grid
+  for(let i=0;i<=yTicks;i++){
+    const yv = yBase + i*yStep;
+    const y = pad.t+ch-((yv-min)/range)*ch;
+    if(y<pad.t||y>pad.t+ch) continue;
+    s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#E8ECF1" stroke-width="1"/>`;
+    s+=`<text x="${pad.l-5}" y="${y+4}" font-size="9" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;
+  }
+
+  // Shaded area between lines
+  const areaPts = sensed.map((v,i)=>pt(v,i)).concat(baseline.map((v,i)=>pt(v,n-1-i)).reverse());
+  s+=`<polygon points="${areaPts.map(p=>p.join(',')).join(' ')}" fill="url(#area${cid})"/>`;
+
+  // Baseline dashed
+  const bPts = baseline.map(pt);
+  s+=`<polyline points="${bPts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#B0B8C4" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+
+  // Sensed solid (smooth)
+  const sPts = sensed.map(pt);
+  s+=`<polyline points="${sPts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#6C5CE7" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+  // Dots on sensed
+  sPts.forEach(([x,y],i)=>{
+    s+=`<circle cx="${x}" cy="${y}" r="3" fill="#6C5CE7" style="cursor:pointer" onmouseenter="showTT(event,'${opts.labels[i]} sensed: ${fmt(sensed[i])} u')" onmouseleave="hideTT()"/>`;
+  });
+
+  // X labels
+  sensed.forEach((_,i)=>{
+    const [x] = pt(0,i);
+    s+=`<text x="${x}" y="${H-4}" font-size="9" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;
+  });
+
+  s+='</svg>';
+  el.innerHTML=s;
+}
+
+function renderOnHandChart(cid, data, rop, opts) {
+  const el = document.getElementById(cid);
+  if (!el) return;
+  const W = el.clientWidth||260, H = el.clientHeight||150;
+  const pad = {t:10,b:22,l:42,r:8};
+  const cw = W-pad.l-pad.r, ch = H-pad.t-pad.b;
+  const n = data.length;
+  const max = Math.max(...data, rop)*1.12||1;
+  const yTicks=4, yStep=niceStep(max/yTicks), yMax=Math.ceil(max/yStep)*yStep;
+  const gap=cw*0.08/(n+1), bw=(cw-gap*(n+1))/n;
+
+  let s=`<svg width="${W}" height="${H}">`;
+  s+=`<defs>
+    <linearGradient id="boh${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2E6BE6" stop-opacity=".8"/><stop offset="100%" stop-color="#2E6BE6" stop-opacity=".35"/></linearGradient>
+    <linearGradient id="blo${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#D97706" stop-opacity=".85"/><stop offset="100%" stop-color="#D97706" stop-opacity=".4"/></linearGradient>
+  </defs>`;
+
+  // Grid
+  for(let i=0;i<=yTicks;i++){
+    const yv=(i/yTicks)*yMax;
+    const y=pad.t+ch-(yv/yMax)*ch;
+    s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#E8ECF1" stroke-width="1"/>`;
+    s+=`<text x="${pad.l-5}" y="${y+4}" font-size="9" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;
+  }
+
+  // ROP line
+  const ropy=pad.t+ch-(rop/yMax)*ch;
+  s+=`<line x1="${pad.l}" y1="${ropy}" x2="${W-pad.r}" y2="${ropy}" stroke="#D97706" stroke-width="1.5" stroke-dasharray="5 3"/>`;
+  s+=`<text x="${W-pad.r}" y="${ropy-3}" font-size="8.5" fill="#D97706" text-anchor="end">ROP</text>`;
+
+  // Bars
+  data.forEach((v,i)=>{
+    const bh=Math.max(4,(v/yMax)*ch);
+    const x=pad.l+gap+i*(bw+gap);
+    const y=pad.t+ch-bh;
+    const isLow=v<rop*1.1;
+    s+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="url(#${isLow?'blo':'boh'}${cid})" style="cursor:pointer" onmouseenter="showTT(event,'${opts.labels[i]} on-hand: ${fmt(v)} u')" onmouseleave="hideTT()"/>`;
+    s+=`<text x="${x+bw/2}" y="${H-4}" font-size="9" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;
+  });
+
+  s+='</svg>';
+  el.innerHTML=s;
+}
+
+function renderGapChart(cid, data, opts) {
+  const el = document.getElementById(cid);
+  if (!el) return;
+  const W = el.clientWidth||260, H = el.clientHeight||150;
+  const pad = {t:10,b:22,l:42,r:8};
+  const cw = W-pad.l-pad.r, ch = H-pad.t-pad.b;
+  const n = data.length;
+  const max = Math.max(...data, 200);
+  const min = Math.min(...data, -200);
+  const range = max-min||1;
+
+  const pt = (v, i) => {
+    const x = pad.l + (i/(n-1))*cw;
+    const y = pad.t + ch - ((v-min)/range)*ch;
+    return [x,y];
+  };
+
+  const zeroY = pad.t + ch - ((0-min)/range)*ch;
+
+  const yTicks = 4;
+  const yStep = niceStep((max-min)/yTicks);
+  const yBase = Math.floor(min/yStep)*yStep;
+
+  let s=`<svg width="${W}" height="${H}">`;
+  s+=`<defs>
+    <linearGradient id="gapfill${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#C93B3B" stop-opacity=".2"/><stop offset="100%" stop-color="#C93B3B" stop-opacity=".04"/></linearGradient>
+    <clipPath id="below${cid}"><rect x="${pad.l}" y="${zeroY}" width="${cw}" height="${pad.t+ch-zeroY}"/></clipPath>
+  </defs>`;
+
+  // Grid + Y labels
+  for(let i=0;i<=yTicks;i++){
+    const yv=yBase+i*yStep;
+    const y=pad.t+ch-((yv-min)/range)*ch;
+    if(y<pad.t-2||y>pad.t+ch+2) continue;
+    s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="${Math.abs(yv)<0.01?'#D0D5DC':'#E8ECF1'}" stroke-width="${Math.abs(yv)<0.01?1.5:1}"/>`;
+    s+=`<text x="${pad.l-5}" y="${y+4}" font-size="9" fill="${yv<0?'#C93B3B':'#8B95A5'}" text-anchor="end">${fmt(yv)}</text>`;
+  }
+
+  // Zero line
+  s+=`<line x1="${pad.l}" y1="${zeroY}" x2="${W-pad.r}" y2="${zeroY}" stroke="#D0D5DC" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+
+  // Fill area below zero
+  const pts = data.map(pt);
+  const areaBelow = pts.map((p,i)=>p.join(',')).join(' ') + ` ${pts[n-1][0]},${zeroY} ${pts[0][0]},${zeroY}`;
+  s+=`<polygon points="${areaBelow}" fill="url(#gapfill${cid})" clip-path="url(#below${cid})"/>`;
+
+  // Main line
+  s+=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#C93B3B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+  // Dots
+  pts.forEach(([x,y],i)=>{
+    const v=data[i];
+    s+=`<circle cx="${x}" cy="${y}" r="3.5" fill="${v<0?'#C93B3B':'#1A8754'}" style="cursor:pointer" onmouseenter="showTT(event,'${opts.labels[i]} gap: ${fmt(v)} u')" onmouseleave="hideTT()"/>`;
+  });
+
+  // X labels
+  data.forEach((_,i)=>{
+    const [x]=pt(0,i);
+    s+=`<text x="${x}" y="${H-4}" font-size="9" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;
+  });
+
+  s+='</svg>';
+  el.innerHTML=s;
+}
+
+function niceStep(rawStep) {
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const residual = rawStep / magnitude;
+  if (residual <= 1) return magnitude;
+  if (residual <= 2) return 2*magnitude;
+  if (residual <= 5) return 5*magnitude;
+  return 10*magnitude;
+}
+
+/* ══════════════════════════════════════
+   TOOLTIP
+══════════════════════════════════════ */
+function showTT(e, txt) {
+  const t = document.getElementById('tt');
+  t.textContent = txt;
+  t.style.display = 'block';
+  t.style.left = (e.clientX+14)+'px';
+  t.style.top  = (e.clientY-28)+'px';
+}
+function hideTT() { document.getElementById('tt').style.display='none'; }
+
+/* ══════════════════════════════════════
+   STORE DETAIL (Screen 2)
+══════════════════════════════════════ */
+function renderStoreDetail(id) {
+  const s = STORES[id];
+  const pct = Math.round(s.onHand/s.maxCap*100);
+  document.getElementById('s2-breadcrumb').textContent = `Store #${id} — ${s.name}`;
+  document.getElementById('s2-title').textContent = `Store #${id} — SKU replenishment detail`;
+  document.getElementById('s2-store-name').textContent = `Store #${id}`;
+  document.getElementById('s2-store-meta').textContent = `${s.name} · Format ${s.format} · Lead time ${s.lead} days`;
+  document.getElementById('s2-cap-pct').textContent = pct+'%';
+  const bar = document.getElementById('s2-cap-bar');
+  bar.style.width = pct+'%';
+  bar.textContent = pct+'%';
+  bar.className = 'cap-bar-fill' + (pct>=85?' warn':'');
+  document.getElementById('s2-cap-note').textContent = `${s.onHand.toLocaleString()} of ${s.maxCap.toLocaleString()} units`;
+  document.getElementById('s2-onhand').textContent = s.onHand.toLocaleString()+' u';
+  document.getElementById('s2-intransit').textContent = s.inTransit.toLocaleString()+' u';
+  document.getElementById('s2-ots').textContent = s.ots.toLocaleString()+' u';
+
+  // Signals
+  const allSig = ['Promo ↑','Festival','Weather','Trend','Event'];
+  document.getElementById('s2-signals').innerHTML = allSig.map(sig =>
+    `<span class="chip${s.signals.includes(sig)?' on':''}">${sig}</span>`
+  ).join('');
+  document.getElementById('s2-sensing-note').textContent =
+    `AI technology detects +${s.uplift}% demand uplift vs baseline this horizon`;
+
+  // SKU counts for filter badges
+  const counts = {all:s.skus.length,replenish:0,low:0,ok:0,hold:0,redeploy:0};
+  s.skus.forEach(sk => counts[sk.st]++);
+  ['all','replenish','low','ok','hold','redeploy'].forEach(k=>{
+    const el=document.getElementById('sf-cnt-'+k);
+    if(el) el.textContent=counts[k];
+  });
+
+  // AI footer
+  const repCount = counts.replenish + counts.low;
+  document.getElementById('s2-ai-footer-text').innerHTML =
+    `<strong>${repCount} SKUs flagged for replenishment</strong> · Consolidated lane DC → #${id} · Projected truck fill ${id==='0142'?92:id==='0137'?88:id==='0151'?75:id==='0165'?84:65}%`;
+
+  renderSkuTable();
+}
+
+function renderSkuTable() {
+  const s = STORES[currentStore];
+  const search = document.getElementById('sku-search').value.toLowerCase();
+  const tbody = document.getElementById('sku-tbody');
+  const filtered = s.skus.filter(sk => {
+    const matchFilter = skuFilter==='all' || sk.st===skuFilter;
+    const matchSearch = !search || sk.id.toLowerCase().includes(search);
+    return matchFilter && matchSearch;
+  });
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--ink4)">No SKUs match the current filter.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(sk => `
+    <tr>
+      <td class="sku-id">${sk.id}</td>
+      <td class="num">${sk.oh.toLocaleString()}</td>
+      <td class="num">${sk.it.toLocaleString()}</td>
+      <td class="num">${sk.dmd.toLocaleString()}</td>
+      <td class="num">${sk.ss.toLocaleString()}</td>
+      <td class="num">${sk.rop.toLocaleString()}</td>
+      <td class="num" style="${sk.nr>0?'color:var(--red);font-weight:700':''}">
+        ${sk.nr > 0 ? sk.nr.toLocaleString() : '—'}
+      </td>
+      <td class="num" style="${sk.rq>0?'color:var(--blue);font-weight:700':''}">
+        ${sk.rq > 0 ? sk.rq.toLocaleString() : '—'}
+      </td>
+      <td><span class="sbadge ${sk.st}">${stLabel(sk.st)}</span></td>
+    </tr>
+  `).join('');
+}
+
+function stLabel(s){return{replenish:'Replenish',low:'Low',ok:'OK',hold:'Hold',redeploy:'Redeploy'}[s]||s}
+
+function setFilter(f) {
+  skuFilter = f;
+  document.querySelectorAll('.sf-chip').forEach(c => {
+    const cf = c.className.match(/f-(\w+)/)?.[1];
+    c.classList.toggle('sel', cf===f);
+  });
+  renderSkuTable();
+}
+
+function filterTable() { renderSkuTable(); }
+
+/* ══════════════════════════════════════
+   DISPATCH — lane toggle
+══════════════════════════════════════ */
+function toggleLane(id, chk) {
+  const row = document.getElementById('lane-'+id);
+  row.classList.toggle('lane-approved', chk.checked);
+  if (chk.checked) {
+    showToast(`Lane DC → #${id} approved and queued for DRP release.`);
+  }
+}
+
+/* ══════════════════════════════════════
+   MODAL & TOAST
+══════════════════════════════════════ */
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+function confirmDRP() {
+  closeModal();
+  // Check all lanes
+  document.querySelectorAll('.lane-chk').forEach(c => { c.checked=true; });
+  document.querySelectorAll('[id^=lane-]').forEach(r => r.classList.add('lane-approved'));
+  showToast('DRP orders released to DC for all 5 lanes. Picking begins in ~4 hours.');
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+window.addEventListener('load', () => {
+  updateKPIs('0142');
+  updateAIStrip('0142');
+  renderAllCharts('0142');
+  renderStoreDetail('0142');
+});
+window.addEventListener('resize', () => renderAllCharts(currentStore));
+document.getElementById('modal').addEventListener('click', function(e){ if(e.target===this)closeModal(); });
+</script>
+</body>
+</html>

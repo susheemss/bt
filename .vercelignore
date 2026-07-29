@@ -1,0 +1,12 @@
+react-app
+pipeline
+node_modules
+*.xlsx
+*.docx
+*.pptx
+*.md
+replenishment-cockpit-prototype.html
+replenishment-cockpit-v2.html
+replenishment-cockpit-v3.html
+replenishment-cockpit-v4.html
+replenishment-ai-platform.html
