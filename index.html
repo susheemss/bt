@@ -971,7 +971,7 @@ body{
     <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink4);margin-bottom:8px">Suggested questions</div>
     <button class="aap-q-btn" onclick="askPanel('capacity')">Which stores are approaching capacity this cycle?</button>
     <button class="aap-q-btn" onclick="askPanel('freight')">How much are we saving on freight vs unoptimised dispatch?</button>
-    <button class="aap-q-btn" onclick="askPanel('risk')">Which SKUs are at stockout risk this week?</button>
+    <button class="aap-q-btn" onclick="askPanel('risk')">Which SKUs are at stockout risk this month?</button>
     <button class="aap-q-btn" onclick="askPanel('deadstock')">Where is dead stock tying up working capital?</button>
     <button class="aap-q-btn" onclick="askPanel('action')">What should I action before end of day?</button>
   </div>
@@ -984,7 +984,7 @@ body{
     <button class="drill-back" onclick="closeDrillDown()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>Back to overview
     </button>
-    <div class="drill-week-label" id="dp-week-label">W1 — Detail</div>
+    <div class="drill-week-label" id="dp-week-label">M1 — Detail</div>
     <div class="drill-meta" id="dp-meta"></div>
   </div>
   <div class="drill-body" id="drill-body"></div>
@@ -1034,8 +1034,8 @@ body{
   <div class="tnav-right">
     <!-- Horizon toggle -->
     <div class="tnav-ctrl">
-      <div class="tnav-ctrl-opt" id="seg-4w" onclick="setHorizon(4)">4W</div>
-      <div class="tnav-ctrl-opt active" id="seg-8w" onclick="setHorizon(8)">8W</div>
+      <div class="tnav-ctrl-opt" id="seg-4w" onclick="setHorizon(4)">4M</div>
+      <div class="tnav-ctrl-opt active" id="seg-8w" onclick="setHorizon(8)">8M</div>
     </div>
     <!-- Node selector -->
     <div class="tnav-node">
@@ -1104,7 +1104,7 @@ body{
   <div class="charts-row">
     <div class="chart-panel">
       <div class="chart-head">
-        <div><div class="chart-title">Demand forecast</div><div class="chart-sub">Units / week · baseline vs AI sensed uplift · click any bar to drill down</div></div>
+        <div><div class="chart-title">Demand forecast</div><div class="chart-sub">Units / month · baseline vs AI sensed uplift · click any bar to drill down</div></div>
         <div class="pbi-links">
           <button class="pbi-btn" onclick="openPbiLink(1)" title="Open Demand Forecasting Agent">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="#F2C811"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="7" width="4" height="14" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
@@ -1142,7 +1142,7 @@ body{
     </div>
     <div class="chart-panel">
       <div class="chart-head">
-        <div><div class="chart-title">On-hand inventory (W1–W8)</div><div class="chart-sub">Projected draw-down + planned replenishment cycles</div></div>
+        <div><div class="chart-title">On-hand inventory (M1–M8)</div><div class="chart-sub">Projected draw-down + planned replenishment cycles</div></div>
       </div>
       <div class="pending-card">Awaiting inventory data<br><b>On-hand, in-transit and ROP</b> have not been uploaded yet.</div>
     </div>
@@ -1218,7 +1218,7 @@ body{
       <div class="store-card">
         <div class="sec-label">Active demand signals</div>
         <div id="s2-signals"></div>
-        <div class="sensing-note" id="s2-sensing-note"><span id="s2-sensing-text">Demand is tracking <strong>+6.4%</strong> above forecast this week, driven by active signals below.</span></div>
+        <div class="sensing-note" id="s2-sensing-note"><span id="s2-sensing-text">Demand is tracking <strong>+6.4%</strong> above forecast this month, driven by active signals below.</span></div>
       </div>
     </div>
     <div>
@@ -1230,7 +1230,7 @@ body{
         <div style="overflow-x:auto">
           <table class="data-table">
             <thead><tr>
-              <th>SKU</th><th>Product</th><th class="r">Sensed dmd/wk</th>
+              <th>SKU</th><th>Product</th><th class="r">Sensed dmd/mo</th>
               <th class="r" style="color:var(--ink4)">On-hand</th><th class="r" style="color:var(--ink4)">Net req.</th><th style="color:var(--ink4)">Status</th>
             </tr></thead>
             <tbody id="sku-tbody"></tbody>
@@ -1290,7 +1290,7 @@ body{
               <th>Promo uplift</th>
               <th>Active Signals</th>
               <th>SKUs loaded</th>
-              <th>Weeks</th>
+              <th>Months</th>
             </tr>
           </thead>
           <tbody id="dh-store-tbody"></tbody>
@@ -1366,7 +1366,12 @@ console.log('[Decision Intelligence] Loaded', Object.keys(STORES).length, 'store
 let currentStore=Object.keys(STORES)[0]||null,currentHorizon=8,skuFilter='all';
 
 /* ════════ UTILS ════════ */
-function fmt(v){return Math.abs(v)>=1000?(v/1000).toFixed(1)+'K':Math.round(v).toLocaleString('en-GB')}
+function fmt(v){
+  const av=Math.abs(v);
+  if(av>=1000) return (v/1000).toFixed(1)+'K';
+  if(av>0 && av<10) return v.toLocaleString('en-GB',{maximumFractionDigits:2});
+  return Math.round(v).toLocaleString('en-GB');
+}
 function niceStep(r){const e=Math.pow(10,Math.floor(Math.log10(r||1)));return r/e>=5?5*e:r/e>=2?2*e:e}
 function $id(id){return document.getElementById(id)}
 function set(id,val){const el=$id(id);if(el)el.textContent=val}
@@ -1470,7 +1475,7 @@ function setHorizon(n){
 /* ════════ CHARTS ════════ */
 function renderAllCharts(id){
   const s=STORES[id],n=currentHorizon;
-  const wk=Array.from({length:n},(_,i)=>'W'+(i+1));
+  const wk=Array.from({length:n},(_,i)=>'M'+(i+1));
   renderStackedBar('chart1',s.forecast.slice(0,n),s.sensed.slice(0,n),{labels:wk});
   // Chart 2: daily Mon–Sun for current week (like the reference)
   const dailyLabels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -1963,10 +1968,10 @@ function setHorizon(n){currentHorizon=n;$id('seg-4w').classList.toggle('active',
 
 /* ════════ DRILL-DOWN (demand) ════════ */
 const WEEK_DATES=[
-  {label:'W1',range:'4–10 Aug 2025'},{label:'W2',range:'11–17 Aug 2025'},
-  {label:'W3',range:'18–24 Aug 2025'},{label:'W4',range:'25–31 Aug 2025'},
-  {label:'W5',range:'1–7 Sep 2025'},{label:'W6',range:'8–14 Sep 2025'},
-  {label:'W7',range:'15–21 Sep 2025'},{label:'W8',range:'22–28 Sep 2025'}
+  {label:'M1',range:'Nov 2025'},{label:'M2',range:'Dec 2025'},
+  {label:'M3',range:'Jan 2026'},{label:'M4',range:'Feb 2026'},
+  {label:'M5',range:'Mar 2026'},{label:'M6',range:'Apr 2026'},
+  {label:'M7',range:'May 2026'},{label:'M8',range:'Jun 2026'}
 ];
 const CAT_MIX=[[32,26,25,17],[35,24,24,17],[33,27,24,16],[38,22,23,17],[31,28,24,17],[36,25,23,16],[34,26,24,16],[35,25,24,16]];
 const CAT_COLORS=['var(--blue)','var(--green)','var(--amber)','var(--ink4)'];
@@ -1991,18 +1996,18 @@ function showDrillDown(weekIdx){
   const actions=[];
   const critCount=stockHealth.filter(s=>s.risk==='critical').length;
   const watchCount=stockHealth.filter(s=>s.risk==='watch').length;
-  if(critCount>0)actions.push({urgent:true,text:`${critCount} SKU${critCount>1?'s':''} projected below ROP by end of ${wd.label} — release replenishment before ${wd.range.split('–')[0]} ${wd.range.split(' ')[1]}.`});
+  if(critCount>0)actions.push({urgent:true,text:`${critCount} SKU${critCount>1?'s':''} projected below ROP by end of ${wd.label} — release replenishment before ${wd.range}.`});
   if(watchCount>0)actions.push({urgent:false,text:`${watchCount} SKU${watchCount>1?'s':''} approaching reorder point. Monitor daily sell-through and front-load if demand strengthens.`});
-  if(uplift>baseline*0.04)actions.push({urgent:false,text:`Demand sensing shows +${((uplift/baseline)*100).toFixed(1)}% uplift this week. Consider pulling forward W${weekIdx+2} order by 2–3 days.`});
+  if(uplift>baseline*0.04)actions.push({urgent:false,text:`Demand sensing shows +${((uplift/baseline)*100).toFixed(1)}% uplift this month. Consider pulling forward M${weekIdx+2} order by a few days.`});
   if(!hasInventoryData)actions.push({urgent:false,text:`ROP-based stock actions need on-hand inventory data, which hasn't been uploaded yet.`});
   else if(!actions.length)actions.push({urgent:false,text:`Stock position healthy for ${wd.label}. No immediate action required — continue monitoring daily sell-through.`});
 
   let html=`<div class="drill-section"><div class="drill-section-title">At a glance</div>
     <div class="drill-hero">
-      <div class="drill-stat"><div class="drill-stat-label">Forecast demand</div><div class="drill-stat-value">${baseline.toLocaleString()}</div><div class="drill-stat-delta ${wowPct>=0?'delta-up':'delta-down'}">${wowPct>=0?'↑':'↓'} ${Math.abs(wowPct)}% vs ${weekIdx>0?WEEK_DATES[weekIdx-1].label:'prior week'}</div></div>
+      <div class="drill-stat"><div class="drill-stat-label">Forecast demand</div><div class="drill-stat-value">${baseline.toLocaleString()}</div><div class="drill-stat-delta ${wowPct>=0?'delta-up':'delta-down'}">${wowPct>=0?'↑':'↓'} ${Math.abs(wowPct)}% vs ${weekIdx>0?WEEK_DATES[weekIdx-1].label:'prior month'}</div></div>
       <div class="drill-stat"><div class="drill-stat-label">Sensed demand</div><div class="drill-stat-value">${sensed.toLocaleString()}</div><div class="drill-stat-delta delta-up">+${((uplift/baseline)*100).toFixed(1)}% above baseline</div></div>
     </div></div>`;
-  html+=`<div class="drill-section"><div class="drill-section-title">What's driving demand this week</div><div class="signal-waterfall">
+  html+=`<div class="drill-section"><div class="drill-section-title">What's driving demand this month</div><div class="signal-waterfall">
     <div class="swf-row"><span class="swf-label">Base forecast</span><div class="swf-bar-wrap"><div class="swf-bar" style="width:100%;background:var(--blue);opacity:.55"></div></div><span class="swf-val">${baseline.toLocaleString()} u</span></div>`;
   const maxSig=Math.max(...signalUnits.map(s=>s.units),1);
   const sigCol={Promo:'var(--purple)',Festival:'var(--amber)',Weather:'var(--blue)',Trend:'var(--green)',Event:'var(--red)'};
@@ -2062,7 +2067,7 @@ function closeDrillDown(){$id('drill-backdrop').classList.remove('open');$id('dr
 const PANEL_QA={
   capacity:{q:'Which stores are approaching capacity this cycle?'},
   freight:{q:'How much are we saving on freight vs unoptimised dispatch?'},
-  risk:{q:'Which SKUs are at stockout risk this week?'},
+  risk:{q:'Which SKUs are at stockout risk this month?'},
   deadstock:{q:'Where is dead stock tying up working capital?'},
   action:{q:'What should I action before end of day?'}
 };
@@ -2261,10 +2266,28 @@ var currentSkuFilter = 'all';
 
 const DH_REQUIRED_COLS = ['SKU Name','Store Name','Week Start Date','Baseline (units)','Promo Units'];
 
+/* CSV files exported from Excel ("CSV UTF-8") prepend a BOM character to
+   the very first header cell, and some tools leave stray whitespace
+   around header names -- strip both so column matching isn't fragile. */
+function dhNormalizeKey(k){
+  let s = String(k);
+  if(s.charCodeAt(0) === 0xFEFF) s = s.slice(1);
+  return s.trim();
+}
+function dhNormalizeRows(rows){
+  return rows.map(r => {
+    const out = {};
+    Object.keys(r).forEach(k => { out[dhNormalizeKey(k)] = r[k]; });
+    return out;
+  });
+}
+
 function dhFindDataSheet(wb){
   for(const name of wb.SheetNames){
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:null});
-    if(rows.length && DH_REQUIRED_COLS.every(c => c in rows[0])) return name;
+    const rawRows = XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:null});
+    if(!rawRows.length) continue;
+    const rows = dhNormalizeRows(rawRows);
+    if(DH_REQUIRED_COLS.every(c => c in rows[0])) return name;
   }
   return null;
 }
@@ -2328,7 +2351,7 @@ function dhDateStr(v){
 }
 
 function dhAggregateData(wb, sheetName){
-  const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {defval:0});
+  const rows = dhNormalizeRows(XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {defval:0}));
 
   const weekDatesByStore = {};
   rows.forEach(r=>{
@@ -2425,7 +2448,7 @@ function dhRenderSummary(liveStores, fileName){
   $id('dh-summary-cards').innerHTML = `
     <div class="dh-card"><div class="dh-card-val">${stores}</div><div class="dh-card-lbl">Stores loaded</div></div>
     <div class="dh-card"><div class="dh-card-val">${allSkus}</div><div class="dh-card-lbl">SKU records</div></div>
-    <div class="dh-card"><div class="dh-card-val">${weeks}</div><div class="dh-card-lbl">Forecast weeks</div></div>
+    <div class="dh-card"><div class="dh-card-val">${weeks}</div><div class="dh-card-lbl">Forecast months</div></div>
     <div class="dh-card"><div class="dh-card-val" style="color:var(--ink4)">—</div><div class="dh-card-lbl">Inventory data (not uploaded)</div></div>
   `;
 

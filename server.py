@@ -43,6 +43,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_plain_error(500, f'Config file not found: {CONFIG_FILE}. Create it with the full path to your Excel file on the first line.')
             return
         raw_path = CONFIG_FILE.read_text(encoding='utf-8').strip()
+        # Windows "Copy as path" wraps the path in double quotes -- strip
+        # them so pasting that straight into the config file just works.
+        if len(raw_path) >= 2 and raw_path[0] == '"' and raw_path[-1] == '"':
+            raw_path = raw_path[1:-1]
         if not raw_path:
             self.send_plain_error(500, f'{CONFIG_FILE.name} is empty -- put the full path to the Excel file in it.')
             return
