@@ -2346,8 +2346,34 @@ function dhProcessFile(file){
 function dhSlug(name){
   return String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'store';
 }
+/* Normalizes a "Week Start Date" cell to a YYYY-MM-DD key regardless of
+   how Excel happened to format that cell:
+   - Date-formatted cell -> SheetJS gives a real JS Date
+   - General-formatted cell holding the same value -> SheetJS gives the
+     raw Excel serial number (days since 1899-12-30) instead
+   - Manually-typed text date -> a plain string like "12/1/2025"
+   Mixed formatting within one file (some rows Date, some General) would
+   otherwise make the same calendar month produce two different grouping
+   keys and silently fragment/misalign the data -- this makes all three
+   representations collapse to the same key. */
 function dhDateStr(v){
-  return v instanceof Date ? v.toISOString().slice(0,10) : String(v).trim();
+  if(v instanceof Date){
+    // SheetJS builds date-only cells as UTC midnight -- read back via the
+    // UTC getters so we don't get shifted by the local timezone.
+    return new Date(Date.UTC(v.getUTCFullYear(), v.getUTCMonth(), v.getUTCDate())).toISOString().slice(0,10);
+  }
+  if(typeof v === 'number' && isFinite(v)){
+    const EXCEL_EPOCH_UTC = Date.UTC(1899, 11, 30);
+    return new Date(EXCEL_EPOCH_UTC + Math.round(v) * 86400000).toISOString().slice(0,10);
+  }
+  // Text date -- parse the digits explicitly (never via `new Date(string)`,
+  // which is timezone-dependent and would shift the calendar day).
+  const s = String(v).trim();
+  let m = s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})/);       // YYYY-MM-DD / YYYY/MM/DD
+  if(m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+  m = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})/);            // M/D/YYYY
+  if(m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+  return s;
 }
 
 function dhAggregateData(wb, sheetName){
