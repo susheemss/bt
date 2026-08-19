@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title>Decision Intelligence Platform — Dabur International</title>
+<title>Decision Intelligence Platform — International</title>
 <!-- Preconnect for faster font loading -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -805,6 +805,15 @@ body{
 }
 .sku-filter-badge.on{display:inline}
 
+/* ── Pending-data placeholder (panels awaiting inventory / freight data) ── */
+.pending-wrap{position:relative}
+.pending-wrap>.pending-dim{opacity:.28;filter:grayscale(.5);pointer-events:none;user-select:none}
+.pending-note{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;z-index:2}
+.pending-note-inner{background:var(--surface);border:1px dashed var(--border2);border-radius:var(--radius);padding:10px 16px;font-size:11.5px;line-height:1.5;color:var(--ink3);font-weight:600;max-width:320px;box-shadow:0 1px 4px rgba(15,23,42,.05)}
+.pending-note-inner b{color:var(--ink2)}
+.pending-card{border:1px dashed var(--border2);border-radius:var(--radius-lg);background:var(--surface2);padding:40px 24px;text-align:center;color:var(--ink4);font-size:12.5px;line-height:1.7}
+.pending-card b{color:var(--ink3)}
+
 </style>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="live_data.js"></script>
@@ -824,100 +833,31 @@ body{
         <div style="font-size:16px;font-weight:700;color:var(--ink);letter-spacing:-.01em">KPI Alerts</div>
         <div style="font-size:12px;color:var(--ink4);margin-top:2px">Threshold breaches · auto-notified executives</div>
       </div>
-      <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--red-light);color:var(--red);border:1px solid rgba(220,38,38,.2)" id="alert-count-badge">3 active</span>
+      <span style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;background:var(--surface3);color:var(--ink3);border:1px solid var(--border)" id="alert-count-badge">0 active</span>
     </div>
     <!-- Alert Agent toggle -->
     <div id="alert-agent-bar" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2)">
       <div style="display:flex;align-items:center;gap:9px">
-        <div style="width:28px;height:28px;border-radius:7px;background:#ECFDF5;border:1px solid #A7F3D0;display:flex;align-items:center;justify-content:center;flex-shrink:0" id="alert-agent-icon">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+        <div style="width:28px;height:28px;border-radius:7px;background:var(--surface3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0" id="alert-agent-icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ink4)" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
         </div>
         <div>
           <div style="font-size:12.5px;font-weight:600;color:var(--ink)">Alert Agent</div>
-          <div style="font-size:11px;color:var(--ink4);margin-top:1px" id="alert-agent-status-text">On — alerts sent automatically to executives</div>
+          <div style="font-size:11px;color:var(--ink4);margin-top:1px" id="alert-agent-status-text">Off — no live data connected yet</div>
         </div>
       </div>
       <label class="agp-toggle" style="flex-shrink:0">
-        <input type="checkbox" id="alert-agent-toggle" checked onchange="toggleAlertAgent(this.checked)">
+        <input type="checkbox" id="alert-agent-toggle" onchange="toggleAlertAgent(this.checked)">
         <span class="agp-slider"></span>
       </label>
     </div>
   </div>
   <div class="alp-body" id="alp-body">
-
-    <!-- Alert 1: Critical SL -->
-    <div class="alert-card" id="alc-1">
-      <div class="alert-card-head">
-        <span class="alert-sev sev-critical">CRITICAL</span>
-        <span class="alert-card-title">Service level below target — Cairo</span>
-        <span class="alert-card-time">08:55 today</span>
-      </div>
-      <div class="alert-card-body">
-        <strong>Store #0151 · Cairo — Egypt</strong> service level dropped to <strong style="color:var(--red)">96.8%</strong> against a 98% target. 4 SKUs are below ROP. At current sell-through rate, SL will fall to 96.2% by end of week without intervention.
-      </div>
-      <div class="alert-card-meta">
-        <div class="alert-sent-to">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          <span>Supply Chain Director, Store GM</span>
-          <span class="alert-sent-badge badge-sent">✓ Alert sent</span>
-        </div>
-        <div style="display:flex;gap:6px">
-          <button class="btn-escalate" onclick="escalateAlert('alc-1','Cairo SL breach escalated to VP Operations.')">Escalate to VP</button>
-          <button class="btn-resolve" onclick="resolveAlert('alc-1')">Resolve</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Alert 2: Stockout risk -->
-    <div class="alert-card" id="alc-2">
-      <div class="alert-card-head">
-        <span class="alert-sev sev-critical">CRITICAL</span>
-        <span class="alert-card-title">Stockout risk — Real Fruit Juice 1L</span>
-        <span class="alert-card-time">08:38 today</span>
-      </div>
-      <div class="alert-card-body">
-        <strong>SKU-4560 · Dubai — UAE</strong> has only <strong style="color:var(--red)">3 days of supply</strong> remaining at current sell-through rate (45 units/week). If no replenishment is dispatched today, stockout expected by <strong>Thursday</strong>.
-      </div>
-      <div class="alert-card-meta">
-        <div class="alert-sent-to">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          <span>Replenishment Planner, Store Manager</span>
-          <span class="alert-sent-badge badge-sent">✓ Alert sent</span>
-        </div>
-        <div style="display:flex;gap:6px">
-          <button class="btn-escalate" onclick="escalateAlert('alc-2','Stockout risk escalated — Dubai — UAE Real Fruit Juice 1L.')">Escalate to SC Director</button>
-          <button class="btn-resolve" onclick="resolveAlert('alc-2')">Resolve</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Alert 3: Capacity warning -->
-    <div class="alert-card" id="alc-3">
-      <div class="alert-card-head">
-        <span class="alert-sev sev-warning">WARNING</span>
-        <span class="alert-card-title">Capacity ceiling approaching — Nairobi — Kenya</span>
-        <span class="alert-card-time">07:30 today</span>
-      </div>
-      <div class="alert-card-body">
-        <strong>Store #0165 · Nairobi — Kenya</strong> is at <strong style="color:var(--amber)">84% capacity</strong>. Festival + Trend signals are projecting +4.7% demand uplift in W4. If the full replenishment order is released without adjustment, the store will exceed its 90% operational ceiling.
-      </div>
-      <div class="alert-card-meta">
-        <div class="alert-sent-to">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          <span>DC Manager, Leeds Store GM</span>
-          <span class="alert-sent-badge badge-pending">⏳ Pending acknowledgement</span>
-        </div>
-        <div style="display:flex;gap:6px">
-          <button class="btn-escalate" onclick="escalateAlert('alc-3','Leeds capacity warning escalated to Supply Chain Director.')">Escalate</button>
-          <button class="btn-resolve" onclick="resolveAlert('alc-3')">Resolve</button>
-        </div>
-      </div>
-    </div>
-
+    <div class="pending-card" style="margin:16px;padding:32px 16px">No active alerts.<br>This panel will show real-time KPI-breach alerts once on-hand inventory and service-level data are connected.</div>
   </div>
   <div class="alp-footer">
     <div style="font-size:11px;color:var(--ink4);margin-bottom:10px">Alerts are automatically sent when KPIs breach configured thresholds. Recipients are set per store and per KPI type.</div>
-    <button class="btn-primary" style="width:100%;justify-content:center" onclick="showToast('Test alert sent to all configured executives.')">
+    <button class="btn-primary" style="width:100%;justify-content:center" disabled>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>
       Send test alert to all executives
     </button>
@@ -951,13 +891,13 @@ body{
   <div class="agp-body" id="agp-body">
     <!-- Monitoring tasks -->
     <div class="agp-section">
-      <div class="agp-section-title">Monitoring tasks (3 active)</div>
+      <div class="agp-section-title">Monitoring tasks (3 configured)</div>
       <div class="agent-task">
         <div class="task-icon" style="background:#EFF6FF"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
         <div class="task-body">
           <div class="task-name">Service level watchdog</div>
           <div class="task-desc">Alerts and generates an expedite plan if any store's SL drops below 97%</div>
-          <span class="task-status ts-watching">● Watching all 5 stores</span>
+          <span class="task-status" style="color:var(--ink4)">● Awaiting live data</span>
         </div>
       </div>
       <div class="agent-task">
@@ -965,53 +905,28 @@ body{
         <div class="task-body">
           <div class="task-name">Lane consolidation optimiser</div>
           <div class="task-desc">Automatically identifies opportunities to consolidate DC→store lanes when combined truck fill exceeds 85%</div>
-          <span class="task-status ts-watching">● Monitoring Wk 32 lanes</span>
+          <span class="task-status" style="color:var(--ink4)">● Awaiting live data</span>
         </div>
       </div>
       <div class="agent-task">
         <div class="task-icon" style="background:#FFFBEB"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
         <div class="task-body">
           <div class="task-name">Dead stock detector</div>
-          <div class="task-desc">Flags SKUs with >4 weeks of supply and proposes redeployment or markdown actions</div>
-          <span class="task-status ts-watching">● 3 SKUs currently flagged</span>
+          <div class="task-desc">Flags SKUs with &gt;4 weeks of supply and proposes redeployment or markdown actions</div>
+          <span class="task-status" style="color:var(--ink4)">● Awaiting live data</span>
         </div>
       </div>
     </div>
     <!-- Pending approvals -->
     <div class="agp-section">
-      <div class="agp-section-title">Pending your approval (2)</div>
-      <div class="approval-card" id="approval-1">
-        <div class="approval-head">
-          <span class="approval-badge">URGENT</span>
-          <span class="approval-title">Expedite order — Cairo — Egypt</span>
-        </div>
-        <div class="approval-body">Agent detected SL at 96.8% (below 97% threshold). Proposed: release DRP order for 4 SKUs totalling 128 units via FTL. Estimated SL recovery: +0.9 pts within 2 days.</div>
-        <div class="approval-actions">
-          <button class="btn-approve" onclick="approveAction('approval-1','Expedite order released to DC — Cairo — Egypt.')">Approve & release</button>
-          <button class="btn-reject" onclick="rejectAction('approval-1')">Reject</button>
-        </div>
-      </div>
-      <div class="approval-card" id="approval-2">
-        <div class="approval-head">
-          <span class="approval-badge" style="background:#DBEAFE;color:#1E40AF;border-color:#BFDBFE">OPTIMISE</span>
-          <span class="approval-title" style="color:#1E3A8A">Consolidate Lagos onto Nairobi milk-run</span>
-        </div>
-        <div class="approval-body">Agent identified that adding Lagos to the Nairobi milk-run reduces Lagos standalone freight from £880 to £620. Weekly saving: £260. Annual saving: £13,520. No change to delivery lead time.</div>
-        <div class="approval-actions">
-          <button class="btn-approve" onclick="approveAction('approval-2','Lane consolidation approved — Lagos added to Nairobi milk-run.')">Approve</button>
-          <button class="btn-reject" onclick="rejectAction('approval-2')">Reject</button>
-        </div>
-      </div>
+      <div class="agp-section-title">Pending your approval (0)</div>
+      <div class="pending-card" style="padding:20px 14px">No pending actions.<br>This section will show AI-proposed actions awaiting your review once inventory and freight data are connected.</div>
     </div>
     <!-- Activity log -->
     <div class="agp-section" style="border-bottom:none">
       <div class="agp-section-title">Agent activity log</div>
       <div id="agent-log">
-        <div class="log-entry"><div class="log-dot" style="background:var(--green)"></div><div class="log-text">Demand sensing cycle completed — 5 stores updated</div><div class="log-time">08:42</div></div>
-        <div class="log-entry"><div class="log-dot" style="background:var(--amber)"></div><div class="log-text">SKU-4560 (Real Fruit Juice 1L, Dubai) flagged — 3 days supply remaining</div><div class="log-time">08:38</div></div>
-        <div class="log-entry"><div class="log-dot" style="background:var(--blue)"></div><div class="log-text">Lane consolidation opportunity identified — Riyadh + Dubai FTL (consol.) saves £2,700</div><div class="log-time">08:15</div></div>
-        <div class="log-entry"><div class="log-dot" style="background:var(--red)"></div><div class="log-text">Cairo SL breach detected — 96.8%, below 97% threshold. Approval request sent.</div><div class="log-time">07:55</div></div>
-        <div class="log-entry"><div class="log-dot" style="background:var(--green)"></div><div class="log-text">Weekly forecast refresh completed — 8-week rolling horizon updated for all stores</div><div class="log-time">06:00</div></div>
+        <div class="log-entry"><div class="log-dot" style="background:var(--ink5)"></div><div class="log-text">No activity yet — agent has not been connected to live data.</div><div class="log-time">—</div></div>
       </div>
     </div>
   </div>
@@ -1034,11 +949,11 @@ body{
       </div>
       <div>
         <div style="font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em">AI Replenishment Advisor</div>
-        <div style="font-size:11.5px;color:var(--ink4);margin-top:1px">Contextual planning intelligence · grounded in live Dabur network data</div>
+        <div style="font-size:11.5px;color:var(--ink4);margin-top:1px">Contextual planning intelligence · grounded in live network data</div>
       </div>
     </div>
     <div style="font-size:11.5px;color:var(--ink3);background:var(--blue-light);border:1px solid var(--blue-mid);border-radius:var(--r);padding:8px 12px;line-height:1.5;margin-top:6px">
-      In the live product, this assistant will be connected to your Dabur store POS data, DC inventory, and live demand signals — answering planning questions in real time.
+      In the live product, this assistant will be connected to your store POS data, DC inventory, and live demand signals — answering planning questions in real time.
     </div>
   </div>
   <div class="aap-chat" id="aap-chat">
@@ -1047,8 +962,8 @@ body{
       <div class="aap-avatar">AI</div>
       <div class="aap-bubble">
         <strong>Hello. I'm your AI Replenishment Advisor.</strong><br><br>
-        I can answer questions about your 5-store Dabur international network — stock positions, demand signals, freight optimisation, and replenishment decisions.<br><br>
-        Select a question below or ask me anything about the current planning cycle.
+        Once your store network is connected with live inventory and freight data, I'll be able to answer questions about stock positions, demand signals, freight optimisation, and replenishment decisions.<br><br>
+        Select a question below to see how this will work.
       </div>
     </div>
   </div>
@@ -1105,13 +1020,13 @@ body{
     <div class="tnav-logo">DI</div>
     <div>
       <div class="tnav-name">DECISION INTELLIGENCE</div>
-      <div class="tnav-sub">Platform for Dabur</div>
+      <div class="tnav-sub">Supply Chain Platform</div>
     </div>
   </div>
   <div class="tnav-sep"></div>
   <div class="tnav-tabs">
     <div class="tnav-tab active" id="nav-overview" onclick="showScreen('overview')">Overview</div>
-    <div class="tnav-tab" id="nav-store" onclick="showScreen('store')">Locations <span class="tnav-badge" id="shortfall-badge">4</span></div>
+    <div class="tnav-tab" id="nav-store" onclick="showScreen('store')">Locations <span class="tnav-badge" id="shortfall-badge" style="display:none">0</span></div>
     <div class="tnav-tab" id="nav-dispatch" onclick="showScreen('dispatch')">Replenishment</div>
     <div class="tnav-sep"></div>
     <div class="tnav-tab" id="nav-datahub" onclick="showScreen('datahub')" style="color:var(--purple);gap:5px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Data Hub</div>
@@ -1126,13 +1041,7 @@ body{
     <div class="tnav-node">
       <span class="tnav-node-lbl">LOCATION</span>
       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8592A3" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
-      <select id="storeSelect" onchange="selectStore(this.value)">
-        <option value="0142">Dubai — UAE — #0142</option>
-        <option value="0137">Riyadh — Saudi Arabia — #0137</option>
-        <option value="0151">Cairo — Egypt — #0151</option>
-        <option value="0165">Nairobi — Kenya — #0165</option>
-        <option value="0188">Lagos — Nigeria — #0188</option>
-      </select>
+      <select id="storeSelect" onchange="selectStore(this.value)"></select>
     </div>
     <!-- SKU filter -->
     <div class="tnav-node" id="sku-filter-node">
@@ -1144,10 +1053,16 @@ body{
     </div>
     <!-- Divider -->
     <div class="tnav-sep"></div>
+    <!-- Refresh from source file -->
+    <button class="tnav-ai-btn" id="refresh-btn" onclick="refreshFromSource()" title="Re-read the source Excel file">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      <span id="refresh-btn-label">Refresh</span>
+    </button>
+    <div class="tnav-sep"></div>
     <!-- Alert bell -->
     <button class="tnav-alert-btn" id="alert-btn" onclick="openAlerts()" title="Active alerts">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-      <span class="alert-badge" id="alert-badge">3</span>
+      <span class="alert-badge" id="alert-badge" style="display:none">0</span>
     </button>
     <div class="tnav-sep"></div>
     <!-- AI tools group -->
@@ -1175,12 +1090,15 @@ body{
 <div class="tab-content active" id="tab-overview">
 <div class="content">
   <!-- KPI row -->
-  <div class="kpi-row" id="kpi-row">
-    <div class="kpi"><div class="kpi-label">Service level</div><div class="kpi-value" id="kpi-sl">97.4%</div><div class="kpi-delta delta-down" id="kpi-sl-d">↓ 0.6 pts vs target</div></div>
-    <div class="kpi"><div class="kpi-label">Fill rate</div><div class="kpi-value" id="kpi-fr">95.1%</div><div class="kpi-delta delta-up" id="kpi-fr-d">↑ 1.2 pts w/w</div></div>
-    <div class="kpi"><div class="kpi-label">Capacity util.</div><div class="kpi-value" id="kpi-cu">88%</div><div class="kpi-delta delta-neu" id="kpi-cu-d">within ceiling</div></div>
-    <div class="kpi"><div class="kpi-label">In-transit units</div><div class="kpi-value" id="kpi-it">320</div><div class="kpi-delta delta-neu" id="kpi-it-d">2 open loads</div></div>
-    <div class="kpi hi"><div class="kpi-label">Transport cost (MTD)</div><div class="kpi-value" id="kpi-tc">£12,400</div><div class="kpi-delta delta-up" id="kpi-tc-d">↓ 9% vs plan</div></div>
+  <div class="pending-wrap">
+    <div class="kpi-row pending-dim" id="kpi-row">
+      <div class="kpi"><div class="kpi-label">Service level</div><div class="kpi-value" id="kpi-sl">—</div><div class="kpi-delta delta-neu" id="kpi-sl-d"></div></div>
+      <div class="kpi"><div class="kpi-label">Fill rate</div><div class="kpi-value" id="kpi-fr">—</div><div class="kpi-delta delta-neu" id="kpi-fr-d"></div></div>
+      <div class="kpi"><div class="kpi-label">Capacity util.</div><div class="kpi-value" id="kpi-cu">—</div><div class="kpi-delta delta-neu" id="kpi-cu-d"></div></div>
+      <div class="kpi"><div class="kpi-label">In-transit units</div><div class="kpi-value" id="kpi-it">—</div><div class="kpi-delta delta-neu" id="kpi-it-d"></div></div>
+      <div class="kpi hi"><div class="kpi-label">Transport cost (MTD)</div><div class="kpi-value" id="kpi-tc">—</div><div class="kpi-delta delta-neu" id="kpi-tc-d"></div></div>
+    </div>
+    <div class="pending-note"><div class="pending-note-inner">Service level, fill rate, capacity, in-transit and transport-cost KPIs need <b>on-hand inventory and freight data</b> — not available yet.</div></div>
   </div>
   <!-- Charts 2x2 -->
   <div class="charts-row">
@@ -1224,49 +1142,37 @@ body{
     </div>
     <div class="chart-panel">
       <div class="chart-head">
-        <div><div class="chart-title">On-hand inventory (W1–W8)</div><div class="chart-sub">Projected draw-down + planned replenishment cycles · click to drill down</div></div>
+        <div><div class="chart-title">On-hand inventory (W1–W8)</div><div class="chart-sub">Projected draw-down + planned replenishment cycles</div></div>
       </div>
-      <div class="chart-area" id="chart3"></div>
-      <div class="chart-legend">
-        <div class="leg-item"><span class="leg-bar" style="background:#94A3B8;opacity:.65"></span>On-hand</div>
-        <div class="leg-item"><span class="leg-bar" style="background:var(--green);opacity:.85"></span>Replen entry</div>
-        <div class="leg-item" style="gap:3px"><span style="border-top:1.5px dashed var(--amber);width:16px;display:inline-block"></span>ROP</div>
-      </div>
+      <div class="pending-card">Awaiting inventory data<br><b>On-hand, in-transit and ROP</b> have not been uploaded yet.</div>
     </div>
     <div class="chart-panel">
       <div class="chart-head">
         <div><div class="chart-title">Inventory gap / net requirement</div><div class="chart-sub">Shortfalls dropping below reorder point (ROP)</div></div>
-        <span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:3px;background:var(--red-light);color:var(--red)">deficit shortfall barrier</span>
       </div>
-      <div class="chart-area" id="chart4"></div>
-      <div class="chart-legend">
-        <div class="leg-item"><span style="width:9px;height:9px;background:var(--red);opacity:.4;border-radius:2px;display:inline-block"></span>Shortfall</div>
-        <div class="leg-item"><span style="width:9px;height:9px;background:var(--green);opacity:.35;border-radius:2px;display:inline-block"></span>Surplus</div>
-      </div>
+      <div class="pending-card">Awaiting inventory data<br><b>Net requirement</b> needs on-hand + safety stock to compute.</div>
     </div>
   </div>
   <!-- AI Strip -->
-  <div class="ai-strip">
-    <div class="ai-strip-inner">
+  <div class="ai-strip pending-wrap">
+    <div class="ai-strip-inner pending-dim">
       <div class="ai-strip-left">
         <div class="ai-strip-head">
           <span class="ai-tag">AI recommendations</span>
           <span class="ai-strip-title">Replenishment recommendations</span>
           <span class="ai-strip-sub">Based on current stock levels, demand signals and delivery lead times</span>
         </div>
-        <div class="ai-analyzing" id="ai-analyzing"><span>Analysing store signals</span><span class="ai-dots"><span></span><span></span><span></span></span></div>
+        <div class="ai-analyzing" id="ai-analyzing" style="display:none"><span>Analysing store signals</span><span class="ai-dots"><span></span><span></span><span></span></span></div>
         <div class="ai-recs" id="ai-recs"></div>
       </div>
       <div class="ai-cta">
         <div class="saving-label">Est. freight saving</div>
-        <div class="saving-value" id="ai-saving">£4,500</div>
+        <div class="saving-value" id="ai-saving">—</div>
         <div class="saving-sub">Estimated saving vs unplanned dispatch this cycle</div>
-        <button class="btn-primary" style="width:100%" onclick="showScreen('dispatch')">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-          Release DRP to DC
-        </button>
+        <button class="btn-primary" style="width:100%" disabled>Release DRP to DC</button>
       </div>
     </div>
+    <div class="pending-note"><div class="pending-note-inner">AI replenishment recommendations need <b>on-hand inventory and freight-cost data</b> — not available yet.</div></div>
   </div>
 </div>
 </div>
@@ -1276,13 +1182,13 @@ body{
 <div class="content">
   <div class="page-header">
     <div style="display:flex;align-items:center;gap:8px">
-      <div class="sf-bar" id="sf-bar">
-        <span class="sf-chip f-all sel" onclick="setFilter('all')">All <span class="sf-count" id="sf-cnt-all">10</span></span>
-        <span class="sf-chip f-replenish" onclick="setFilter('replenish')">Replenish <span class="sf-count" id="sf-cnt-replenish">3</span></span>
-        <span class="sf-chip f-low" onclick="setFilter('low')">Low <span class="sf-count" id="sf-cnt-low">2</span></span>
-        <span class="sf-chip f-ok" onclick="setFilter('ok')">OK <span class="sf-count" id="sf-cnt-ok">3</span></span>
-        <span class="sf-chip f-hold" onclick="setFilter('hold')">Hold <span class="sf-count" id="sf-cnt-hold">1</span></span>
-        <span class="sf-chip f-redeploy" onclick="setFilter('redeploy')">Redeploy <span class="sf-count" id="sf-cnt-redeploy">1</span></span>
+      <div class="sf-bar" id="sf-bar" style="display:none">
+        <span class="sf-chip f-all sel" onclick="setFilter('all')">All <span class="sf-count" id="sf-cnt-all">0</span></span>
+        <span class="sf-chip f-replenish" onclick="setFilter('replenish')">Replenish <span class="sf-count" id="sf-cnt-replenish">0</span></span>
+        <span class="sf-chip f-low" onclick="setFilter('low')">Low <span class="sf-count" id="sf-cnt-low">0</span></span>
+        <span class="sf-chip f-ok" onclick="setFilter('ok')">OK <span class="sf-count" id="sf-cnt-ok">0</span></span>
+        <span class="sf-chip f-hold" onclick="setFilter('hold')">Hold <span class="sf-count" id="sf-cnt-hold">0</span></span>
+        <span class="sf-chip f-redeploy" onclick="setFilter('redeploy')">Redeploy <span class="sf-count" id="sf-cnt-redeploy">0</span></span>
       </div>
       <div class="search-wrap">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -1294,20 +1200,20 @@ body{
   <div class="detail-layout">
     <div class="store-sidebar">
       <div class="store-card">
-        <div class="store-name-lg" id="s2-store-name">Store #0142</div>
-        <div class="store-meta" id="s2-store-meta">Dubai — UAE · Lead time 2 days</div>
-        <div class="cap-donut-wrap">
+        <div class="store-name-lg" id="s2-store-name">Store</div>
+        <div class="store-meta" id="s2-store-meta" style="display:none"></div>
+        <div class="cap-donut-wrap" style="display:none">
           <div class="cap-donut">
-            <svg viewBox="0 0 68 68"><circle cx="34" cy="34" r="28" fill="none" stroke="var(--surface3)" stroke-width="7"/><circle id="donut-arc" cx="34" cy="34" r="28" fill="none" stroke="var(--blue)" stroke-width="7" stroke-linecap="round" stroke-dasharray="175.9" stroke-dashoffset="21" transform="rotate(-90 34 34)"/></svg>
-            <div class="cap-donut-center"><div class="cap-donut-pct" id="s2-cap-pct">88%</div><div class="cap-donut-lbl">cap</div></div>
+            <svg viewBox="0 0 68 68"><circle cx="34" cy="34" r="28" fill="none" stroke="var(--surface3)" stroke-width="7"/><circle id="donut-arc" cx="34" cy="34" r="28" fill="none" stroke="var(--blue)" stroke-width="7" stroke-linecap="round" stroke-dasharray="175.9" stroke-dashoffset="175.9" transform="rotate(-90 34 34)"/></svg>
+            <div class="cap-donut-center"><div class="cap-donut-pct" id="s2-cap-pct">—</div><div class="cap-donut-lbl">cap</div></div>
           </div>
           <div class="cap-kv">
-            <div class="cap-kv-row"><span class="cap-kv-k">On-hand</span><span class="cap-kv-v" id="s2-onhand">1,584 u</span></div>
-            <div class="cap-kv-row"><span class="cap-kv-k">In-transit</span><span class="cap-kv-v" id="s2-intransit">320 u</span></div>
-            <div class="cap-kv-row"><span class="cap-kv-k">Open-to-ship</span><span class="cap-kv-v" id="s2-ots">216 u</span></div>
-            <div class="cap-kv-row"><span class="cap-kv-k">Target SL</span><span class="cap-kv-v">98%</span></div>
+            <div class="cap-kv-row"><span class="cap-kv-k">On-hand</span><span class="cap-kv-v" id="s2-onhand">—</span></div>
+            <div class="cap-kv-row"><span class="cap-kv-k">In-transit</span><span class="cap-kv-v" id="s2-intransit">—</span></div>
+            <div class="cap-kv-row"><span class="cap-kv-k">Open-to-ship</span><span class="cap-kv-v" id="s2-ots">—</span></div>
           </div>
         </div>
+        <div class="pending-card" style="padding:18px 14px;font-size:11.5px">Awaiting inventory data<br><b>On-hand, in-transit &amp; capacity</b> not uploaded yet.</div>
       </div>
       <div class="store-card">
         <div class="sec-label">Active demand signals</div>
@@ -1324,11 +1230,8 @@ body{
         <div style="overflow-x:auto">
           <table class="data-table">
             <thead><tr>
-              <th style="width:32px"><input type="checkbox" id="sku-select-all" class="lane-chk" onchange="toggleAllSKUs(this)" title="Select all"></th>
-              <th>SKU</th><th>Product</th><th class="r">On-hand</th><th class="r">In-transit</th>
-              <th class="r">Sensed dmd/wk</th><th class="r">Safety stock</th>
-              <th class="r" style="color:var(--blue)">ROP</th>
-              <th class="r">Net req.</th><th class="r">Replen qty</th><th>Status</th>
+              <th>SKU</th><th>Product</th><th class="r">Sensed dmd/wk</th>
+              <th class="r" style="color:var(--ink4)">On-hand</th><th class="r" style="color:var(--ink4)">Net req.</th><th style="color:var(--ink4)">Status</th>
             </tr></thead>
             <tbody id="sku-tbody"></tbody>
           </table>
@@ -1336,8 +1239,8 @@ body{
       </div>
       <div class="ai-footer">
         <span class="ai-tag">Decision Intelligence</span>
-        <span class="ai-footer-text" id="s2-footer-text"><strong>4 SKUs flagged for replenishment</strong> · Consolidated lane DC → #0142 · Projected truck fill 92%</span>
-        <button class="btn-primary" id="release-btn" onclick="releaseSelected()" disabled style="opacity:.45;cursor:not-allowed">Release selected to DC</button>
+        <span class="ai-footer-text" id="s2-footer-text">Replenishment status needs <b>on-hand inventory data</b> — not available yet.</span>
+        <button class="btn-primary" id="release-btn" disabled style="opacity:.45;cursor:not-allowed">Release selected to DC</button>
       </div>
     </div>
   </div>
@@ -1347,107 +1250,9 @@ body{
 <!-- ═══════════════════ SCREEN 3 — REPLENISHMENT ═══════════════════ -->
 <div class="tab-content" id="tab-dispatch">
 <div class="content">
-  <div class="page-header">
-    <button class="btn-primary" onclick="openModal()">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-      Approve all lanes
-    </button>
-  </div>
-  <!-- KPI tiles -->
-  <div class="kpi-row-4">
-    <div class="kpi hi"><div class="kpi-label">Transport cost (weekly)</div><div class="kpi-value">£8,690</div><div class="kpi-delta delta-up">↓ 13% vs un-optimised</div></div>
-    <div class="kpi"><div class="kpi-label">Avg truck utilisation</div><div class="kpi-value">85%</div><div class="kpi-delta delta-up">↑ 14 pts vs baseline</div></div>
-    <div class="kpi"><div class="kpi-label">LTL / expedite loads</div><div class="kpi-value">1</div><div class="kpi-delta delta-up">↓ 7 loads vs baseline</div></div>
-    <div class="kpi"><div class="kpi-label">Capacity-feasible</div><div class="kpi-value">100%</div><div class="kpi-delta delta-neu">all 5 stores within cap</div></div>
-  </div>
-  <!-- Replen table + rationale -->
-  <div class="dispatch-bottom" style="margin-bottom:10px">
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">Consolidated replenishment plan — DC dispatch cycle Wk 32</div>
-        <span class="ai-tag">AI-optimised</span>
-      </div>
-      <div style="overflow-x:auto">
-        <table class="data-table">
-          <thead><tr><th style="width:28px"></th><th>Lane (DC → store)</th><th class="r">SKUs</th><th class="r">Units</th><th>Truck fill</th><th>Mode</th><th class="r">Freight</th><th class="r">vs baseline</th></tr></thead>
-          <tbody>
-            <tr id="lane-0142"><td><input type="checkbox" class="lane-chk" onchange="toggleLane('0142',this)"></td><td onclick="highlightStore('0142')" style="cursor:pointer"><strong>DC → Dubai — UAE</strong> <span style="font-size:10.5px;color:var(--ink4)">#0142</span></td><td class="num">18</td><td class="num">320</td><td><div class="fill-wrap"><span class="fill-val">91%</span><div class="fill-track"><div class="fill-bar fill-hi" style="width:91%"></div></div></div></td><td><span class="mode-badge ftl">FTL</span></td><td class="num">£2,100</td><td class="num vs-save">↓ 14%</td></tr>
-            <tr id="lane-0137"><td><input type="checkbox" class="lane-chk" onchange="toggleLane('0137',this)"></td><td onclick="highlightStore('0137')" style="cursor:pointer"><strong>DC → Riyadh · Dubai</strong> <span style="font-size:10.5px;color:var(--ink4)">#0137 · #0142</span></td><td class="num">22</td><td class="num">275</td><td><div class="fill-wrap"><span class="fill-val">87%</span><div class="fill-track"><div class="fill-bar fill-hi" style="width:87%"></div></div></div></td><td><span class="mode-badge consol">FTL (consol.)</span></td><td class="num">£2,500</td><td class="num vs-save">↓ 18%</td></tr>
-            <tr id="lane-0151"><td><input type="checkbox" class="lane-chk" onchange="toggleLane('0151',this)"></td><td onclick="highlightStore('0151')" style="cursor:pointer"><strong>DC → Cairo — Egypt</strong> <span style="font-size:10.5px;color:var(--ink4)">#0151</span></td><td class="num">9</td><td class="num">128</td><td><div class="fill-wrap"><span class="fill-val">74%</span><div class="fill-track"><div class="fill-bar fill-md" style="width:74%"></div></div></div></td><td><span class="mode-badge ftl">FTL</span></td><td class="num">£1,450</td><td class="num vs-save">↓ 9%</td></tr>
-            <tr id="lane-0165"><td><input type="checkbox" class="lane-chk" onchange="toggleLane('0165',this)"></td><td onclick="highlightStore('0165')" style="cursor:pointer"><strong>DC → Nairobi — Kenya</strong> <span style="font-size:10.5px;color:var(--ink4)">#0165</span></td><td class="num">11</td><td class="num">198</td><td><div class="fill-wrap"><span class="fill-val">88%</span><div class="fill-track"><div class="fill-bar fill-hi" style="width:88%"></div></div></div></td><td><span class="mode-badge ftl">FTL</span></td><td class="num">£1,760</td><td class="num vs-save">↓ 11%</td></tr>
-            <tr id="lane-0188"><td><input type="checkbox" class="lane-chk" onchange="toggleLane('0188',this)"></td><td onclick="highlightStore('0188')" style="cursor:pointer"><strong>DC → Lagos — Nigeria</strong> <span style="font-size:10.5px;color:var(--ink4)">#0188</span></td><td class="num">7</td><td class="num">94</td><td><div class="fill-wrap"><span class="fill-val">61%</span><div class="fill-track"><div class="fill-bar fill-lo" style="width:61%"></div></div></div></td><td><span class="mode-badge milkrun">Milk-run</span></td><td class="num">£880</td><td class="num vs-save">↓ 21%</td></tr>
-            <tr class="total-row"><td></td><td>Network total</td><td class="num">67</td><td class="num">1,015</td><td><div class="fill-wrap"><span class="fill-val" style="color:var(--green)">85%</span><div class="fill-track"><div class="fill-bar fill-hi" style="width:85%"></div></div></div></td><td>—</td><td class="num">£8,690</td><td class="num vs-save">↓ 13%</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    <!-- Rationale panel -->
-    <div class="card" style="height:fit-content">
-      <div class="card-header"><div class="card-title">Decision rationale</div><span class="ai-tag">AI reasoning</span></div>
-      <div style="padding:14px 16px;display:flex;flex-direction:column;gap:14px">
-        <div>
-          <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:5px">How does the plan stay within each store's capacity?</div>
-          <div style="font-size:12px;color:var(--ink3);line-height:1.6">Each order is capped at the physical space available. When space is tight, higher-demand SKUs are prioritised so every shelf unit is used productively.</div>
-        </div>
-        <div>
-          <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:5px">How much stock should each store hold?</div>
-          <div style="font-size:12px;color:var(--ink3);line-height:1.6">Enough to cover sales during the 2-day delivery window, plus a safety buffer to maintain 98% service level. Recalculated each week as demand signals change.</div>
-        </div>
-        <div>
-          <div style="font-size:12px;font-weight:600;color:var(--ink);margin-bottom:5px">How is freight cost being cut this week?</div>
-          <div style="font-size:12px;color:var(--ink3);line-height:1.6">Combining store orders onto shared trucks lifted average fill from 71% to 85%, saving £1,300 vs dispatching each store separately.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- UK map + telemetry — full width below table -->
-  <div class="dispatch-top" style="grid-template-columns:1fr 280px">
-    <div class="uk-map-card">
-      <div class="uk-map-header">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:12px;font-weight:700;color:var(--ink)">Network control tower — UK distribution</span>
-          <span style="font-size:10px;color:var(--green);font-weight:600;display:flex;align-items:center;gap:4px"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>Live</span>
-        </div>
-        <div style="font-size:10.5px;color:var(--ink4)">Click a store node for telemetry</div>
-      </div>
-      <div class="uk-map-body">
-        <div class="uk-map-svg-wrap" id="uk-map-svg-wrap"></div>
-        <div class="uk-telemetry" id="uk-telemetry">
-          <div class="tel-title">Active telemetry console</div>
-          <div class="tel-store-name" id="tel-store-name">Dubai — UAE</div>
-          <div class="tel-coords" id="tel-coords">#0142 · 25.2048° N, 55.2708° E</div>
-          <div class="tel-grid">
-            <div class="tel-tile"><div class="tel-tile-label">Dispatch mode</div><div class="tel-tile-value" id="tel-mode">FTL</div></div>
-            <div class="tel-tile"><div class="tel-tile-label">Truck util.</div><div class="tel-tile-value" id="tel-util" style="color:var(--green)">91%</div></div>
-          </div>
-          <div class="tel-kv"><span class="tel-kv-k">Consolidated volume</span><span class="tel-kv-v" id="tel-units">320 units</span></div>
-          <div class="tel-kv"><span class="tel-kv-k">Sensed SKU count</span><span class="tel-kv-v" id="tel-skus">18 active SKUs</span></div>
-          <div class="tel-kv"><span class="tel-kv-k">Freight allocation</span><span class="tel-kv-v" id="tel-freight">£2,100</span></div>
-          <div class="tel-alerts">
-            <div class="tel-alert-title">Demand &amp; signal alerts</div>
-            <div id="tel-alerts-list"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <!-- AI Advisor -->
-    <div class="ai-advisor-card">
-      <div class="aa-head">
-        <div class="aa-title">AI Replenishment Advisor</div>
-        <div class="aa-sub">Grounding logic with active demand &amp; supply factors</div>
-      </div>
-      <div class="aa-chat" id="aa-chat">
-        <div class="aa-empty">Click one of the planning questions below to receive contextual optimisation insights grounded in live network data.</div>
-      </div>
-      <div class="aa-questions">
-        <div class="aa-q-label">Planning questions</div>
-        <button class="aa-q-btn" onclick="askAdvisor('capacity')">Q: Maximise capacity vs demand forecast</button>
-        <button class="aa-q-btn" onclick="askAdvisor('deadstock')">Q: Identify dead stock risk across the network</button>
-        <button class="aa-q-btn" onclick="askAdvisor('freight')">Q: How is freight cost being optimised this cycle</button>
-        <button class="aa-q-btn" onclick="askAdvisor('attention')">Q: Which stores need immediate attention</button>
-      </div>
-    </div>
+  <div class="pending-card" style="padding:64px 24px">
+    <div style="font-size:14px;font-weight:700;color:var(--ink2);margin-bottom:8px">Replenishment planning is not available yet</div>
+    <div style="max-width:480px;margin:0 auto">The AI-optimised consolidated dispatch plan — lanes, truck fill, freight cost and network map — needs <b>on-hand inventory, lead time and freight-cost data</b>, none of which has been uploaded yet. Upload an inventory data source via <b>Data Hub</b> to enable this screen.</div>
   </div>
 </div>
 </div>
@@ -1457,7 +1262,7 @@ body{
 <div class="content">
   <div class="dh-wrap">
     <div class="dh-title">Data Hub</div>
-    <div class="dh-sub">Upload the data team's Excel file to refresh the dashboard with live supply chain data.</div>
+    <div class="dh-sub">Upload the data team's demand file to refresh the forecast &amp; sensing charts. Stores and SKUs are read directly from the file.</div>
 
     <!-- Upload zone -->
     <div class="dh-zone" id="dh-zone"
@@ -1467,7 +1272,7 @@ body{
              onchange="dhFileSelected(event)" onclick="event.stopPropagation()">
       <div class="dh-zone-icon">📂</div>
       <div class="dh-zone-label">Drop your Excel file here, or click to browse</div>
-      <div class="dh-zone-hint">Accepts <strong>Dabur_Supply_Data.xlsx</strong> · Sheets required: <em>Demand Forecasting</em> &amp; <em>On Hand Inventory</em></div>
+      <div class="dh-zone-hint">Accepts <strong>Supply_Data.xlsx</strong> · Columns required: <em>SKU Name, Store Name, Week Start Date, Baseline (units), Promo Units</em></div>
     </div>
 
     <!-- Status message -->
@@ -1482,10 +1287,7 @@ body{
           <thead>
             <tr>
               <th>Store</th>
-              <th>On-Hand</th>
-              <th>In-Transit</th>
-              <th>Cap. Util.</th>
-              <th>Uplift</th>
+              <th>Promo uplift</th>
               <th>Active Signals</th>
               <th>SKUs loaded</th>
               <th>Weeks</th>
@@ -1514,160 +1316,54 @@ body{
 /* ════════════════════════════════
    DATA
 ════════════════════════════════ */
-const STORES={
-  '0142':{name:'Dubai — UAE',format:'L',maxCap:1800,onHand:1584,inTransit:320,ots:216,lead:2,capPct:88,
-    signals:[{t:'Promo',pct:4.2,on:true},{t:'Festival',pct:2.8,on:true},{t:'Weather',pct:1.1,on:true},{t:'Trend',pct:0,on:false},{t:'Event',pct:0,on:false}],
-    uplift:6.4,
-    kpis:{sl:'97.4%',slD:'↓ 0.6 pts vs target',slC:'delta-down',fr:'95.1%',frD:'↑ 1.2 pts w/w',frC:'delta-up',cu:'88%',cuD:'within ceiling',cuC:'delta-neu',it:'320',itD:'2 open loads',itC:'delta-neu',tc:'£12,400',tcD:'↓ 9% vs plan',tcC:'delta-up'},
-    forecast:[420,465,510,560,610,665,710,760],sensed:[452,508,556,612,668,724,774,828],
-    gap:[20,10,-30,-155,-95,-210,-160,-310],rop:350,
-    aiRecs:[
-      {type:'order',text:'Order 320 units across 18 SKUs — stock is running low and fits within available headroom.',meta:'Ready to release to DC this cycle'},
-      {type:'consol',text:'Consolidate with Riyadh — Saudi Arabia on the same truck — fills to 92% and avoids a part-load surcharge.',meta:'Saves £2,700 vs running two separate deliveries'},
-      {type:'redeploy',text:'SKU-4471 has excess stock. Move 54 units to Cairo which is running short.',meta:'No freight cost — internal transfer'}],
-    saving:'£4,500',
-    coords:{lat:'51.5138° N',lng:'0.1416° W'},
-    telMode:'FTL',telUtil:'91%',telUnits:'320 units',telSKUs:'18 active SKUs',telFreight:'£2,100',
-    telAlerts:[{col:'#D97706',text:'Promo + Festival signals active · +6.4% uplift'},{col:'#2563EB',text:'Real Fruit Juice 1L: 3 days of supply'}],
-    skus:[
-      {id:'SKU-4471',name:'Dabur Honey 1kg',oh:42,it:0,dmd:8,ss:12,rop:22,nr:0,rq:0,st:'hold'},
-      {id:'SKU-4490',name:'Real Activ Juice 1L',oh:14,it:6,dmd:12,ss:18,rop:34,nr:18,rq:20,st:'replenish'},
-      {id:'SKU-4512',name:'Vatika Hair Oil 300ml',oh:28,it:12,dmd:38,ss:28,rop:62,nr:48,rq:54,st:'replenish'},
-      {id:'SKU-4533',name:'Chyawanprash 500g',oh:124,it:0,dmd:28,ss:22,rop:48,nr:0,rq:0,st:'ok'},
-      {id:'SKU-4560',name:'Real Fruit Juice 1L',oh:18,it:8,dmd:45,ss:36,rop:74,nr:48,rq:54,st:'low'},
-      {id:'SKU-4588',name:'Dabur Red Toothpaste 200g',oh:84,it:0,dmd:18,ss:14,rop:30,nr:0,rq:0,st:'redeploy'},
-      {id:'SKU-4601',name:'Hajmola Candy 120pc',oh:38,it:24,dmd:32,ss:24,rop:50,nr:24,rq:28,st:'replenish'},
-      {id:'SKU-4624',name:'Dabur Amla Hair Oil 200ml',oh:96,it:16,dmd:24,ss:18,rop:38,nr:0,rq:0,st:'ok'},
-      {id:'SKU-4647',name:'Meswak Toothpaste 100g',oh:8,it:0,dmd:6,ss:10,rop:18,nr:16,rq:18,st:'low'},
-      {id:'SKU-4671',name:'Dabur Glucose D 500g',oh:145,it:36,dmd:32,ss:22,rop:46,nr:0,rq:0,st:'ok'}]},
-  '0137':{name:'Riyadh — Saudi Arabia',format:'M',maxCap:1400,onHand:1008,inTransit:235,ots:392,lead:2,capPct:72,
-    signals:[{t:'Promo',pct:3.1,on:true},{t:'Festival',pct:0,on:false},{t:'Weather',pct:0,on:false},{t:'Trend',pct:1.8,on:true},{t:'Event',pct:0,on:false}],
-    uplift:3.1,
-    kpis:{sl:'98.2%',slD:'↑ 0.4 pts w/w',slC:'delta-up',fr:'96.4%',frD:'↑ 0.8 pts w/w',frC:'delta-up',cu:'72%',cuD:'within ceiling',cuC:'delta-neu',it:'235',itD:'2 open loads',itC:'delta-neu',tc:'£9,800',tcD:'↓ 7% vs plan',tcC:'delta-up'},
-    forecast:[310,325,345,360,420,395,370,350],sensed:[320,335,356,371,433,407,381,361],
-    gap:[15,8,0,0,-38,0,-25,-88],rop:280,
-    aiRecs:[
-      {type:'order',text:'Order 275 units across 14 SKUs — headroom is comfortable at 392 units.',meta:'Ready to release to DC this cycle'},
-      {type:'consol',text:'Combine with Dubai — UAE on the same truck — saves £960 in freight this week.',meta:'Combined truck fills to 87%'},
-      {type:'order',text:'SKU-7312 and SKU-7345 selling faster than planned. Increase safety stock by 15%.',meta:'Risk of stockout in 2 weeks if not acted on'}],
-    saving:'£2,600',
-    coords:{lat:'53.4808° N',lng:'2.2426° W'},
-    telMode:'FTL (consol.)',telUtil:'87%',telUnits:'275 units',telSKUs:'14 active SKUs',telFreight:'£2,500',
-    telAlerts:[{col:'#2563EB',text:'Promo + Trend signals active · +3.1% uplift'},{col:'#16A34A',text:'SL tracking above 98% target'}],
-    skus:[
-      {id:'SKU-7290',name:'Real Mixed Fruit Juice 1L',oh:68,it:16,dmd:18,ss:14,rop:30,nr:0,rq:0,st:'ok'},
-      {id:'SKU-7312',name:'Dabur Lal Dant Manjan 60g',oh:22,it:8,dmd:28,ss:20,rop:42,nr:28,rq:32,st:'replenish'},
-      {id:'SKU-7334',name:'Vatika Coconut Hair Oil 150ml',oh:86,it:0,dmd:12,ss:14,rop:28,nr:0,rq:0,st:'hold'},
-      {id:'SKU-7345',name:'Dabur Honey 250g',oh:18,it:6,dmd:24,ss:18,rop:38,nr:28,rq:32,st:'low'},
-      {id:'SKU-7378',name:'Real Apple Juice 1L',oh:56,it:0,dmd:16,ss:14,rop:30,nr:0,rq:0,st:'ok'},
-      {id:'SKU-7401',name:'Hajmola Tablets 60pc',oh:18,it:8,dmd:22,ss:16,rop:34,nr:22,rq:26,st:'replenish'},
-      {id:'SKU-7423',name:'Chyawanprash Lite 500g',oh:104,it:0,dmd:10,ss:12,rop:22,nr:0,rq:0,st:'redeploy'},
-      {id:'SKU-7445',name:'Dabur Anmol Gold Coconut Oil',oh:28,it:12,dmd:18,ss:14,rop:30,nr:0,rq:0,st:'ok'}]},
-  '0151':{name:'Cairo — Egypt',format:'S',maxCap:1100,onHand:715,inTransit:110,ots:385,lead:2,capPct:65,
-    signals:[{t:'Promo',pct:0,on:false},{t:'Festival',pct:0,on:false},{t:'Weather',pct:1.8,on:true},{t:'Trend',pct:0,on:false},{t:'Event',pct:0,on:false}],
-    uplift:1.8,
-    kpis:{sl:'96.8%',slD:'↓ 1.2 pts vs target',slC:'delta-down',fr:'93.6%',frD:'↓ 0.4 pts w/w',frC:'delta-down',cu:'65%',cuD:'within ceiling',cuC:'delta-neu',it:'110',itD:'1 open load',itC:'delta-neu',tc:'£6,800',tcD:'↓ 5% vs plan',tcC:'delta-up'},
-    forecast:[280,262,248,235,220,208,198,190],sensed:[285,267,253,239,224,212,202,194],
-    gap:[0,0,-18,-42,-65,-88,-105,-120],rop:180,
-    aiRecs:[
-      {type:'order',text:'Service level is below 98% target. 7 SKUs need ordering this cycle — do not defer.',meta:'Expedite this week and review safety stock levels'},
-      {type:'redeploy',text:'Accept 54 units of SKU-4471 from London. Covers the W4 gap with no freight cost.',meta:'Internal transfer — no PO needed'},
-      {type:'order',text:'Rain forecast is lifting accessory demand by 1.8%. Prioritise cases and cables.',meta:'Pull forward accessories to W3'}],
-    saving:'£1,400',
-    coords:{lat:'52.4797° N',lng:'1.8951° W'},
-    telMode:'FTL',telUtil:'74%',telUnits:'128 units',telSKUs:'9 active SKUs',telFreight:'£1,450',
-    telAlerts:[{col:'#DC2626',text:'SL at 96.8% — below 98% target. Act today.'},{col:'#2563EB',text:'Weather signal active · +1.8% uplift on accessories'}],
-    skus:[
-      {id:'SKU-3110',name:'Real Orange Juice 1L',oh:44,it:8,dmd:14,ss:10,rop:24,nr:0,rq:0,st:'ok'},
-      {id:'SKU-3145',name:'Dabur Red Toothpaste 100g',oh:12,it:4,dmd:18,ss:14,rop:30,nr:20,rq:24,st:'replenish'},
-      {id:'SKU-3167',name:'Vatika Olive Hair Oil 150ml',oh:62,it:0,dmd:8,ss:10,rop:20,nr:0,rq:0,st:'hold'},
-      {id:'SKU-3189',name:'Dabur Meswak Toothpaste 200g',oh:8,it:2,dmd:16,ss:14,rop:28,nr:24,rq:28,st:'low'},
-      {id:'SKU-3201',name:'Real Cranberry Juice 1L',oh:38,it:0,dmd:12,ss:10,rop:22,nr:0,rq:0,st:'ok'},
-      {id:'SKU-3224',name:'Dabur Shilajit Gold 20cap',oh:14,it:6,dmd:16,ss:12,rop:26,nr:12,rq:14,st:'replenish'},
-      {id:'SKU-3246',name:'Dabur Pudin Hara 30ml',oh:54,it:0,dmd:8,ss:8,rop:16,nr:0,rq:0,st:'redeploy'}]},
-  '0165':{name:'Nairobi — Kenya',format:'M',maxCap:1500,onHand:1260,inTransit:240,ots:250,lead:2,capPct:84,
-    signals:[{t:'Promo',pct:0,on:false},{t:'Festival',pct:3.4,on:true},{t:'Weather',pct:0,on:false},{t:'Trend',pct:2.1,on:true},{t:'Event',pct:0,on:false}],
-    uplift:4.7,
-    kpis:{sl:'97.9%',slD:'↑ 0.2 pts w/w',slC:'delta-up',fr:'95.8%',frD:'↑ 1.6 pts w/w',frC:'delta-up',cu:'84%',cuD:'near ceiling',cuC:'delta-neu',it:'240',itD:'2 open loads',itC:'delta-neu',tc:'£11,000',tcD:'↓ 11% vs plan',tcC:'delta-up'},
-    forecast:[280,330,400,480,520,460,380,310],sensed:[293,346,420,503,545,482,398,325],
-    gap:[10,0,-18,-245,-280,-195,-88,-22],rop:320,
-    aiRecs:[
-      {type:'order',text:'198 units needed across 11 SKUs. Very little headroom left — order now, do not wait.',meta:'Release to DC this cycle'},
-      {type:'order',text:'Festival and trend activity pushing demand up 4.7%. Order W3 stock early to avoid W4 gap.',meta:'W4 shortfall of 112 units if deferred'},
-      {type:'consol',text:'Volume large enough for a dedicated full truck. Fills to 88% — cheaper than splitting the load.',meta:'Freight estimated at £1,760'}],
-    saving:'£3,300',
-    coords:{lat:'53.7974° N',lng:'1.5438° W'},
-    telMode:'FTL',telUtil:'88%',telUnits:'198 units',telSKUs:'11 active SKUs',telFreight:'£1,760',
-    telAlerts:[{col:'#D97706',text:'Festival + Trend signals · +4.7% uplift'},{col:'#D97706',text:'Capacity at 84% — near ceiling. Advance W4.'}],
-    skus:[
-      {id:'SKU-9001',name:'Real Kiwi Juice 1L',oh:52,it:12,dmd:22,ss:16,rop:36,nr:0,rq:0,st:'ok'},
-      {id:'SKU-9045',name:'Dabur Vatika Shampoo 200ml',oh:16,it:4,dmd:30,ss:22,rop:46,nr:28,rq:32,st:'replenish'},
-      {id:'SKU-9067',name:'Dabur Honey 1kg — Squeezy',oh:22,it:6,dmd:26,ss:20,rop:42,nr:28,rq:32,st:'low'},
-      {id:'SKU-9089',name:'Hajmola Imli Candy',oh:78,it:0,dmd:14,ss:16,rop:30,nr:0,rq:0,st:'hold'},
-      {id:'SKU-9112',name:'Chyawanprash Special 1kg',oh:34,it:10,dmd:24,ss:18,rop:38,nr:8,rq:12,st:'replenish'},
-      {id:'SKU-9134',name:'Real Guava Nectar 1L',oh:118,it:0,dmd:12,ss:14,rop:26,nr:0,rq:0,st:'redeploy'},
-      {id:'SKU-9156',name:'Dabur Amla Juice 500ml',oh:22,it:4,dmd:20,ss:16,rop:32,nr:16,rq:18,st:'replenish'},
-      {id:'SKU-9178',name:'Vatika Egg Hair Oil 150ml',oh:56,it:8,dmd:16,ss:12,rop:26,nr:0,rq:0,st:'ok'}]},
-  '0188':{name:'Lagos — Nigeria',format:'S',maxCap:1200,onHand:732,inTransit:96,ots:465,lead:2,capPct:61,
-    signals:[{t:'Promo',pct:0,on:false},{t:'Festival',pct:0,on:false},{t:'Weather',pct:0,on:false},{t:'Trend',pct:0,on:false},{t:'Event',pct:2.2,on:true}],
-    uplift:2.2,
-    kpis:{sl:'97.1%',slD:'↓ 0.9 pts vs target',slC:'delta-neu',fr:'94.3%',frD:'↑ 0.5 pts w/w',frC:'delta-up',cu:'61%',cuD:'within ceiling',cuC:'delta-neu',it:'96',itD:'1 open load',itC:'delta-neu',tc:'£6,300',tcD:'↓ 6% vs plan',tcC:'delta-up'},
-    forecast:[180,182,185,188,210,208,185,180],sensed:[184,186,189,192,232,229,204,198],
-    gap:[12,8,5,0,-18,0,8,5],rop:150,
-    aiRecs:[
-      {type:'order',text:'94 units needed across 7 SKUs. Volume is small — a milk run is the right call here.',meta:'Milk run saves on part-load freight charges'},
-      {type:'order',text:'Local event lifting demand by 2.2%. Watch sell-through daily — top-up if it crosses 80%.',meta:'Watch sell-through this week'},
-      {type:'redeploy',text:'Store has spare capacity. Can absorb 60–80 units from stores sitting on excess stock.',meta:'Potential sources: London or Leeds'}],
-    saving:'£960',
-    coords:{lat:'55.9521° N',lng:'3.1965° W'},
-    telMode:'Milk-run',telUtil:'61%',telUnits:'94 units',telSKUs:'7 active SKUs',telFreight:'£880',
-    telAlerts:[{col:'#2563EB',text:'Local event signal · +2.2% uplift on accessories'},{col:'#16A34A',text:'Capacity at 61% — available for redeployment'}],
-    skus:[
-      {id:'SKU-6010',name:'Real Mixed Fruit Juice 1L',oh:52,it:6,dmd:14,ss:10,rop:22,nr:0,rq:0,st:'ok'},
-      {id:'SKU-6034',name:'Dabur Lal Toothpaste 80g',oh:10,it:4,dmd:20,ss:14,rop:30,nr:22,rq:26,st:'replenish'},
-      {id:'SKU-6056',name:'Real Mango Juice 1L',oh:78,it:0,dmd:8,ss:10,rop:18,nr:0,rq:0,st:'hold'},
-      {id:'SKU-6078',name:'Dabur Glucoplus-C 500g',oh:9,it:2,dmd:14,ss:12,rop:24,nr:16,rq:18,st:'low'},
-      {id:'SKU-6101',name:'Real Fruit Juice 1L',oh:34,it:0,dmd:12,ss:10,rop:20,nr:0,rq:0,st:'ok'},
-      {id:'SKU-6123',name:'Hajmola Regular 120pc',oh:14,it:4,dmd:14,ss:12,rop:24,nr:10,rq:12,st:'replenish'},
-      {id:'SKU-6145',name:'Dabur Ashokarishta 450ml',oh:68,it:0,dmd:6,ss:8,rop:14,nr:0,rq:0,st:'redeploy'}]}
-};
-
-/* ── Live data merge (from live_data.js / Dabur_Supply_Data.xlsx) ─────────
-   Overwrites: onHand, inTransit, ots, capPct, uplift, signals,
-               forecast, sensed, gap, rop, skus, kpisLive
-   Keeps hardcoded: kpis (SL/FR/TC until data team provides those tables),
-                    aiRecs, coords, telMode, saving
-──────────────────────────────────────────────────────────────────────── */
-if (window.LIVE_STORES) {
-  Object.keys(window.LIVE_STORES).forEach(function(storeId) {
-    if (!STORES[storeId]) return;
-    var live = window.LIVE_STORES[storeId];
-    // Screen 1 — inventory & demand fields
-    STORES[storeId].onHand    = live.onHand;
-    STORES[storeId].inTransit = live.inTransit;
-    STORES[storeId].ots       = live.ots;
-    STORES[storeId].capPct    = live.capPct;
-    STORES[storeId].uplift    = live.uplift;
-    STORES[storeId].signals   = live.signals;
-    STORES[storeId].forecast  = live.forecast;
-    STORES[storeId].sensed    = live.sensed;
-    STORES[storeId].gap       = live.gap;
-    STORES[storeId].rop       = live.rop;
-    // KPI tiles — partial update (only fields we can derive from Excel)
-    if (live.kpisLive) {
-      STORES[storeId].kpis.cu  = live.kpisLive.cu;
-      STORES[storeId].kpis.it  = live.kpisLive.it;
-      STORES[storeId].kpis.itD = live.kpisLive.itD;
-    }
-    // SKU table (Screen 2)
-    if (live.skus && live.skus.length) {
-      STORES[storeId].skus = live.skus;
-    }
-  });
-  console.log('[Decision Intelligence] Live data loaded from Dabur_Supply_Data.xlsx');
+/* ── STORES — built entirely from live_data.js (data.xlsx upload) ──────────
+   There is no fixed store list any more: every store/SKU shown comes from
+   whatever Store Name / SKU Name values are in the uploaded file. There is
+   no inventory sheet yet, so on-hand/in-transit/ROP/KPI/telemetry/AI-rec
+   fields are placeholders ('—' / 0 / empty) rather than fabricated numbers.
+   The UI hides or greys out the panels that depend on them — see the
+   "pending" placeholders on Screens 1–3.
+──────────────────────────────────────────────────────────────────────────── */
+function emptyKpis(){
+  return {
+    sl:'—', slD:'', slC:'delta-neu',
+    fr:'—', frD:'', frC:'delta-neu',
+    cu:'—', cuD:'', cuC:'delta-neu',
+    it:'—', itD:'', itC:'delta-neu',
+    tc:'—', tcD:'', tcC:'delta-neu',
+  };
+}
+function normalizeStore(id, live){
+  const weeks = live.weeks || (live.forecast||[]).length || 1;
+  return {
+    id, name: live.name, format:'—',
+    maxCap:0, onHand:0, inTransit:0, ots:0, lead:0, capPct:0,
+    uplift: live.uplift || 0,
+    signals: live.signals || [],
+    kpis: emptyKpis(),
+    forecast: live.forecast || [],
+    sensed:   live.sensed   || [],
+    gap:      new Array(weeks).fill(0),
+    rop: 0,
+    aiRecs: [],
+    saving: '—',
+    coords: {lat:'—', lng:'—'},
+    telMode:'—', telUtil:'—', telUnits:'—', telSKUs:'—', telFreight:'—', telAlerts:[],
+    skus: (live.skus||[]).map(function(sk){
+      return {id:sk.id, name:sk.name, oh:0, it:0, dmd:sk.dmd||0, ss:0, rop:0, nr:0, rq:0, st:'hold'};
+    }),
+  };
 }
 
-let currentStore='0142',currentHorizon=8,skuFilter='all';
+let STORES = {};
+if (window.LIVE_STORES) {
+  Object.keys(window.LIVE_STORES).forEach(function(id){
+    STORES[id] = normalizeStore(id, window.LIVE_STORES[id]);
+  });
+}
+console.log('[Decision Intelligence] Loaded', Object.keys(STORES).length, 'store(s) from live_data.js');
+
+let currentStore=Object.keys(STORES)[0]||null,currentHorizon=8,skuFilter='all';
 
 /* ════════ UTILS ════════ */
 function fmt(v){return Math.abs(v)>=1000?(v/1000).toFixed(1)+'K':Math.round(v).toLocaleString('en-GB')}
@@ -1687,7 +1383,7 @@ function showScreen(name){
   const nav=$id('nav-'+name);if(nav)nav.classList.add('active');
   if(name==='store') renderStoreDetail(currentStore);
   if(name==='datahub') {}  /* Data Hub has no init render needed */
-  if(name==='dispatch') renderUKMap(currentStore);
+  /* Screen 3 (dispatch) is a static "awaiting data" placeholder — no per-store render */
   window.scrollTo(0,0);
 }
 
@@ -1725,9 +1421,19 @@ function selectStore(id){
     },900);
   } else if(activeTab==='tab-store'){
     renderStoreDetail(id);
-  } else if(activeTab==='tab-dispatch'){
-    renderUKMap(id);
   }
+}
+
+/* Populate the top-nav store selector from whatever stores are currently loaded */
+function populateStoreSelector(){
+  const sel=$id('storeSelect');if(!sel)return;
+  sel.innerHTML='';
+  Object.keys(STORES).forEach(id=>{
+    const opt=document.createElement('option');
+    opt.value=id;opt.textContent=STORES[id].name;
+    sel.appendChild(opt);
+  });
+  if(currentStore) sel.value=currentStore;
 }
 
 function updateKPIs(id){
@@ -2032,45 +1738,11 @@ function updateTelemetry(id){
     </div>`).join('');
 }
 
-/* ════════ AI ADVISOR ════════ */
-const AI_QA={
-  capacity:{
-    q:'Maximise capacity vs demand forecast',
-    a:`Dubai — UAE is operating at 88% capacity — highest across the network. consolidating DC → Dubai and Riyadh onto FTL (consol.) achieves 92% truck fill and saves £2,700 vs separate dispatch.\n\nNairobi — Kenya is approaching capacity at 84% with festival + trend signals pushing demand up 4.7%. Pulling W4 stock forward by 2 days is recommended before headroom closes.\n\nCairo — Egypt has the most headroom at 65% — ideal absorption point for any London excess stock.`
-  },
-  deadstock:{
-    q:'Identify dead stock risk across the network',
-    a:`3 SKUs flagged with >4 weeks of supply:\n\n• SKU-4471 — Dabur Honey 1kg (Dubai) — 5.3 wks supply, £2,142 tied up. Recommend: return to DC.\n• SKU-4588 — Chyawanprash 500g (Dubai) — 4.7 wks, £1,764. Redeploy to Lagos (2.1 wks supply there).\n• SKU-4624 — Dabur Amla Hair Oil 200ml (Dubai) — 4.0 wks, £2,304.\n\nTotal capital unlock potential: £6,210.`
-  },
-  freight:{
-    q:'How is freight cost being optimised this cycle',
-    a:`Current weekly freight: £8,690 — already 13% below unoptimised baseline of £9,988.\n\nAdditional opportunity identified: consolidating Lagos onto the Nairobi run as a milk-run extension reduces Lagos freight from £880 to ~£620, saving £260/week (£13,520 annualised).\n\nImplementing this change would bring network freight to £8,430. Confidence: 87%.`
-  },
-  attention:{
-    q:'Which stores need immediate attention',
-    a:`2 stores require action before end of today:\n\n① Cairo — Egypt (#0151) — SL at 96.8%, below 98% target. Dabur Red Toothpaste and Dabur Meswak Toothpaste are below ROP. Release expedite order immediately.\n\n② Dubai — UAE (#0142) — Real Fruit Juice 1L has only 3 days of supply remaining. Stockout risk within 72 hours if not dispatched today.`
-  }
-};
-
-function askAdvisor(key){
-  const qa=AI_QA[key];if(!qa)return;
-  const chat=$id('aa-chat');
-  chat.innerHTML=`<div class="aa-bubble question">${qa.q}</div><div class="aa-bubble answer fade-in" style="white-space:pre-line">${qa.a}</div>`;
-  chat.scrollTop=0;
-}
-
 /* ════════ STORE DETAIL ════════ */
 function renderStoreDetail(id){
   const s=STORES[id];
   set('s2-title',`${s.name} — SKU replenishment detail`);
-  set('s2-store-name',`Store #${id}`);
-  set('s2-store-meta',`${s.name} · Lead time ${s.lead} days`);
-  set('s2-onhand',s.onHand.toLocaleString('en-GB')+' u');
-  set('s2-intransit',s.inTransit.toLocaleString('en-GB')+' u');
-  set('s2-ots',s.ots.toLocaleString('en-GB')+' u');
-  set('s2-cap-pct',s.capPct+'%');
-  const circ=2*Math.PI*28,arc=$id('donut-arc');
-  if(arc){arc.setAttribute('stroke-dasharray',circ);arc.setAttribute('stroke-dashoffset',circ*(1-s.capPct/100));arc.setAttribute('stroke',s.capPct>=85?'var(--amber)':'var(--blue)');}
+  set('s2-store-name',s.name);
   const sigCls={Promo:'sig-promo',Festival:'sig-festival',Weather:'sig-weather',Trend:'sig-trend',Event:'sig-event'};
   const sigEl=$id('s2-signals');
   if(sigEl) sigEl.innerHTML=s.signals.map(sig=>`
@@ -2082,37 +1754,22 @@ function renderStoreDetail(id){
       <div class="sig-track"><div class="sig-fill ${sigCls[sig.t]}" style="width:${sig.on?Math.min(100,(sig.pct/6)*100):0}%;opacity:${sig.on?1:0.25}"></div></div>
     </div>`).join('');
   const stEl=$id('s2-sensing-text');if(stEl) stEl.innerHTML=`Demand is tracking <strong>+${s.uplift}%</strong> above forecast this week, driven by active signals below.`;
-  const cnt={all:s.skus.length,replenish:0,low:0,ok:0,hold:0,redeploy:0};
-  s.skus.forEach(sk=>cnt[sk.st]++);
-  ['all','replenish','low','ok','hold','redeploy'].forEach(f=>set('sf-cnt-'+f,cnt[f]));
-  const flags=cnt.replenish+cnt.low;
-  const fill={'0142':'92','0137':'87','0151':'74','0165':'88','0188':'61'};
-  const ftEl=$id('s2-footer-text');
-  if(ftEl) ftEl.innerHTML=`<strong>${flags} SKUs flagged for replenishment</strong> · Consolidated lane DC → #${id} · Projected truck fill ${fill[id]||'85'}%`;
   renderSKUTable(id,skuFilter);
 }
 
 function renderSKUTable(id,filter){
   const s=STORES[id],search=($id('sku-search')?.value||'').toLowerCase();
   const tbody=$id('sku-tbody');if(!tbody)return;
-  const rows=s.skus.filter(sk=>(filter==='all'||sk.st===filter)&&(sk.id.toLowerCase().includes(search)||(sk.name||'').toLowerCase().includes(search)));
-  // Auto-check replenish/low SKUs by default
+  const rows=s.skus.filter(sk=>sk.id.toLowerCase().includes(search)||(sk.name||'').toLowerCase().includes(search));
   tbody.innerHTML=rows.length?rows.map(sk=>{
-    const autoCheck=sk.st==='replenish'||sk.st==='low';
-    return`<tr class="${autoCheck?'sku-row-selected':''}">
-    <td><input type="checkbox" class="lane-chk sku-chk" data-sku="${sk.id}" ${autoCheck?'checked':''} onchange="updateSKUSelection()"></td>
+    return`<tr>
     <td><div class="sku-id">${sk.id}</div></td>
     <td style="color:var(--ink2)">${sk.name||'—'}</td>
-    <td class="num">${sk.oh.toLocaleString('en-GB')}</td>
-    <td class="num">${sk.it?sk.it.toLocaleString('en-GB'):'-'}</td>
     <td class="num">${sk.dmd.toLocaleString('en-GB')}</td>
-    <td class="num">${sk.ss.toLocaleString('en-GB')}</td>
-    <td class="num" style="color:var(--blue);font-weight:700">${sk.rop.toLocaleString('en-GB')}</td>
-    <td class="num" style="color:${sk.nr>0?'var(--red)':'var(--ink4)'}">${sk.nr||'-'}</td>
-    <td class="num" style="font-weight:${sk.rq?700:400};color:${sk.rq?'var(--ink)':'var(--ink4)'}">${sk.rq||'-'}</td>
-    <td><span class="sbadge ${sk.st}">${sk.st.charAt(0).toUpperCase()+sk.st.slice(1)}</span></td>
-  </tr>`;}).join(''):`<tr><td colspan="11" style="text-align:center;padding:28px 0;color:var(--ink4);font-size:12px">No SKUs match this filter</td></tr>`;
-  updateSKUSelection();
+    <td class="num" style="color:var(--ink5)">—</td>
+    <td class="num" style="color:var(--ink5)">—</td>
+    <td><span class="sbadge hold" style="opacity:.55">Pending</span></td>
+  </tr>`;}).join(''):`<tr><td colspan="6" style="text-align:center;padding:28px 0;color:var(--ink4);font-size:12px">No SKUs match this search</td></tr>`;
 }
 
 /* ════════ FILTERS ════════ */
@@ -2325,18 +1982,20 @@ function showDrillDown(weekIdx){
   const signalUnits=activeSignals.map(sg=>({name:sg.t,units:Math.round(baseline*(sg.pct/100))}));
   const mix=CAT_MIX[weekIdx]||CAT_MIX[0];
   const sorted=[...s.skus].sort((a,b)=>b.dmd-a.dmd).slice(0,5);
-  const stockHealth=s.skus.map(sk=>{
+  const hasInventoryData=s.skus.some(sk=>sk.rop>0||sk.oh>0);
+  const stockHealth=hasInventoryData?s.skus.map(sk=>{
     let oh=sk.oh;for(let w=0;w<=weekIdx;w++){oh-=sk.dmd*0.88;if(w===1&&sk.rq>0)oh+=sk.rq;}
     oh=Math.round(Math.max(0,oh));const ratio=sk.rop>0?oh/sk.rop:1;
     const risk=ratio<0.5?'critical':ratio<1.2?'watch':'ok';return{...sk,projOH:oh,risk};
-  }).filter(sk=>sk.risk!=='ok').sort((a,b)=>a.risk==='critical'?-1:1);
+  }).filter(sk=>sk.risk!=='ok').sort((a,b)=>a.risk==='critical'?-1:1):[];
   const actions=[];
   const critCount=stockHealth.filter(s=>s.risk==='critical').length;
   const watchCount=stockHealth.filter(s=>s.risk==='watch').length;
   if(critCount>0)actions.push({urgent:true,text:`${critCount} SKU${critCount>1?'s':''} projected below ROP by end of ${wd.label} — release replenishment before ${wd.range.split('–')[0]} ${wd.range.split(' ')[1]}.`});
   if(watchCount>0)actions.push({urgent:false,text:`${watchCount} SKU${watchCount>1?'s':''} approaching reorder point. Monitor daily sell-through and front-load if demand strengthens.`});
   if(uplift>baseline*0.04)actions.push({urgent:false,text:`Demand sensing shows +${((uplift/baseline)*100).toFixed(1)}% uplift this week. Consider pulling forward W${weekIdx+2} order by 2–3 days.`});
-  if(!actions.length)actions.push({urgent:false,text:`Stock position healthy for ${wd.label}. No immediate action required — continue monitoring daily sell-through.`});
+  if(!hasInventoryData)actions.push({urgent:false,text:`ROP-based stock actions need on-hand inventory data, which hasn't been uploaded yet.`});
+  else if(!actions.length)actions.push({urgent:false,text:`Stock position healthy for ${wd.label}. No immediate action required — continue monitoring daily sell-through.`});
 
   let html=`<div class="drill-section"><div class="drill-section-title">At a glance</div>
     <div class="drill-hero">
@@ -2364,7 +2023,7 @@ function showDrillDown(weekIdx){
 }
 
 /* ════════ DRILL-DOWN (inventory) ════════ */
-function skuPrice(sk){const n=(sk.name||'').toLowerCase();if(n.includes('honey 1kg'))return 12;if(n.includes('chyawanprash'))return 9;if(n.includes('shilajit'))return 18;if(n.includes('honey'))return 6;if(n.includes('real activ')||n.includes('real kiwi')||n.includes('real mixed'))return 4;if(n.includes('real'))return 3;if(n.includes('vatika shampoo'))return 7;if(n.includes('vatika'))return 6;if(n.includes('amla juice'))return 5;if(n.includes('amla'))return 6;if(n.includes('dabur red')||n.includes('lal toothpaste')||n.includes('lal dant'))return 3;if(n.includes('meswak'))return 4;if(n.includes('hajmola'))return 2;if(n.includes('pudin hara'))return 4;if(n.includes('ashokarishta'))return 6;if(n.includes('glucose'))return 4;if(n.includes('glucoplus'))return 5;return 3;}
+function skuPrice(sk){const n=(sk.name||'').toLowerCase();if(n.includes('honey 1kg'))return 12;if(n.includes('chyawanprash'))return 9;if(n.includes('shilajit'))return 18;if(n.includes('honey'))return 6;if(n.includes('real activ')||n.includes('real kiwi')||n.includes('real mixed'))return 4;if(n.includes('real'))return 3;if(n.includes('vatika shampoo'))return 7;if(n.includes('vatika'))return 6;if(n.includes('amla juice'))return 5;if(n.includes('amla'))return 6;if(n.includes('red toothpaste')||n.includes('lal toothpaste')||n.includes('lal dant'))return 3;if(n.includes('meswak'))return 4;if(n.includes('hajmola'))return 2;if(n.includes('pudin hara'))return 4;if(n.includes('ashokarishta'))return 6;if(n.includes('glucose'))return 4;if(n.includes('glucoplus'))return 5;return 3;}
 
 function showInventoryDrillDown(weekIdx){
   const s=STORES[currentStore],wd=WEEK_DATES[weekIdx]||WEEK_DATES[0];
@@ -2401,27 +2060,13 @@ function closeDrillDown(){$id('drill-backdrop').classList.remove('open');$id('dr
 
 /* ════════ AI ADVISOR PANEL ════════ */
 const PANEL_QA={
-  capacity:{
-    q:'Which stores are approaching capacity this cycle?',
-    a:`<strong>Nairobi — Kenya (#0165)</strong> and <strong>Dubai — UAE (#0142)</strong> are the two stores to watch this cycle.\n\nLeeds is at 84% capacity with a Festival + Trend uplift of +4.7% still to peak in W4–W5. If the demand signal holds, headroom will close to under 100 units — leaving no room to absorb any expedite stock.\n\n<strong>Recommended action:</strong> Pull forward the Nairobi W4 replenishment order by 2 days and cap to open-to-ship headroom of 250 units.\n\nDubai is at 88% — the highest in the network — but stable. The FTL consolidated lane with Riyadh is already the right call to avoid overfilling.`
-  },
-  freight:{
-    q:'How much are we saving on freight vs unoptimised dispatch?',
-    a:`This cycle's optimised freight is <strong>£8,690</strong> — saving <strong>£1,298 (13%)</strong> versus an unoptimised baseline of £9,988.\n\nThe biggest single saving comes from consolidating the <strong>Riyadh + Dubai lanes onto one FTL truck</strong>, which fills to 87% and avoids two separate part-load journeys (saving ~£720 alone).\n\nThe Lagos milk-run is the only lane below 70% fill. If Lagos's order volume grows by ~30 units, it would be worth switching to a consolidated Nairobi + Lagos run — projecting an additional £260/week saving (£13,520 annualised).\n\nOn an annualised basis, the full optimisation strategy saves approximately <strong>£67,500/year</strong> vs unmanaged dispatch.`
-  },
-  risk:{
-    q:'Which SKUs are at stockout risk this week?',
-    a:`<strong>3 SKUs flagged as critical stockout risk within 72 hours:</strong>\n\n🔴 <strong>SKU-4560 — Real Fruit Juice 1L (Dubai)</strong>\n3 days of supply remaining at current sell-through. This is a fast-moving product with strong daily demand across the Gulf region. Release replenishment today.\n\n🔴 <strong>SKU-3189 — Dabur Meswak Toothpaste 200g (Cairo)</strong>\nStock at 8 units, demand 16/week. Cairo's service level is already below target — this SKU will push it further. Expedite required.\n\n🟡 <strong>SKU-7345 — Dabur Honey 250g (Riyadh)</strong>\n7 days of supply. Not yet critical but the Trend signal on this SKU is active — sell-through may accelerate. Include in this cycle's order.\n\n<strong>Action:</strong> All three can be resolved by releasing the pending DRP orders on the Locations page.`
-  },
-  deadstock:{
-    q:'Where is dead stock tying up working capital?',
-    a:`<strong>£75,258 of working capital is currently tied up in slow/dead stock</strong> across the Dubai — UAE store.\n\n<strong>Top 3 items to act on:</strong>\n\n1. <strong>SKU-4471 — Dabur Honey 1kg</strong> · 42 units · 5.3 weeks supply · £2,142 at cost. Demand has slowed vs forecast — honey consumption typically dips mid-cycle. Recommend returning 30 units to DC for redistribution.\n\n2. <strong>SKU-4588 — Chyawanprash 500g</strong> · 84 units · 4.7 weeks supply · £3,696. Lagos has only 2.1 weeks supply of this SKU — redeploy 40 units via intra-network transfer at zero freight cost.\n\n3. <strong>SKU-4624 — Dabur Amla Hair Oil 200ml</strong> · 96 units · 4.0 weeks · £2,304. Consider a short-term 10% markdown to accelerate clearance.\n\n<strong>Freeing these 3 SKUs recovers ~168 shelf units</strong> for faster-moving stock.`
-  },
-  action:{
-    q:'What should I action before end of day?',
-    a:`<strong>3 things to do before close of business today:</strong>\n\n<strong>① Release Cairo DRP order immediately</strong>\nService level at 96.8% — below the 98% target. 4 SKUs are below ROP including Dabur Red Toothpaste and Dabur Meswak Toothpaste. Every day of delay costs ~0.2 pts of service level.\n\n<strong>② Approve the Dubai + Riyadh consolidated FTL lane</strong>\nThe truck consolidation has been optimised and is ready to release. Approving now locks in the £2,700 freight saving vs separate dispatch. Dispatch window closes at 18:00.\n\n<strong>③ Check Real Fruit Juice 1L sell-through (Dubai)</strong>\nSKU-4560 is at 3 days of supply. If today's sell-through exceeds 8 units, trigger an emergency top-up order. Monitor the POS feed hourly.\n\n<em>Everything else in the network can wait for tomorrow's planning cycle.</em>`
-  }
+  capacity:{q:'Which stores are approaching capacity this cycle?'},
+  freight:{q:'How much are we saving on freight vs unoptimised dispatch?'},
+  risk:{q:'Which SKUs are at stockout risk this week?'},
+  deadstock:{q:'Where is dead stock tying up working capital?'},
+  action:{q:'What should I action before end of day?'}
 };
+const PANEL_QA_PENDING_ANSWER='This needs live on-hand inventory and freight-cost data to answer, which hasn\'t been connected yet. Once your inventory data source is uploaded via Data Hub, I\'ll be able to answer this from real numbers.';
 
 /* ════════ ALERTS ════════ */
 let activeAlertCount=3;
@@ -2511,8 +2156,8 @@ function toggleAgent(on){
     btn?.classList.add('tnav-ai-btn--agent');
     if(statusText) statusText.textContent='Agent is active — monitoring network';
     // Add live log entry
-    addAgentLog('Agent activated — monitoring SL, lanes and dead stock across 5 stores.','var(--green)','now');
-    showToast('AI Agent activated — monitoring your Dabur network.');
+    addAgentLog('Agent activated — monitoring SL, lanes and dead stock across the network.','var(--green)','now');
+    showToast('AI Agent activated — monitoring your network.');
   } else {
     btn?.classList.remove('agent-active');
     btn?.classList.remove('tnav-ai-btn--agent');
@@ -2574,7 +2219,7 @@ function askPanel(key){
     const t=$id('aap-typing');if(t)t.remove();
     const aiMsg=document.createElement('div');
     aiMsg.className='aap-msg fade-in';
-    aiMsg.innerHTML=`<div class="aap-avatar">AI</div><div class="aap-bubble" style="white-space:pre-line">${qa.a}</div>`;
+    aiMsg.innerHTML=`<div class="aap-avatar">AI</div><div class="aap-bubble" style="white-space:pre-line">${PANEL_QA_PENDING_ANSWER}</div>`;
     chat.appendChild(aiMsg);
     chat.scrollTop=chat.scrollHeight;
     document.querySelectorAll('.aap-q-btn').forEach(b=>b.disabled=false);
@@ -2586,18 +2231,17 @@ window.addEventListener('load',()=>{
   // Use rAF to ensure layout/paint is complete before measuring chart widths
   requestAnimationFrame(()=>{
     requestAnimationFrame(()=>{
-      updateKPIs('0142');
-      renderAllCharts('0142');
-      buildSkuDataFromStores();
-      initSkuDropdown('0142');
-      updateAIStrip('0142');
-      renderStoreDetail('0142');
-      renderUKMap('0142');
-      const ro=new ResizeObserver(()=>{
+      populateStoreSelector();
+      if(currentStore){
+        updateKPIs(currentStore);
         renderAllCharts(currentStore);
-        renderUKMap(currentStore);
-      });
-      ['chart1','chart2','chart3','chart4','uk-map-svg-wrap'].forEach(id=>{
+        buildSkuDataFromStores();
+        initSkuDropdown(currentStore);
+        updateAIStrip(currentStore);
+        renderStoreDetail(currentStore);
+      }
+      const ro=new ResizeObserver(()=>{ if(currentStore) renderAllCharts(currentStore); });
+      ['chart1','chart2','chart3','chart4'].forEach(id=>{
         const el=$id(id);if(el)ro.observe(el);
       });
     });
@@ -2605,16 +2249,25 @@ window.addEventListener('load',()=>{
 });
 
 /* ════════════════════════════════════════════════════════════════
-   DATA HUB — Excel upload, parse, aggregate, update STORES
+   DATA HUB — Excel upload, parse, aggregate, rebuild STORES
+   Format: one sheet, header row 1 — SKU Name, Store Name,
+   Week Start Date, Baseline (units), Promo Units, Total Demand.
+   There is no Store ID / SKU ID (name is the identifier), no
+   inventory sheet, and no Weather/Festival columns. Stores and SKUs
+   are fully dynamic — built from whatever names appear in the file.
 ════════════════════════════════════════════════════════════════ */
 
-const DH_STORE_MASTER = {
-  '#0142': {id:'0142', name:'Dubai — UAE',           maxCap:1800, lead:2},
-  '#0137': {id:'0137', name:'Riyadh — Saudi Arabia', maxCap:1400, lead:2},
-  '#0151': {id:'0151', name:'Cairo — Egypt',          maxCap:1500, lead:2},
-  '#0165': {id:'0165', name:'Nairobi — Kenya',        maxCap:900,  lead:2},
-  '#0188': {id:'0188', name:'Lagos — Nigeria',        maxCap:1100, lead:2},
-};
+var currentSkuFilter = 'all';
+
+const DH_REQUIRED_COLS = ['SKU Name','Store Name','Week Start Date','Baseline (units)','Promo Units'];
+
+function dhFindDataSheet(wb){
+  for(const name of wb.SheetNames){
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:null});
+    if(rows.length && DH_REQUIRED_COLS.every(c => c in rows[0])) return name;
+  }
+  return null;
+}
 
 function dhDragOver(e){e.preventDefault();$id('dh-zone').classList.add('drag-over')}
 function dhDragLeave(e){$id('dh-zone').classList.remove('drag-over')}
@@ -2642,16 +2295,15 @@ function dhProcessFile(file){
   reader.onload = function(e){
     try {
       const wb = XLSX.read(e.target.result, {type:'array', cellDates:true});
-      const required = ['Demand Forecasting','On Hand Inventory'];
-      const missing = required.filter(s => !wb.SheetNames.includes(s));
-      if(missing.length){
-        dhSetStatus('Missing sheets: ' + missing.join(', ') + '. Check your Excel file.', 'error');
+      const sheetName = dhFindDataSheet(wb);
+      if(!sheetName){
+        dhSetStatus('No sheet found with the expected columns: ' + DH_REQUIRED_COLS.join(', ') + '.', 'error');
         return;
       }
       dhSetStatus('Parsing data…', 'processing');
       setTimeout(function(){
         try {
-          const liveStores = dhAggregateData(wb);
+          const liveStores = dhAggregateData(wb, sheetName);
           dhApplyToStores(liveStores);
           dhRenderSummary(liveStores, file.name);
           dhSetStatus('✓ Data loaded successfully from ' + file.name, 'success');
@@ -2668,226 +2320,133 @@ function dhProcessFile(file){
   reader.readAsArrayBuffer(file);
 }
 
-function dhSheetToRows(wb, sheetName){
-  /* SheetJS: range:2 skips 2 title rows, uses row 3 as header */
-  const ws = wb.Sheets[sheetName];
-  return XLSX.utils.sheet_to_json(ws, {range:2, defval:0});
+function dhSlug(name){
+  return String(name).trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'') || 'store';
+}
+function dhDateStr(v){
+  return v instanceof Date ? v.toISOString().slice(0,10) : String(v).trim();
 }
 
-function dhAggregateData(wb){
-  const demandRows = dhSheetToRows(wb, 'Demand Forecasting');
-  const invRows    = dhSheetToRows(wb, 'On Hand Inventory');
+function dhAggregateData(wb, sheetName){
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {defval:0});
 
-  /* ── Build demand: storeId → weekIndex → {baseline, promo, weather, festival} */
-  const demandMap  = {};   // '#0142' → Map(dateStr → weekIdx)
-  const weekDates  = {};   // '#0142' → sorted date strings
-  const weekBucket = {};   // '#0142' → {0:{baseline,promo,weather,festival}, ...}
-
-  // Collect unique dates per store
-  demandRows.forEach(r => {
-    const sid  = (r['Store ID']||'').trim();
-    const date = r['Week Start Date'];
-    if(!sid || !date) return;
-    if(!weekDates[sid]) weekDates[sid] = new Set();
-    weekDates[sid].add(typeof date === 'object' ? date.toISOString().slice(0,10) : String(date).slice(0,10));
+  const weekDatesByStore = {};
+  rows.forEach(r=>{
+    const store=String(r['Store Name']||'').trim(), wk=r['Week Start Date'];
+    if(!store || !wk) return;
+    if(!weekDatesByStore[store]) weekDatesByStore[store]=new Set();
+    weekDatesByStore[store].add(dhDateStr(wk));
+  });
+  const weekIdx={};
+  Object.keys(weekDatesByStore).forEach(store=>{
+    const sorted=Array.from(weekDatesByStore[store]).sort();
+    weekIdx[store]={};
+    sorted.forEach((d,i)=>weekIdx[store][d]=i);
   });
 
-  // Sort dates → week index map
-  const weekIdx = {};
-  Object.keys(weekDates).forEach(sid => {
-    const sorted = Array.from(weekDates[sid]).sort();
-    weekIdx[sid] = {};
-    sorted.forEach((d,i) => weekIdx[sid][d] = i);
-    weekBucket[sid] = {};
-    sorted.forEach((_,i) => weekBucket[sid][i] = {baseline:0, promo:0, weather:0, festival:0});
+  const storeWeek={}, storeSkuWeek={}, storeSkuNames={};
+
+  rows.forEach(r=>{
+    const store=String(r['Store Name']||'').trim();
+    const sku=String(r['SKU Name']||'').trim();
+    const wk=r['Week Start Date'];
+    if(!store || !sku || !wk) return;
+    const wi = weekIdx[store][dhDateStr(wk)];
+    const bl = Number(r['Baseline (units)']||0);
+    const pr = Number(r['Promo Units']||0);
+
+    if(!storeWeek[store]) storeWeek[store]={};
+    if(!storeWeek[store][wi]) storeWeek[store][wi]={baseline:0,promo:0};
+    storeWeek[store][wi].baseline+=bl; storeWeek[store][wi].promo+=pr;
+
+    const skuId=dhSlug(sku);
+    if(!storeSkuNames[store]) storeSkuNames[store]={};
+    storeSkuNames[store][skuId]=sku;
+    if(!storeSkuWeek[store]) storeSkuWeek[store]={};
+    if(!storeSkuWeek[store][skuId]) storeSkuWeek[store][skuId]={};
+    if(!storeSkuWeek[store][skuId][wi]) storeSkuWeek[store][skuId][wi]={baseline:0,promo:0};
+    storeSkuWeek[store][skuId][wi].baseline+=bl; storeSkuWeek[store][skuId][wi].promo+=pr;
   });
 
-  // Aggregate
-  demandRows.forEach(r => {
-    const sid  = (r['Store ID']||'').trim();
-    const date = r['Week Start Date'];
-    if(!sid || !date) return;
-    const dateStr = typeof date === 'object' ? date.toISOString().slice(0,10) : String(date).slice(0,10);
-    const wi = weekIdx[sid] ? weekIdx[sid][dateStr] : undefined;
-    if(wi === undefined) return;
-    weekBucket[sid][wi].baseline  += Number(r['Baseline (units)']||0);
-    weekBucket[sid][wi].promo     += Number(r['Promo Units']||0);
-    weekBucket[sid][wi].weather   += Number(r['Weather Units']||0);
-    weekBucket[sid][wi].festival  += Number(r['Festival Units']||0);
-  });
-
-  /* ── Build inventory: storeId → aggregated totals + skus */
-  const invMap = {};
-  invRows.forEach(r => {
-    const sid = (r['Store ID']||'').trim();
-    if(!sid) return;
-    if(!invMap[sid]) invMap[sid] = {oh:0, it:0, ss:0, rop:0, rq:0, nr:0, skus:[]};
-    const oh  = Number(r['On-Hand (units)']||0);
-    const it  = Number(r['In-Transit (units)']||0);
-    const ss  = Number(r['Safety Stock']||0);
-    const rop = Number(r['ROP']||0);
-    const rq  = Number(r['Replenishment Qty']||0);
-    const nr  = Number(r['Net Requirement']||0);
-    invMap[sid].oh  += oh;
-    invMap[sid].it  += it;
-    invMap[sid].ss  += ss;
-    invMap[sid].rop += rop;
-    invMap[sid].rq  += rq;
-    invMap[sid].nr  += nr;
-    // Find this SKU's weekly demand from demand sheet (week 0)
-    const skuId = String(r['SKU ID']||'').trim();
-    const skuName = String(r['SKU Name']||'').trim();
-    let dmd = 0;
-    demandRows.forEach(dr => {
-      if((dr['Store ID']||'').trim()===sid && (dr['SKU ID']||'').trim()===skuId){
-        const dd = dr['Week Start Date'];
-        const ddStr = typeof dd==='object' ? dd.toISOString().slice(0,10) : String(dd).slice(0,10);
-        if(weekIdx[sid] && weekIdx[sid][ddStr]===0) dmd = Number(dr['Baseline (units)']||0);
-      }
-    });
-    // Derive status
-    const st = dhDeriveStatus(oh, rop, nr, dmd);
-    invMap[sid].skus.push({id:skuId, name:skuName, oh, it, dmd, ss, rop, nr, rq, st});
-  });
-
-  /* ── Build output per store */
-  const result = {};
-  Object.entries(DH_STORE_MASTER).forEach(([rawSid, master]) => {
-    const jsKey  = master.id;
-    const maxCap = master.maxCap;
-    const wb0    = weekBucket[rawSid] || {};
-    const numWeeks = Object.keys(wb0).length || 8;
-
-    const forecastArr = [], sensedArr = [];
+  const result={};
+  Object.keys(weekIdx).forEach(store=>{
+    const numWeeks=Object.keys(weekIdx[store]).length;
+    const forecastArr=[], sensedArr=[];
     for(let w=0; w<numWeeks; w++){
-      const d = wb0[w] || {baseline:0, promo:0, weather:0, festival:0};
-      forecastArr.push(d.baseline);
-      sensedArr.push(d.baseline + d.promo + d.weather + d.festival);
+      const d=(storeWeek[store]||{})[w]||{baseline:0,promo:0};
+      forecastArr.push(Math.round(d.baseline*100)/100);
+      sensedArr.push(Math.round((d.baseline+d.promo)*100)/100);
     }
-
-    // Signals from week 0
-    const w0   = wb0[0] || {baseline:1, promo:0, weather:0, festival:0};
-    const bl0  = w0.baseline || 1;
-    const signals = [
-      {t:'Promo',    pct:Math.round(w0.promo   /bl0*1000)/10, on:w0.promo   >0},
-      {t:'Weather',  pct:Math.round(w0.weather /bl0*1000)/10, on:w0.weather >0},
-      {t:'Festival', pct:Math.round(w0.festival/bl0*1000)/10, on:w0.festival>0},
-      {t:'Trend',    pct:0, on:false},
-      {t:'Event',    pct:0, on:false},
+    const w0=(storeWeek[store]||{})[0]||{baseline:1,promo:0};
+    const bl0=w0.baseline||1;
+    const promoPct=Math.round(w0.promo/bl0*1000)/10;
+    const signals=[
+      {t:'Promo',pct:promoPct,on:w0.promo>0},
+      {t:'Weather',pct:0,on:false},
+      {t:'Festival',pct:0,on:false},
+      {t:'Trend',pct:0,on:false},
+      {t:'Event',pct:0,on:false},
     ];
-    const uplift = Math.round((w0.promo+w0.weather+w0.festival)/bl0*1000)/10;
-
-    // Inventory totals
-    const inv  = invMap[rawSid] || {oh:0, it:0, ss:0, rop:0, rq:0, nr:0, skus:[]};
-    const oh   = inv.oh, it = inv.it, rop = inv.rop, rq = inv.rq;
-    const ots  = Math.max(0, maxCap - oh - it);
-    const cap  = Math.round(oh / maxCap * 100);
-
-    // 8-week gap projection
-    const gapArr = [];
-    let running = oh + it;
-    for(let w=0; w<numWeeks; w++){
-      gapArr.push(Math.round(running - rop));
-      running -= sensedArr[w];
-      if(w===1) running += rq;
-    }
-
-    result[jsKey] = {
-      onHand: oh, inTransit: it, ots, capPct: cap, uplift, signals,
-      forecast: forecastArr, sensed: sensedArr, gap: gapArr, rop,
-      kpisLive: {
-        cu:  cap + '%',
-        it:  String(it),
-        itD: inv.skus.filter(s=>s.it>0).length + ' SKUs in transit',
-      },
-      skus: inv.skus,
-      _meta: { weeks: numWeeks, skuCount: inv.skus.length }
+    const skus=Object.keys(storeSkuNames[store]||{}).map(skuId=>{
+      const w0sku=(storeSkuWeek[store][skuId]||{})[0]||{baseline:0};
+      return {id:skuId, name:storeSkuNames[store][skuId], dmd:Math.round(w0sku.baseline*100)/100};
+    });
+    result[dhSlug(store)]={
+      name:store, forecast:forecastArr, sensed:sensedArr,
+      signals, uplift:promoPct, skus, weeks:numWeeks,
     };
   });
-
   return result;
 }
 
-function dhDeriveStatus(oh, rop, nr, dmd){
-  if(nr>0 && oh < rop*0.7) return 'low';
-  if(nr>0) return 'replenish';
-  if(dmd>0 && oh > dmd*6) return 'redeploy';
-  if(oh >= rop) return 'ok';
-  return 'hold';
-}
-
 function dhApplyToStores(liveStores){
-  Object.keys(liveStores).forEach(function(storeId){
-    if(!STORES[storeId]) return;
-    const live = liveStores[storeId];
-    STORES[storeId].onHand    = live.onHand;
-    STORES[storeId].inTransit = live.inTransit;
-    STORES[storeId].ots       = live.ots;
-    STORES[storeId].capPct    = live.capPct;
-    STORES[storeId].uplift    = live.uplift;
-    STORES[storeId].signals   = live.signals;
-    STORES[storeId].forecast  = live.forecast;
-    STORES[storeId].sensed    = live.sensed;
-    STORES[storeId].gap       = live.gap;
-    STORES[storeId].rop       = live.rop;
-    if(live.kpisLive){
-      STORES[storeId].kpis.cu  = live.kpisLive.cu;
-      STORES[storeId].kpis.it  = live.kpisLive.it;
-      STORES[storeId].kpis.itD = live.kpisLive.itD;
-    }
-    if(live.skus && live.skus.length) STORES[storeId].skus = live.skus;
+  STORES = {};
+  Object.keys(liveStores).forEach(function(id){
+    STORES[id] = normalizeStore(id, liveStores[id]);
   });
-  // Re-render overview if visible
-  if(document.getElementById('tab-overview').classList.contains('active')){
-    selectStore(currentStore);
+  currentStore = Object.keys(STORES)[0] || null;
+  populateStoreSelector();
+  buildSkuDataFromStores();
+  if(currentStore){
+    initSkuDropdown(currentStore);
+    updateKPIs(currentStore);
+    renderAllCharts(currentStore);
+    updateAIStrip(currentStore);
+    if(document.getElementById('tab-store')?.classList.contains('active')) renderStoreDetail(currentStore);
   }
-  console.log('[Data Hub] STORES updated with live data from Excel');
+  console.log('[Data Hub] STORES rebuilt —', Object.keys(STORES).length, 'store(s) loaded');
 }
-
-const STATUS_COLOR = {
-  replenish:{bg:'var(--red-light)',  color:'var(--red)'},
-  low:      {bg:'var(--amber-light)',color:'var(--amber)'},
-  ok:       {bg:'var(--green-light)',color:'var(--green)'},
-  hold:     {bg:'var(--surface3)',   color:'var(--ink3)'},
-  redeploy: {bg:'#EDE9FE',           color:'#6C5CE7'},
-};
 
 function dhRenderSummary(liveStores, fileName){
-  // Summary cards
-  const allSkus   = Object.values(liveStores).reduce((a,s)=>a+s._meta.skuCount,0);
-  const weeks     = Object.values(liveStores)[0]?._meta.weeks || 8;
-  const stores    = Object.keys(liveStores).length;
-  const replenish = Object.values(liveStores).reduce((a,s)=>a+s.skus.filter(k=>k.st==='replenish'||k.st==='low').length,0);
+  const allSkus = Object.values(liveStores).reduce((a,s)=>a+s.skus.length,0);
+  const weeks   = Object.values(liveStores)[0]?.weeks || 0;
+  const stores  = Object.keys(liveStores).length;
 
   $id('dh-summary-cards').innerHTML = `
     <div class="dh-card"><div class="dh-card-val">${stores}</div><div class="dh-card-lbl">Stores loaded</div></div>
     <div class="dh-card"><div class="dh-card-val">${allSkus}</div><div class="dh-card-lbl">SKU records</div></div>
     <div class="dh-card"><div class="dh-card-val">${weeks}</div><div class="dh-card-lbl">Forecast weeks</div></div>
-    <div class="dh-card"><div class="dh-card-val" style="color:var(--red)">${replenish}</div><div class="dh-card-lbl">SKUs needing replenishment</div></div>
+    <div class="dh-card"><div class="dh-card-val" style="color:var(--ink4)">—</div><div class="dh-card-lbl">Inventory data (not uploaded)</div></div>
   `;
 
-  // Per-store table
   const tbody = $id('dh-store-tbody');
-  tbody.innerHTML = '';
-  const storeOrder = ['0142','0137','0151','0165','0188'];
-  storeOrder.forEach(id => {
-    const s = liveStores[id];
-    if(!s) return;
-    const activeSigs = s.signals.filter(sg=>sg.on);
-    const chips = activeSigs.map(sg=>`<span class="dh-chip">${sg.t} +${sg.pct}%</span>`).join('') || '<span style="color:var(--ink5);font-size:11px">None</span>';
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><strong>${STORES[id]?STORES[id].name:id}</strong></td>
-      <td>${s.onHand.toLocaleString()}</td>
-      <td>${s.inTransit.toLocaleString()}</td>
-      <td>${s.capPct}%</td>
-      <td style="color:var(--blue);font-weight:600">+${s.uplift}%</td>
-      <td><div class="dh-signal-chips">${chips}</div></td>
-      <td>${s._meta.skuCount}</td>
-      <td>${s._meta.weeks}</td>
-    `;
-    tbody.appendChild(tr);
-  });
+  if(tbody){
+    tbody.innerHTML = '';
+    Object.keys(liveStores).forEach(id=>{
+      const s=liveStores[id];
+      const activeSigs=s.signals.filter(sg=>sg.on);
+      const chips=activeSigs.map(sg=>`<span class="dh-chip">${sg.t} +${sg.pct}%</span>`).join('')||'<span style="color:var(--ink5);font-size:11px">None</span>';
+      const tr=document.createElement('tr');
+      tr.innerHTML=`
+        <td><strong>${s.name}</strong></td>
+        <td style="color:var(--blue);font-weight:600">+${s.uplift}%</td>
+        <td><div class="dh-signal-chips">${chips}</div></td>
+        <td>${s.skus.length}</td>
+        <td>${s.weeks}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
 
   $id('dh-timestamp').textContent = 'Last loaded: ' + new Date().toLocaleString() + ' · ' + fileName;
   $id('dh-summary').classList.add('visible');
@@ -2895,158 +2454,44 @@ function dhRenderSummary(liveStores, fileName){
 /* ── end Data Hub ───────────────────────────────────────────── */
 
 /* ════════════════════════════════════════════════════════════════
-   SKU FILTER — per-SKU chart drill-down on the Overview screen
+   REFRESH FROM SOURCE — re-reads the live Excel file over HTTP.
+   /source-data.xlsx is served by server.py, which reads whatever
+   absolute path is written in source_path.txt on the server — that
+   file can live anywhere on disk, it does not need to be inside this
+   app's folder. Manual only — triggered by the Refresh button, no
+   polling/scheduler. Reuses the exact same parse/apply pipeline as a
+   Data Hub upload, just fetches the bytes instead of reading a
+   picked File.
 ════════════════════════════════════════════════════════════════ */
+const LIVE_DATA_XLSX_URL = '/source-data.xlsx';
 
-var currentSkuFilter = 'all';
-
-/* ── Store per-SKU data after upload ─────────────────────── */
-// window.DH_SKU_DATA['0142']['SKU-4471'] = {forecast, sensed, gap, uplift, oh, it, rop, rq}
-// window.DH_AGG_DATA['0142']             = {forecast, sensed, gap, uplift, onHand, inTransit, ...}
-
-function dhBuildSkuData(wb, liveStores) {
-  /* Build per-SKU demand buckets from the raw workbook.
-     Called after dhAggregateData so weekIdx is already computed there.
-     We re-parse the sheets here independently for clarity. */
-  const demandRows = XLSX.utils.sheet_to_json(wb.Sheets['Demand Forecasting'], {range:2, defval:0});
-  const invRows    = XLSX.utils.sheet_to_json(wb.Sheets['On Hand Inventory'],   {range:2, defval:0});
-
-  // Build weekIdx per store (same as dhAggregateData)
-  const weekDates = {};
-  demandRows.forEach(r => {
-    const sid  = (r['Store ID']||'').trim();
-    const date = r['Week Start Date'];
-    if(!sid || !date) return;
-    if(!weekDates[sid]) weekDates[sid] = new Set();
-    const ds = typeof date==='object' ? date.toISOString().slice(0,10) : String(date).slice(0,10);
-    weekDates[sid].add(ds);
-  });
-  const weekIdxMap = {};
-  Object.keys(weekDates).forEach(sid => {
-    const sorted = Array.from(weekDates[sid]).sort();
-    weekIdxMap[sid] = {};
-    sorted.forEach((d,i) => weekIdxMap[sid][d] = i);
-  });
-
-  // Per-SKU demand bucket: storeRawId → skuId → weekIdx → {bl,pr,we,fe}
-  const skuBucket = {};
-  demandRows.forEach(r => {
-    const sid   = (r['Store ID']||'').trim();
-    const skuId = (r['SKU ID']||'').trim();
-    const date  = r['Week Start Date'];
-    if(!sid || !skuId || !date) return;
-    const ds = typeof date==='object' ? date.toISOString().slice(0,10) : String(date).slice(0,10);
-    const wi = weekIdxMap[sid]?.[ds];
-    if(wi === undefined) return;
-    if(!skuBucket[sid])       skuBucket[sid] = {};
-    if(!skuBucket[sid][skuId])skuBucket[sid][skuId] = {};
-    if(!skuBucket[sid][skuId][wi]) skuBucket[sid][skuId][wi] = {bl:0,pr:0,we:0,fe:0};
-    skuBucket[sid][skuId][wi].bl += Number(r['Baseline (units)']||0);
-    skuBucket[sid][skuId][wi].pr += Number(r['Promo Units']||0);
-    skuBucket[sid][skuId][wi].we += Number(r['Weather Units']||0);
-    skuBucket[sid][skuId][wi].fe += Number(r['Festival Units']||0);
-  });
-
-  // Per-SKU inventory lookup: storeRawId → skuId → {oh,it,ss,rop,rq,nr,name}
-  const invLookup = {};
-  invRows.forEach(r => {
-    const sid   = (r['Store ID']||'').trim();
-    const skuId = (r['SKU ID']||'').trim();
-    if(!sid || !skuId) return;
-    if(!invLookup[sid]) invLookup[sid] = {};
-    invLookup[sid][skuId] = {
-      name: String(r['SKU Name']||'').trim(),
-      oh:   Number(r['On-Hand (units)']||0),
-      it:   Number(r['In-Transit (units)']||0),
-      ss:   Number(r['Safety Stock']||0),
-      rop:  Number(r['ROP']||0),
-      rq:   Number(r['Replenishment Qty']||0),
-      nr:   Number(r['Net Requirement']||0),
-    };
-  });
-
-  window.DH_SKU_DATA = {};
-  window.DH_AGG_DATA = {};
-
-  Object.entries(DH_STORE_MASTER).forEach(([rawSid, master]) => {
-    const jsKey = master.id;
-
-    // Save aggregate data for "All Items" restore
-    if(liveStores[jsKey]) {
-      window.DH_AGG_DATA[jsKey] = {
-        forecast:  liveStores[jsKey].forecast.slice(),
-        sensed:    liveStores[jsKey].sensed.slice(),
-        gap:       liveStores[jsKey].gap.slice(),
-        uplift:    liveStores[jsKey].uplift,
-        onHand:    liveStores[jsKey].onHand,
-        inTransit: liveStores[jsKey].inTransit,
-        ots:       liveStores[jsKey].ots,
-        capPct:    liveStores[jsKey].capPct,
-        rop:       liveStores[jsKey].rop,
-        kpisLive:  liveStores[jsKey].kpisLive,
-      };
+async function refreshFromSource(){
+  const btn = $id('refresh-btn'), label = $id('refresh-btn-label');
+  if(btn) btn.disabled = true;
+  if(label) label.textContent = 'Refreshing…';
+  try {
+    const res = await fetch(LIVE_DATA_XLSX_URL + '?t=' + Date.now(), {cache:'no-store'});
+    if(!res.ok) {
+      const detail = await res.text().catch(()=> '');
+      throw new Error('HTTP ' + res.status + (detail ? ' — ' + detail.slice(0,180) : ''));
     }
-
-    window.DH_SKU_DATA[jsKey] = {};
-    const storeSku = skuBucket[rawSid] || {};
-    const storeInv = invLookup[rawSid] || {};
-
-    Object.keys(storeSku).forEach(skuId => {
-      const skuWeeks = storeSku[skuId];
-      const numWeeks = Object.keys(skuWeeks).length;
-      const inv      = storeInv[skuId] || {oh:0,it:0,ss:0,rop:0,rq:0,nr:0,name:skuId};
-
-      const forecast = [], sensed = [];
-      for(let w=0; w<numWeeks; w++){
-        const d = skuWeeks[w] || {bl:0,pr:0,we:0,fe:0};
-        forecast.push(d.bl);
-        sensed.push(d.bl + d.pr + d.we + d.fe);
-      }
-
-      // 8-week gap for this SKU
-      const gap = [];
-      let running = inv.oh + inv.it;
-      for(let w=0; w<numWeeks; w++){
-        gap.push(Math.round(running - inv.rop));
-        running -= sensed[w];
-        if(w===1) running += inv.rq;
-      }
-
-      const w0  = skuWeeks[0] || {bl:1,pr:0,we:0,fe:0};
-      const bl0 = w0.bl || 1;
-      const skuUplift = Math.round((w0.pr+w0.we+w0.fe)/bl0*1000)/10;
-
-      window.DH_SKU_DATA[jsKey][skuId] = {
-        name:     inv.name || skuId,
-        forecast, sensed, gap,
-        uplift:   skuUplift,
-        oh: inv.oh, it: inv.it, ss: inv.ss,
-        rop: inv.rop, rq: inv.rq, nr: inv.nr,
-      };
-    });
-  });
-
-  console.log('[SKU Filter] Per-SKU data built for', Object.keys(window.DH_SKU_DATA).length, 'stores');
+    const buf = await res.arrayBuffer();
+    const wb = XLSX.read(buf, {type:'array', cellDates:true});
+    const sheetName = dhFindDataSheet(wb);
+    if(!sheetName) throw new Error('No sheet found with the expected columns: ' + DH_REQUIRED_COLS.join(', '));
+    const liveStores = dhAggregateData(wb, sheetName);
+    dhApplyToStores(liveStores);
+    dhRenderSummary(liveStores, 'source file');
+    showToast('✓ Refreshed from source file');
+  } catch(err){
+    showToast('Refresh failed — ' + err.message);
+    console.error('[Refresh]', err);
+  } finally {
+    if(btn) btn.disabled = false;
+    if(label) label.textContent = 'Refresh';
+  }
 }
 
-function dhPopulateSkuDropdown(liveStores) {
-  /* Populate the SKU dropdown from the first store's SKU list
-     (same SKUs exist across all stores in the dataset) */
-  const firstKey = Object.keys(liveStores)[0];
-  const skus     = liveStores[firstKey]?.skus || [];
-  const sel      = $id('skuFilterSelect');
-  while(sel.options.length > 1) sel.remove(1);
-  skus.forEach(sku => {
-    const opt = document.createElement('option');
-    opt.value = sku.id;
-    opt.textContent = sku.name;
-    sel.appendChild(opt);
-  });
-
-  // Reset to "All Items"
-  sel.value = 'all';
-  currentSkuFilter = 'all';
-}
 
 /* ── Apply / clear SKU filter to STORES ─────────────────── */
 function applySkuFilterToStores(storeId) {
@@ -3095,8 +2540,9 @@ function applySkuFilterToStores(storeId) {
 
 
 /* Build DH_AGG_DATA + DH_SKU_DATA from current STORES object.
-   Runs on page load so the SKU filter works without needing an upload.
-   After an Excel upload, dhBuildSkuData overwrites this with exact per-row data. */
+   Runs on page load and again after every Data Hub upload (dhApplyToStores
+   rebuilds STORES first, then calls this) so the SKU filter always reflects
+   whatever is currently loaded. */
 function buildSkuDataFromStores() {
   window.DH_AGG_DATA = {};
   window.DH_SKU_DATA = {};
@@ -3158,7 +2604,7 @@ function buildSkuDataFromStores() {
 function initSkuDropdown(storeId) {
   const sel  = document.getElementById('skuFilterSelect');
   if(!sel) return;
-  const skus = (STORES[storeId] || STORES['0142']).skus || [];
+  const skus = (STORES[storeId] || STORES[Object.keys(STORES)[0]] || {}).skus || [];
   // Keep only the first "All Items" option, remove rest
   while(sel.options.length > 1) sel.remove(1);
   skus.forEach(sku => {
