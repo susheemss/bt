@@ -1350,7 +1350,10 @@ function normalizeStore(id, live){
     coords: {lat:'—', lng:'—'},
     telMode:'—', telUtil:'—', telUnits:'—', telSKUs:'—', telFreight:'—', telAlerts:[],
     skus: (live.skus||[]).map(function(sk){
-      return {id:sk.id, name:sk.name, oh:0, it:0, dmd:sk.dmd||0, ss:0, rop:0, nr:0, rq:0, st:'hold'};
+      return {
+        id:sk.id, name:sk.name, oh:0, it:0, dmd:sk.dmd||0, ss:0, rop:0, nr:0, rq:0, st:'hold',
+        forecast: sk.forecast || [], sensed: sk.sensed || [], uplift: sk.uplift || 0,
+      };
     }),
   };
 }
@@ -2426,19 +2429,36 @@ function dhAggregateData(wb, sheetName){
       forecastArr.push(Math.round(d.baseline*100)/100);
       sensedArr.push(Math.round((d.baseline+d.promo)*100)/100);
     }
-    const w0=(storeWeek[store]||{})[0]||{baseline:1,promo:0};
-    const bl0=w0.baseline||1;
-    const promoPct=Math.round(w0.promo/bl0*1000)/10;
+    // "Current" signals/uplift/demand are read from the most recent month in
+    // the data (not the oldest) -- a live dashboard's "what's happening now"
+    // should track the latest data point, not wherever month index 0 lands.
+    const latest=numWeeks-1;
+    const wLatest=(storeWeek[store]||{})[latest]||{baseline:1,promo:0};
+    const blLatest=wLatest.baseline||1;
+    const promoPct=Math.round(wLatest.promo/blLatest*1000)/10;
     const signals=[
-      {t:'Promo',pct:promoPct,on:w0.promo>0},
+      {t:'Promo',pct:promoPct,on:wLatest.promo>0},
       {t:'Weather',pct:0,on:false},
       {t:'Festival',pct:0,on:false},
       {t:'Trend',pct:0,on:false},
       {t:'Event',pct:0,on:false},
     ];
     const skus=Object.keys(storeSkuNames[store]||{}).map(skuId=>{
-      const w0sku=(storeSkuWeek[store][skuId]||{})[0]||{baseline:0};
-      return {id:skuId, name:storeSkuNames[store][skuId], dmd:Math.round(w0sku.baseline*100)/100};
+      const skuWeeks=storeSkuWeek[store][skuId]||{};
+      const skuForecast=[], skuSensed=[];
+      for(let w=0; w<numWeeks; w++){
+        const d=skuWeeks[w]||{baseline:0,promo:0};
+        skuForecast.push(Math.round(d.baseline*100)/100);
+        skuSensed.push(Math.round((d.baseline+d.promo)*100)/100);
+      }
+      const skuLatest=skuWeeks[latest]||{baseline:0,promo:0};
+      const skuBlLatest=skuLatest.baseline||1;
+      const skuUplift=Math.round((skuLatest.promo/skuBlLatest)*1000)/10;
+      return {
+        id:skuId, name:storeSkuNames[store][skuId],
+        dmd:Math.round(skuLatest.baseline*100)/100,
+        forecast:skuForecast, sensed:skuSensed, uplift:skuUplift,
+      };
     });
     result[dhSlug(store)]={
       name:store, forecast:forecastArr, sensed:sensedArr,
@@ -2553,6 +2573,7 @@ function applySkuFilterToStores(storeId) {
     STORES[storeId].sensed    = agg.sensed;
     STORES[storeId].gap       = agg.gap;
     STORES[storeId].uplift    = agg.uplift;
+    if(agg.signals) STORES[storeId].signals = agg.signals;
     STORES[storeId].onHand    = agg.onHand;
     STORES[storeId].inTransit = agg.inTransit;
     STORES[storeId].ots       = agg.ots;
@@ -2570,6 +2591,7 @@ function applySkuFilterToStores(storeId) {
     STORES[storeId].sensed    = skuData.sensed;
     STORES[storeId].gap       = skuData.gap;
     STORES[storeId].uplift    = skuData.uplift;
+    if(skuData.signals) STORES[storeId].signals = skuData.signals;
     // KPI tile: in-transit for this SKU only
     STORES[storeId].kpis.it  = String(skuData.it);
     STORES[storeId].kpis.itD = skuData.it > 0 ? 'units in transit for this SKU' : 'none in transit';
@@ -2602,12 +2624,13 @@ function buildSkuDataFromStores() {
     // Total weekly demand across all SKUs (used to weight each SKU share)
     var totalDmd = skus.reduce(function(a,s){ return a + (s.dmd||0); }, 0) || 1;
 
-    // Save store-level aggregate so "All Items" can always restore it
+    // Save store-level aggregate (incl. signals) so "All Items" can always restore it
     window.DH_AGG_DATA[storeId] = {
       forecast:  store.forecast.slice(),
       sensed:    store.sensed.slice(),
       gap:       store.gap.slice(),
       uplift:    store.uplift,
+      signals:   store.signals.map(function(s){ return Object.assign({}, s); }),
       onHand:    store.onHand,
       inTransit: store.inTransit,
       ots:       store.ots,
@@ -2616,14 +2639,23 @@ function buildSkuDataFromStores() {
       kpisLive:  { cu: store.kpis.cu, it: store.kpis.it, itD: store.kpis.itD },
     };
 
-    // Build per-SKU 8-week arrays by scaling store arrays by each SKU demand share
     window.DH_SKU_DATA[storeId] = {};
     skus.forEach(function(sku) {
-      var share    = (sku.dmd || 0) / totalDmd;
-      var forecast = store.forecast.map(function(v){ return Math.round(v * share); });
-      var sensed   = store.sensed.map(function(v){ return Math.round(v * share); });
+      // Prefer the SKU's own per-month series (built from its actual Promo/Baseline
+      // rows) over an approximation -- a SKU with no promo of its own should show
+      // no uplift even if other SKUs in the store do.
+      var hasOwnSeries = Array.isArray(sku.forecast) && sku.forecast.length > 0;
+      var forecast, sensed;
+      if(hasOwnSeries){
+        forecast = sku.forecast.slice();
+        sensed   = sku.sensed.slice();
+      } else {
+        var share = (sku.dmd || 0) / totalDmd;
+        forecast = store.forecast.map(function(v){ return Math.round(v * share); });
+        sensed   = store.sensed.map(function(v){ return Math.round(v * share); });
+      }
 
-      // Project 8-week gap for this individual SKU
+      // Project gap for this individual SKU
       var gap     = [];
       var running = (sku.oh || 0) + (sku.it || 0);
       for(var w = 0; w < forecast.length; w++) {
@@ -2632,12 +2664,17 @@ function buildSkuDataFromStores() {
         if(w === 1) running += (sku.rq || 0);
       }
 
+      var skuUplift = (typeof sku.uplift === 'number') ? sku.uplift : store.uplift;
+
       window.DH_SKU_DATA[storeId][sku.id] = {
         name:     sku.name,
         forecast: forecast,
         sensed:   sensed,
         gap:      gap,
-        uplift:   store.uplift,
+        uplift:   skuUplift,
+        signals:  store.signals.map(function(s){
+          return s.t === 'Promo' ? {t:'Promo', pct:skuUplift, on:skuUplift>0} : Object.assign({}, s);
+        }),
         oh:  sku.oh  || 0,
         it:  sku.it  || 0,
         ss:  sku.ss  || 0,
