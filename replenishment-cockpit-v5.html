@@ -1663,17 +1663,46 @@ function renderGap(cid,data,opts){
   const isNum=v=>v!==null&&v!==undefined&&!isNaN(v);
   const real=data.filter(isNum);
   if(!real.length){el.innerHTML='';return;}
-  const mx=Math.max(...real,200),mn=Math.min(...real,-200),rng=mx-mn||1;
-  const pt=(v,i)=>[pad.l+(n>1?(i/(n-1)):0.5)*cw,pad.t+ch-((v-mn)/rng)*ch];
+  // Y axis is scaled to the values actually present. It used to clamp the
+  // range to at least -200..+200, which flattened any real series smaller
+  // than that into a squiggle on the zero line and left half the panel
+  // permanently empty. Zero always stays on the axis, since the whole point
+  // of the chart is which side of it each month falls.
+  const dMax=Math.max(...real,0), dMin=Math.min(...real,0);
+  const span=(dMax-dMin)||Math.max(1,Math.abs(dMax))||1;
+  // Step up the 1/2/5 ladder until the axis needs at most 6 intervals, so a
+  // range that straddles zero doesn't end up with a dozen gridlines.
+  const stepUp=st=>{const e=Math.pow(10,Math.floor(Math.log10(st)));const m=Math.round(st/e);return m<2?2*e:m<5?5*e:10*e;};
+  let yS=niceStep(span/4)||1;
+  const hiPad=dMax+span*0.08, loPad=dMin<0?dMin-span*0.08:0;
+  for(let guard=0; guard<8 && (hiPad-loPad)/yS>6; guard++) yS=stepUp(yS);
+  const yTop=Math.max(yS,Math.ceil(hiPad/yS)*yS);
+  const yBot=dMin<0?Math.floor(loPad/yS)*yS:0;
+  const mn=yBot, mx=yTop, rng=(mx-mn)||1;
+  // X positions match the on-hand chart's month slots exactly, so a month
+  // sits at the same horizontal position in both panels.
+  const xgap=cw*0.06/(n+1), slot=(cw-xgap*(n+1))/n;
+  const xAt=i=>pad.l+xgap+i*(slot+xgap)+slot/2;
+  const pt=(v,i)=>[xAt(i),pad.t+ch-((v-mn)/rng)*ch];
   const zY=pad.t+ch-((0-mn)/rng)*ch;
-  const yS=niceStep((mx-mn)/4),yB=Math.floor(mn/yS)*yS;
   let s=`<svg width="${W}" height="${H}"><defs>
     <linearGradient id="gneg${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#DC2626" stop-opacity=".2"/><stop offset="100%" stop-color="#DC2626" stop-opacity=".03"/></linearGradient>
     <linearGradient id="gpos${cid}" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#16A34A" stop-opacity=".15"/><stop offset="100%" stop-color="#16A34A" stop-opacity=".02"/></linearGradient>
     <clipPath id="cneg${cid}"><rect x="${pad.l}" y="${zY}" width="${cw}" height="${pad.t+ch-zY}"/></clipPath>
     <clipPath id="cpos${cid}"><rect x="${pad.l}" y="${pad.t}" width="${cw}" height="${Math.max(0,zY-pad.t)}"/></clipPath>
+    <linearGradient id="gstk${cid}" x1="0" y1="${pad.t}" x2="0" y2="${pad.t+ch}" gradientUnits="userSpaceOnUse">
+      <stop offset="${Math.min(1,Math.max(0,(zY-pad.t)/ch))}" stop-color="#16A34A"/>
+      <stop offset="${Math.min(1,Math.max(0,(zY-pad.t)/ch))}" stop-color="#DC2626"/>
+    </linearGradient>
   </defs>`;
-  for(let i=0;i<=4;i++){const yv=yB+i*yS,y=pad.t+ch-((yv-mn)/rng)*ch;if(y<pad.t-2||y>pad.t+ch+2)continue;s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="${Math.abs(yv)<1?'#C8D0DB':'#E8ECF1'}" stroke-width="${Math.abs(yv)<1?1.5:1}"/><text x="${pad.l-4}" y="${y+4}" font-size="8.5" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;}
+  const nLines=Math.max(1,Math.round((yTop-yBot)/yS));
+  for(let k=0; k<=nLines; k++){
+    const yv=yBot+k*yS;              // multiply, don't accumulate -- 0.2 steps drift
+    const y=pad.t+ch-((yv-mn)/rng)*ch;
+    if(y<pad.t-2||y>pad.t+ch+2) continue;
+    const isZero=Math.abs(yv)<yS*0.001;
+    s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="${isZero?'#C8D0DB':'#E8ECF1'}" stroke-width="${isZero?1.5:1}"/><text x="${pad.l-4}" y="${y+4}" font-size="8.5" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;
+  }
   // Draw each unbroken run of real months on its own -- the line must not
   // bridge a month the inventory file simply has no row for.
   const runs=[]; let cur=null;
@@ -1689,10 +1718,10 @@ function renderGap(cid,data,opts){
       const pathD=`M${p[0].join(',')} ${p.slice(1).map(q=>`L${q.join(',')}`).join(' ')} L${p[p.length-1][0]},${zY} L${p[0][0]},${zY}Z`;
       s+=`<path d="${pathD}" fill="url(#gpos${cid})" clip-path="url(#cpos${cid})"/>`;
       s+=`<path d="${pathD}" fill="url(#gneg${cid})" clip-path="url(#cneg${cid})"/>`;
-      s+=`<polyline points="${p.map(q=>q.join(',')).join(' ')}" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+      s+=`<polyline points="${p.map(q=>q.join(',')).join(' ')}" fill="none" stroke="url(#gstk${cid})" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
     }
   });
-  data.forEach((v,i)=>{if(!isNum(v))return;const[x,y]=pt(v,i);s+=`<circle cx="${x}" cy="${y}" r="3.5" fill="${v<0?'#DC2626':'#16A34A'}" onmouseenter="showTT(event,'${opts.labels[i]} net req: ${fmtExact(v)} u')" onmouseleave="hideTT()" style="cursor:pointer"/>`;});
+  data.forEach((v,i)=>{if(!isNum(v))return;const[x,y]=pt(v,i);s+=`<circle cx="${x}" cy="${y}" r="3.5" fill="${v<0?'#DC2626':'#16A34A'}" onmouseenter="showTT(event,'${opts.labels[i]} ${v<0?'shortfall vs ROP':'surplus over ROP'}: ${fmtExact(Math.abs(v))} u')" onmouseleave="hideTT()" style="cursor:pointer"/>`;});
   data.forEach((v,i)=>{const[x]=pt(0,i);s+=`<text x="${x}" y="${H-3}" font-size="8.5" fill="${isNum(v)?'#8B95A5':'#C4CBD6'}" text-anchor="middle">${opts.labels[i]}</text>`;});
   s+='</svg>';el.innerHTML=s;
 }
