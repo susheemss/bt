@@ -1156,6 +1156,7 @@ body{
       <div class="pending-card" id="chart3-pending">Awaiting inventory data<br><b>On-hand and ROP</b> have not been loaded for this store yet.</div>
       <div class="chart-legend" id="chart3-legend" style="display:none">
         <div class="leg-item"><span class="leg-bar" style="background:#94A3B8;opacity:.65"></span>On-hand</div>
+        <div class="leg-item"><span class="leg-bar" style="background:#16A34A;opacity:.85"></span>Replenishment that month</div>
         <div class="leg-item" style="gap:3px"><span style="border-top:1.5px dashed var(--amber);width:16px;display:inline-block"></span>ROP</div>
       </div>
     </div>
@@ -1505,14 +1506,29 @@ function renderAllCharts(id){
 
   const inv3=$id('chart3-pending'), leg3=$id('chart3-legend');
   const inv4=$id('chart4-pending'), leg4=$id('chart4-legend');
-  if(s.hasInv && s.onHandSeries && s.onHandSeries.length){
+  // Respect the SKU filter here too -- otherwise this chart always shows
+  // the whole store's on-hand summed across every SKU, so "replenishment"
+  // could reflect a completely different SKU's reorder that happened to
+  // land in the same month, not the one you've filtered to.
+  let invSource=null;
+  if(currentSkuFilter==='all'){
+    if(s.hasInv && s.onHandSeries && s.onHandSeries.length) invSource=s;
+  } else {
+    const selSku=(s.skus||[]).find(sk=>sk.id===currentSkuFilter);
+    if(selSku && selSku.hasInv && selSku.onHandSeries && selSku.onHandSeries.length){
+      invSource={onHandSeries:selSku.onHandSeries, ropSeries:selSku.ropSeries, replenQtySeries:selSku.replenQtySeries, gap:selSku.gapSeries, rop:selSku.rop};
+    }
+  }
+  if(invSource){
     if(inv3) inv3.style.display='none';
     if(leg3) leg3.style.display='flex';
-    renderOnHand('chart3',s.onHandSeries.slice(0,n),s.rop,{labels:wk,replenQty:(s.replenQtySeries||[]).slice(0,n)});
+    renderOnHand('chart3',invSource.onHandSeries.slice(0,n),invSource.rop,{labels:wk,replenQty:(invSource.replenQtySeries||[]).slice(0,n)});
     if(inv4) inv4.style.display='none';
     if(leg4) leg4.style.display='flex';
-    renderGap('chart4',s.gap.slice(0,n),{labels:wk});
+    renderGap('chart4',invSource.gap.slice(0,n),{labels:wk});
   } else {
+    const c3=$id('chart3'); if(c3) c3.innerHTML='';
+    const c4=$id('chart4'); if(c4) c4.innerHTML='';
     if(inv3) inv3.style.display='block';
     if(leg3) leg3.style.display='none';
     if(inv4) inv4.style.display='block';
@@ -2718,16 +2734,29 @@ function applyCustomerFilterToStores(storeId){
 
   store.skus.forEach(sk=>{
     let oh=0, ss=0, rop=0, rq=0, found=false;
+    // Full per-month series for this one SKU (summed across the selected
+    // customer(s) only) -- this is what the SKU-filtered on-hand/gap chart
+    // uses, so "replenishment" there always reflects this SKU's own ROP
+    // crossing, not some unrelated SKU's reorder that happened to land in
+    // the same month.
+    const skOnHand=new Array(numWeeks).fill(0), skRop=new Array(numWeeks).fill(0), skReplenQty=new Array(numWeeks).fill(0);
     customers.forEach(cust=>{
       const bySkuAtCust=inv.cell[cust]||{};
       const cellForSku=bySkuAtCust[sk.id];
       if(!cellForSku) return;
+      for(let w=0; w<numWeeks; w++){
+        const c=cellForSku[w];
+        if(!c) continue;
+        skOnHand[w]+=c.onHand; skRop[w]+=c.rop; skReplenQty[w]+=c.replenQty;
+      }
       const latest=cellForSku[numWeeks-1];
       if(!latest) return;
       found=true;
       oh+=latest.onHand; ss+=latest.ss; rop+=latest.rop; rq+=latest.replenQty;
     });
     sk.hasInv=found;
+    sk.onHandSeries=skOnHand; sk.ropSeries=skRop; sk.replenQtySeries=skReplenQty;
+    sk.gapSeries=skOnHand.map((v,i)=>Math.round(v-(skRop[i]||0)));
     if(found){
       sk.oh=oh; sk.ss=ss; sk.rop=rop; sk.rq=rq;
       sk.nr=Math.max(0, rop-oh);
