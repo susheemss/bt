@@ -1156,7 +1156,7 @@ body{
       <div class="pending-card" id="chart3-pending">Awaiting inventory data<br><b>On-hand and ROP</b> have not been loaded for this store yet.</div>
       <div class="chart-legend" id="chart3-legend" style="display:none">
         <div class="leg-item"><span class="leg-bar" style="background:#94A3B8;opacity:.65"></span>On-hand</div>
-        <div class="leg-item"><span class="leg-bar" style="background:#16A34A;opacity:.85"></span>Replenishment that month</div>
+        <div class="leg-item"><span class="leg-bar" style="background:#16A34A;opacity:.85"></span>Replenishment qty</div>
         <div class="leg-item" style="gap:3px"><span style="border-top:1.5px dashed var(--amber);width:16px;display:inline-block"></span>ROP</div>
       </div>
     </div>
@@ -1393,6 +1393,12 @@ function fmt(v){
   if(av>0 && av<10) return v.toLocaleString('en-GB',{maximumFractionDigits:2});
   return Math.round(v).toLocaleString('en-GB');
 }
+/* fmt() abbreviates for axis labels (1.2K, whole units). Anywhere we quote a
+   figure that came straight out of the source file -- tooltips especially --
+   use the exact recorded value instead, so nothing is rounded away. */
+function fmtExact(v){
+  return Number(v).toLocaleString('en-GB',{maximumFractionDigits:2});
+}
 function niceStep(r){const e=Math.pow(10,Math.floor(Math.log10(r||1)));return r/e>=5?5*e:r/e>=2?2*e:e}
 function $id(id){return document.getElementById(id)}
 function set(id,val){const el=$id(id);if(el)el.textContent=val}
@@ -1527,7 +1533,7 @@ function renderAllCharts(id){
   if(invSource){
     if(inv3) inv3.style.display='none';
     if(leg3) leg3.style.display='flex';
-    renderOnHand('chart3',invSource.onHandSeries.slice(0,n),invSource.rop,{labels:wk,replenQty:(invSource.replenQtySeries||[]).slice(0,n)});
+    renderOnHand('chart3',invSource.onHandSeries.slice(0,n),invSource.rop,{labels:wk,replenQty:(invSource.replenQtySeries||[]).slice(0,n),ropSeries:(invSource.ropSeries||[]).slice(0,n)});
     if(inv4) inv4.style.display='none';
     if(leg4) leg4.style.display='flex';
     renderGap('chart4',invSource.gap.slice(0,n),{labels:wk});
@@ -1592,39 +1598,61 @@ function renderOnHand(cid,data,rop,opts){
   const{el,W,H}=b,pad={t:8,b:20,l:40,r:6},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b,n=data.length;
   // null = the inventory file has no row for that month; it is drawn as an
   // empty slot rather than a zero bar.
-  const real=data.filter(v=>v!==null&&v!==undefined&&!isNaN(v));
+  const isNum=v=>v!==null&&v!==undefined&&!isNaN(v);
+  const replenQty=opts.replenQty||[];
+  const ropSeries=opts.ropSeries||[];
+  const real=data.filter(isNum);
   if(!real.length){el.innerHTML='';return;}
-  const mx=Math.max(...real,rop)*1.1||1,yS=niceStep(mx/4),yM=Math.ceil(mx/yS)*yS;
-  const gap=cw*0.06/(n+1),bw=(cw-gap*(n+1))/n;
+  // Both bars are read straight off the inventory file: the grey bar is the
+  // "On hand inventory" cell for that month and the green bar is the
+  // "Replenishment quantity" cell. Neither is derived from the other, and
+  // nothing is subtracted -- each bar's height is its own recorded value.
+  const realRep=replenQty.filter(isNum), realRop=ropSeries.filter(isNum);
+  const mx=Math.max(...real,...(realRep.length?realRep:[0]),...(realRop.length?realRop:[isNum(rop)?rop:0]))*1.1||1;
+  const yS=niceStep(mx/4),yM=Math.ceil(mx/yS)*yS;
+  const gap=cw*0.06/(n+1),slot=(cw-gap*(n+1))/n;
+  const bw=slot*0.46,inner=slot*0.08;
   let s=`<svg width="${W}" height="${H}"><defs>
     <linearGradient id="boh${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#94A3B8" stop-opacity=".7"/><stop offset="100%" stop-color="#94A3B8" stop-opacity=".3"/></linearGradient>
     <linearGradient id="brp${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#16A34A" stop-opacity=".9"/><stop offset="100%" stop-color="#16A34A" stop-opacity=".4"/></linearGradient>
   </defs>`;
   for(let i=0;i<=4;i++){const yv=(i/4)*yM,y=pad.t+ch-(yv/yM)*ch;s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#E8ECF1" stroke-width="1"/><text x="${pad.l-4}" y="${y+4}" font-size="8.5" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;}
-  const ropy=pad.t+ch-(rop/yM)*ch;
-  s+=`<line x1="${pad.l}" y1="${ropy}" x2="${W-pad.r}" y2="${ropy}" stroke="#D97706" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${W-pad.r-2}" y="${ropy-3}" font-size="8" fill="#D97706" text-anchor="end">ROP</text>`;
-  // "Replen entry" highlight uses the real Replenishment quantity for that
-  // month (opts.replenQty), not a guessed pattern -- a month only shows the
-  // green portion if your file actually recorded a replenishment then.
-  const replenQty=opts.replenQty||[];
+  // ROP follows the value recorded for each month. It is only drawn as a
+  // single flat line when the file has no per-month ROP to follow.
+  const ropY=val=>pad.t+ch-(val/yM)*ch;
+  if(ropSeries.some(isNum)){
+    let segs='', lastY=null;
+    ropSeries.forEach((rv,i)=>{
+      if(!isNum(rv)) return;
+      const x0=pad.l+gap+i*(slot+gap), y=ropY(rv);
+      if(lastY!==null && lastY!==y) segs+=`<line x1="${x0}" y1="${lastY}" x2="${x0}" y2="${y}" stroke="#D97706" stroke-width="1.5" stroke-dasharray="4 3" opacity=".7"/>`;
+      segs+=`<line x1="${x0}" y1="${y}" x2="${x0+slot}" y2="${y}" stroke="#D97706" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+      lastY=y;
+    });
+    s+=segs;
+    const firstReal=ropSeries.find(isNum);
+    s+=`<text x="${W-pad.r-2}" y="${ropY(firstReal)-3}" font-size="8" fill="#D97706" text-anchor="end">ROP</text>`;
+  } else if(isNum(rop)){
+    const ropy=ropY(rop);
+    s+=`<line x1="${pad.l}" y1="${ropy}" x2="${W-pad.r}" y2="${ropy}" stroke="#D97706" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${W-pad.r-2}" y="${ropy-3}" font-size="8" fill="#D97706" text-anchor="end">ROP</text>`;
+  }
   data.forEach((v,i)=>{
-    const x=pad.l+gap+i*(bw+gap);
-    if(v===null||v===undefined||isNaN(v)){
-      s+=`<text x="${x+bw/2}" y="${H-3}" font-size="8.5" fill="#C4CBD6" text-anchor="middle">${opts.labels[i]}</text>`;
+    const x0=pad.l+gap+i*(slot+gap), mid=x0+slot/2;
+    if(!isNum(v)){
+      s+=`<text x="${mid}" y="${H-3}" font-size="8.5" fill="#C4CBD6" text-anchor="middle">${opts.labels[i]}</text>`;
       return;
     }
-    const bh=Math.max(3,(v/yM)*ch),y=pad.t+ch-bh;
-    const rq=replenQty[i]||0;
-    const isReplen=rq>0 && v>0;
-    // Base bar: on-hand minus the portion that was this month's replenishment
-    const baseV=isReplen?Math.max(0,v-rq):v;
-    const baseH=isReplen?Math.max(3,(baseV/yM)*ch):bh;
-    s+=`<rect x="${x}" y="${pad.t+ch-baseH}" width="${bw}" height="${baseH}" rx="2" fill="url(#boh${cid})" onmouseenter="showTT(event,'${opts.labels[i]} on-hand: ${fmt(v)} u')" onmouseleave="hideTT()"/>`;
-    if(isReplen){
-      const rh=bh-baseH;
-      s+=`<rect x="${x}" y="${pad.t+ch-bh}" width="${bw}" height="${rh}" rx="2" fill="url(#brp${cid})" onmouseenter="showTT(event,'${opts.labels[i]} replenishment: +${fmt(rq)} u')" onmouseleave="hideTT()"/>`;
+    // On-hand: exactly the recorded value.
+    const oh=v, ohH=oh>0?Math.max(2,(oh/yM)*ch):0;
+    if(ohH>0) s+=`<rect x="${x0}" y="${pad.t+ch-ohH}" width="${bw}" height="${ohH}" rx="2" fill="url(#boh${cid})" onmouseenter="showTT(event,'${opts.labels[i]} on-hand: ${fmtExact(oh)} u')" onmouseleave="hideTT()"/>`;
+    // Replenishment quantity: exactly the recorded value, drawn alongside --
+    // a month with no replenishment recorded simply has no green bar.
+    const rq=isNum(replenQty[i])?replenQty[i]:null;
+    if(rq!==null && rq>0){
+      const rH=Math.max(2,(rq/yM)*ch);
+      s+=`<rect x="${x0+bw+inner}" y="${pad.t+ch-rH}" width="${bw}" height="${rH}" rx="2" fill="url(#brp${cid})" onmouseenter="showTT(event,'${opts.labels[i]} replenishment qty: ${fmtExact(rq)} u')" onmouseleave="hideTT()"/>`;
     }
-    s+=`<text x="${x+bw/2}" y="${H-3}" font-size="8.5" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;
+    s+=`<text x="${mid}" y="${H-3}" font-size="8.5" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;
   });
   s+='</svg>';el.innerHTML=s;
 }
@@ -1664,7 +1692,7 @@ function renderGap(cid,data,opts){
       s+=`<polyline points="${p.map(q=>q.join(',')).join(' ')}" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
     }
   });
-  data.forEach((v,i)=>{if(!isNum(v))return;const[x,y]=pt(v,i);s+=`<circle cx="${x}" cy="${y}" r="3.5" fill="${v<0?'#DC2626':'#16A34A'}" onmouseenter="showTT(event,'${opts.labels[i]} net req: ${fmt(v)} u')" onmouseleave="hideTT()" style="cursor:pointer"/>`;});
+  data.forEach((v,i)=>{if(!isNum(v))return;const[x,y]=pt(v,i);s+=`<circle cx="${x}" cy="${y}" r="3.5" fill="${v<0?'#DC2626':'#16A34A'}" onmouseenter="showTT(event,'${opts.labels[i]} net req: ${fmtExact(v)} u')" onmouseleave="hideTT()" style="cursor:pointer"/>`;});
   data.forEach((v,i)=>{const[x]=pt(0,i);s+=`<text x="${x}" y="${H-3}" font-size="8.5" fill="${isNum(v)?'#8B95A5':'#C4CBD6'}" text-anchor="middle">${opts.labels[i]}</text>`;});
   s+='</svg>';el.innerHTML=s;
 }
@@ -1875,12 +1903,12 @@ function renderSKUTable(id,filter){
     return`<tr>
     <td><div class="sku-id">${sk.id}</div></td>
     <td style="color:var(--ink2)">${sk.name||'—'}</td>
-    <td class="num">${sk.dmd.toLocaleString('en-GB')}</td>
-    <td class="num">${inv?sk.oh.toLocaleString('en-GB'):'—'}</td>
-    <td class="num">${inv?sk.ss.toLocaleString('en-GB'):'—'}</td>
-    <td class="num" style="color:var(--blue);font-weight:700">${inv?sk.rop.toLocaleString('en-GB'):'—'}</td>
-    <td class="num" style="color:${inv&&sk.nr>0?'var(--red)':'var(--ink4)'}">${inv?(sk.nr||'-'):'—'}</td>
-    <td class="num" style="font-weight:${inv&&sk.rq?700:400};color:${inv&&sk.rq?'var(--ink)':'var(--ink4)'}">${inv?(sk.rq||'-'):'—'}</td>
+    <td class="num">${fmtExact(sk.dmd)}</td>
+    <td class="num">${inv?fmtExact(sk.oh):'—'}</td>
+    <td class="num">${inv?fmtExact(sk.ss):'—'}</td>
+    <td class="num" style="color:var(--blue);font-weight:700">${inv?fmtExact(sk.rop):'—'}</td>
+    <td class="num" style="color:${inv&&sk.nr>0?'var(--red)':'var(--ink4)'}">${inv?fmtExact(sk.nr):'—'}</td>
+    <td class="num" style="font-weight:${inv&&sk.rq?700:400};color:${inv&&sk.rq?'var(--ink)':'var(--ink4)'}">${inv?fmtExact(sk.rq):'—'}</td>
     <td>${inv?`<span class="sbadge ${sk.st}">${sk.st.charAt(0).toUpperCase()+sk.st.slice(1)}</span>`:`<span class="sbadge hold" style="opacity:.55">Pending</span>`}</td>
   </tr>`;}).join(''):`<tr><td colspan="9" style="text-align:center;padding:28px 0;color:var(--ink4);font-size:12px">No SKUs match this search</td></tr>`;
 }
