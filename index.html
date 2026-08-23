@@ -1358,6 +1358,7 @@ function normalizeStore(id, live){
     kpis: emptyKpis(),
     forecast: live.forecast || [],
     sensed:   live.sensed   || [],
+    weekKeys: live.weekKeys || [],
     gap:      new Array(weeks).fill(0),
     rop: 0,
     aiRecs: [],
@@ -1510,12 +1511,16 @@ function renderAllCharts(id){
   // the whole store's on-hand summed across every SKU, so "replenishment"
   // could reflect a completely different SKU's reorder that happened to
   // land in the same month, not the one you've filtered to.
+  // A series that exists but is all-null over the visible months means the
+  // inventory file covers no month currently on screen -- show the awaiting
+  // state rather than an empty set of axes.
+  const hasRealIn=arr=>Array.isArray(arr)&&arr.slice(0,n).some(v=>v!==null&&v!==undefined&&!isNaN(v));
   let invSource=null;
   if(currentSkuFilter==='all'){
-    if(s.hasInv && s.onHandSeries && s.onHandSeries.length) invSource=s;
+    if(s.hasInv && hasRealIn(s.onHandSeries)) invSource=s;
   } else {
     const selSku=(s.skus||[]).find(sk=>sk.id===currentSkuFilter);
-    if(selSku && selSku.hasInv && selSku.onHandSeries && selSku.onHandSeries.length){
+    if(selSku && selSku.hasInv && hasRealIn(selSku.onHandSeries)){
       invSource={onHandSeries:selSku.onHandSeries, ropSeries:selSku.ropSeries, replenQtySeries:selSku.replenQtySeries, gap:selSku.gapSeries, rop:selSku.rop};
     }
   }
@@ -1585,7 +1590,11 @@ function renderDualLine(cid,sensed,baseline,opts){
 function renderOnHand(cid,data,rop,opts){
   const b=svgBase(cid,400,160);if(!b)return;
   const{el,W,H}=b,pad={t:8,b:20,l:40,r:6},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b,n=data.length;
-  const mx=Math.max(...data,rop)*1.1||1,yS=niceStep(mx/4),yM=Math.ceil(mx/yS)*yS;
+  // null = the inventory file has no row for that month; it is drawn as an
+  // empty slot rather than a zero bar.
+  const real=data.filter(v=>v!==null&&v!==undefined&&!isNaN(v));
+  if(!real.length){el.innerHTML='';return;}
+  const mx=Math.max(...real,rop)*1.1||1,yS=niceStep(mx/4),yM=Math.ceil(mx/yS)*yS;
   const gap=cw*0.06/(n+1),bw=(cw-gap*(n+1))/n;
   let s=`<svg width="${W}" height="${H}"><defs>
     <linearGradient id="boh${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#94A3B8" stop-opacity=".7"/><stop offset="100%" stop-color="#94A3B8" stop-opacity=".3"/></linearGradient>
@@ -1599,7 +1608,12 @@ function renderOnHand(cid,data,rop,opts){
   // green portion if your file actually recorded a replenishment then.
   const replenQty=opts.replenQty||[];
   data.forEach((v,i)=>{
-    const bh=Math.max(3,(v/yM)*ch),x=pad.l+gap+i*(bw+gap),y=pad.t+ch-bh;
+    const x=pad.l+gap+i*(bw+gap);
+    if(v===null||v===undefined||isNaN(v)){
+      s+=`<text x="${x+bw/2}" y="${H-3}" font-size="8.5" fill="#C4CBD6" text-anchor="middle">${opts.labels[i]}</text>`;
+      return;
+    }
+    const bh=Math.max(3,(v/yM)*ch),y=pad.t+ch-bh;
     const rq=replenQty[i]||0;
     const isReplen=rq>0 && v>0;
     // Base bar: on-hand minus the portion that was this month's replenishment
@@ -1618,7 +1632,10 @@ function renderOnHand(cid,data,rop,opts){
 function renderGap(cid,data,opts){
   const b=svgBase(cid,400,160);if(!b)return;
   const{el,W,H}=b,pad={t:8,b:20,l:40,r:6},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b,n=data.length;
-  const mx=Math.max(...data,200),mn=Math.min(...data,-200),rng=mx-mn||1;
+  const isNum=v=>v!==null&&v!==undefined&&!isNaN(v);
+  const real=data.filter(isNum);
+  if(!real.length){el.innerHTML='';return;}
+  const mx=Math.max(...real,200),mn=Math.min(...real,-200),rng=mx-mn||1;
   const pt=(v,i)=>[pad.l+(n>1?(i/(n-1)):0.5)*cw,pad.t+ch-((v-mn)/rng)*ch];
   const zY=pad.t+ch-((0-mn)/rng)*ch;
   const yS=niceStep((mx-mn)/4),yB=Math.floor(mn/yS)*yS;
@@ -1629,13 +1646,26 @@ function renderGap(cid,data,opts){
     <clipPath id="cpos${cid}"><rect x="${pad.l}" y="${pad.t}" width="${cw}" height="${Math.max(0,zY-pad.t)}"/></clipPath>
   </defs>`;
   for(let i=0;i<=4;i++){const yv=yB+i*yS,y=pad.t+ch-((yv-mn)/rng)*ch;if(y<pad.t-2||y>pad.t+ch+2)continue;s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="${Math.abs(yv)<1?'#C8D0DB':'#E8ECF1'}" stroke-width="${Math.abs(yv)<1?1.5:1}"/><text x="${pad.l-4}" y="${y+4}" font-size="8.5" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;}
-  const lPts=data.map(pt),pathD=`M${lPts[0].join(',')} ${lPts.slice(1).map(p=>`L${p.join(',')}`).join(' ')} L${lPts[n-1][0]},${zY} L${lPts[0][0]},${zY}Z`;
-  s+=`<path d="${pathD}" fill="url(#gpos${cid})" clip-path="url(#cpos${cid})"/>`;
-  s+=`<path d="${pathD}" fill="url(#gneg${cid})" clip-path="url(#cneg${cid})"/>`;
+  // Draw each unbroken run of real months on its own -- the line must not
+  // bridge a month the inventory file simply has no row for.
+  const runs=[]; let cur=null;
+  data.forEach((v,i)=>{
+    if(!isNum(v)){ cur=null; return; }
+    if(!cur){ cur=[]; runs.push(cur); }
+    cur.push(i);
+  });
   s+=`<line x1="${pad.l}" y1="${zY}" x2="${W-pad.r}" y2="${zY}" stroke="#1C2128" stroke-width="1" stroke-dasharray="3 3" opacity=".18"/>`;
-  s+=`<polyline points="${lPts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
-  data.forEach((v,i)=>{const[x,y]=pt(v,i);s+=`<circle cx="${x}" cy="${y}" r="3.5" fill="${v<0?'#DC2626':'#16A34A'}" onmouseenter="showTT(event,'${opts.labels[i]} net req: ${fmt(v)} u')" onmouseleave="hideTT()" style="cursor:pointer"/>`;});
-  data.forEach((_,i)=>{const[x]=pt(0,i);s+=`<text x="${x}" y="${H-3}" font-size="8.5" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;});
+  runs.forEach(run=>{
+    const p=run.map(i=>pt(data[i],i));
+    if(p.length>1){
+      const pathD=`M${p[0].join(',')} ${p.slice(1).map(q=>`L${q.join(',')}`).join(' ')} L${p[p.length-1][0]},${zY} L${p[0][0]},${zY}Z`;
+      s+=`<path d="${pathD}" fill="url(#gpos${cid})" clip-path="url(#cpos${cid})"/>`;
+      s+=`<path d="${pathD}" fill="url(#gneg${cid})" clip-path="url(#cneg${cid})"/>`;
+      s+=`<polyline points="${p.map(q=>q.join(',')).join(' ')}" fill="none" stroke="#DC2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    }
+  });
+  data.forEach((v,i)=>{if(!isNum(v))return;const[x,y]=pt(v,i);s+=`<circle cx="${x}" cy="${y}" r="3.5" fill="${v<0?'#DC2626':'#16A34A'}" onmouseenter="showTT(event,'${opts.labels[i]} net req: ${fmt(v)} u')" onmouseleave="hideTT()" style="cursor:pointer"/>`;});
+  data.forEach((v,i)=>{const[x]=pt(0,i);s+=`<text x="${x}" y="${H-3}" font-size="8.5" fill="${isNum(v)?'#8B95A5':'#C4CBD6'}" text-anchor="middle">${opts.labels[i]}</text>`;});
   s+='</svg>';el.innerHTML=s;
 }
 
@@ -2436,9 +2466,14 @@ function dhSlug(name){
    representations collapse to the same key. */
 function dhDateStr(v){
   if(v instanceof Date){
-    // SheetJS builds date-only cells as UTC midnight -- read back via the
-    // UTC getters so we don't get shifted by the local timezone.
-    return new Date(Date.UTC(v.getUTCFullYear(), v.getUTCMonth(), v.getUTCDate())).toISOString().slice(0,10);
+    // A date-only cell always means some midnight, but SheetJS may hand it
+    // back as local midnight OR as UTC midnight nudged by the timezone
+    // offset. Reading UTC getters in a UTC+ timezone (e.g. IST) silently
+    // moved every date to the previous day. Rounding to the nearest local
+    // midnight recovers the intended calendar day in either case.
+    const d=new Date(v.getTime());
+    if(d.getHours()>=12) d.setDate(d.getDate()+1);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
   if(typeof v === 'number' && isFinite(v)){
     const EXCEL_EPOCH_UTC = Date.UTC(1899, 11, 30);
@@ -2582,6 +2617,10 @@ function dhAggregateData(wb, sheetName){
     result[dhSlug(store)]={
       name:store, forecast:forecastArr, sensed:sensedArr,
       signals, uplift:promoPct, skus, weeks:numWeeks,
+      // Actual calendar months behind index 0..numWeeks-1, so the inventory
+      // file (which has its own, possibly different, month set) can be lined
+      // up against the same months these demand series use.
+      weekKeys: Object.keys(weekIdx[store]).sort(),
       demandCustomers: storeCustomers[store] ? Array.from(storeCustomers[store]).sort() : [],
       customerSkuSeries,
     };
@@ -2662,6 +2701,7 @@ function dhAggregateInventory(wb, sheetName){
     result[dhSlug(store)] = {
       name: store,
       weeks: Object.keys(weekIdx[store]).length,
+      weekKeys: Object.keys(weekIdx[store]).sort(),
       customers: Array.from(storeCustomers[store]||[]).sort(),
       cell: cell[store] || {},
       skuNames: storeSkuNames[store] || {},
@@ -2717,7 +2757,20 @@ function applyCustomerFilterToStores(storeId){
   }
 
   const customers = currentCustomerFilter==='all' ? inv.customers : [currentCustomerFilter];
-  const numWeeks = inv.weeks;
+
+  // Chart months come from the demand file. The inventory file keeps its own
+  // month set, which can start later, end earlier, or skip months entirely
+  // (inventory is usually actuals-to-date while demand runs into the future).
+  // Line the two up by actual calendar month, so on-hand at "M3" is the same
+  // month the demand bars call "M3". Months with no inventory row stay null --
+  // a genuine gap in the line, never a fabricated zero.
+  const axis = (store.weekKeys && store.weekKeys.length) ? store.weekKeys : (inv.weekKeys||[]);
+  const axisPos = {};
+  axis.forEach((d,i)=>{ axisPos[d]=i; });
+  const invKeys = inv.weekKeys || [];
+  const invToAxis = invKeys.map(d => (d in axisPos) ? axisPos[d] : -1);
+  const N = axis.length;
+  const addAt = (arr,i,v)=>{ arr[i] = (arr[i]===null?0:arr[i]) + v; };
 
   // Inventory can reference SKUs the demand file doesn't have (yet) -- add
   // them to the table (with dmd:0, genuinely unknown, not fabricated)
@@ -2739,24 +2792,32 @@ function applyCustomerFilterToStores(storeId){
     // uses, so "replenishment" there always reflects this SKU's own ROP
     // crossing, not some unrelated SKU's reorder that happened to land in
     // the same month.
-    const skOnHand=new Array(numWeeks).fill(0), skRop=new Array(numWeeks).fill(0), skReplenQty=new Array(numWeeks).fill(0);
+    const skOnHand=new Array(N).fill(null), skRop=new Array(N).fill(null), skReplenQty=new Array(N).fill(null);
     customers.forEach(cust=>{
       const bySkuAtCust=inv.cell[cust]||{};
       const cellForSku=bySkuAtCust[sk.id];
       if(!cellForSku) return;
-      for(let w=0; w<numWeeks; w++){
+      for(let w=0; w<invKeys.length; w++){
         const c=cellForSku[w];
         if(!c) continue;
-        skOnHand[w]+=c.onHand; skRop[w]+=c.rop; skReplenQty[w]+=c.replenQty;
+        const a=invToAxis[w];
+        if(a<0) continue;
+        addAt(skOnHand,a,c.onHand); addAt(skRop,a,c.rop); addAt(skReplenQty,a,c.replenQty);
       }
-      const latest=cellForSku[numWeeks-1];
-      if(!latest) return;
-      found=true;
-      oh+=latest.onHand; ss+=latest.ss; rop+=latest.rop; rq+=latest.replenQty;
+      // "Current" figures come from the most recent month this SKU/customer
+      // actually has a row for -- not blindly the file's last month, which
+      // may simply be missing for this particular combination.
+      for(let w=invKeys.length-1; w>=0; w--){
+        const c=cellForSku[w];
+        if(!c) continue;
+        found=true;
+        oh+=c.onHand; ss+=c.ss; rop+=c.rop; rq+=c.replenQty;
+        break;
+      }
     });
     sk.hasInv=found;
     sk.onHandSeries=skOnHand; sk.ropSeries=skRop; sk.replenQtySeries=skReplenQty;
-    sk.gapSeries=skOnHand.map((v,i)=>Math.round(v-(skRop[i]||0)));
+    sk.gapSeries=skOnHand.map((v,i)=> v===null ? null : Math.round(v-(skRop[i]||0)));
     if(found){
       sk.oh=oh; sk.ss=ss; sk.rop=rop; sk.rq=rq;
       sk.nr=Math.max(0, rop-oh);
@@ -2764,27 +2825,28 @@ function applyCustomerFilterToStores(storeId){
     }
   });
 
-  const onHandArr=[], ropArr=[], replenQtyArr=[];
-  let anyMonth=false;
-  for(let w=0; w<numWeeks; w++){
-    let oh=0, rop=0, rq=0;
+  const onHandArr=new Array(N).fill(null), ropArr=new Array(N).fill(null), replenQtyArr=new Array(N).fill(null);
+  let anyMonth=false, lastFilled=-1;
+  for(let w=0; w<invKeys.length; w++){
+    const a=invToAxis[w];
+    if(a<0) continue;
     customers.forEach(cust=>{
       const bySku=inv.cell[cust]||{};
       Object.keys(bySku).forEach(skuId=>{
         const c=bySku[skuId][w];
-        if(c){ oh+=c.onHand; rop+=c.rop; rq+=c.replenQty; anyMonth=true; }
+        if(c){ addAt(onHandArr,a,c.onHand); addAt(ropArr,a,c.rop); addAt(replenQtyArr,a,c.replenQty); anyMonth=true; }
       });
     });
-    onHandArr.push(oh); ropArr.push(rop); replenQtyArr.push(rq);
+    if(onHandArr[a]!==null) lastFilled=a;
   }
 
   store.hasInv = anyMonth;
   store.onHandSeries = onHandArr;
   store.ropSeries = ropArr;
   store.replenQtySeries = replenQtyArr;
-  store.rop = ropArr.length ? ropArr[ropArr.length-1] : 0;
-  store.onHand = onHandArr.length ? onHandArr[onHandArr.length-1] : 0;
-  store.gap = onHandArr.map((v,i)=>Math.round(v-(ropArr[i]||0)));
+  store.rop = lastFilled>=0 ? (ropArr[lastFilled]||0) : 0;
+  store.onHand = lastFilled>=0 ? (onHandArr[lastFilled]||0) : 0;
+  store.gap = onHandArr.map((v,i)=> v===null ? null : Math.round(v-(ropArr[i]||0)));
 }
 
 function dhMergeInventory(liveInv){
