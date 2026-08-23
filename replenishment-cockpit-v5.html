@@ -1051,6 +1051,14 @@ body{
         <option value="all">All Items</option>
       </select>
     </div>
+    <!-- Customer filter (from inventory data; hidden until inventory data with customers is loaded) -->
+    <div class="tnav-node" id="customer-filter-node" style="display:none">
+      <span class="tnav-node-lbl">CUSTOMER</span>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8592A3" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <select id="customerFilterSelect" onchange="selectCustomerFilter(this.value)" style="appearance:none;border:none;outline:none;font-family:'Inter',sans-serif;font-size:12px;color:var(--ink);background:transparent;cursor:pointer;font-weight:600;max-width:160px">
+        <option value="all">All Customers</option>
+      </select>
+    </div>
     <!-- Divider -->
     <div class="tnav-sep"></div>
     <!-- Refresh from source file -->
@@ -1130,7 +1138,7 @@ body{
     </div>
     <div class="chart-panel">
       <div class="chart-head">
-        <div><div class="chart-title">Demand sensing vs baseline</div><div class="chart-sub">Daily sensing overlay · signal recalculated · dashed = baseline  solid = sensed</div></div>
+        <div><div class="chart-title">Demand sensing vs baseline</div><div class="chart-sub">Monthly overlay · dashed = baseline · solid = sensed</div></div>
         <span class="ai-tag">AI sensing</span>
       </div>
       <div class="chart-area" id="chart2"></div>
@@ -1142,15 +1150,25 @@ body{
     </div>
     <div class="chart-panel">
       <div class="chart-head">
-        <div><div class="chart-title">On-hand inventory (M1–M8)</div><div class="chart-sub">Projected draw-down + planned replenishment cycles</div></div>
+        <div><div class="chart-title">On-hand inventory (M1–M8)</div><div class="chart-sub">Actual on-hand vs ROP, from your inventory file</div></div>
       </div>
-      <div class="pending-card">Awaiting inventory data<br><b>On-hand, in-transit and ROP</b> have not been uploaded yet.</div>
+      <div class="chart-area" id="chart3"></div>
+      <div class="pending-card" id="chart3-pending">Awaiting inventory data<br><b>On-hand and ROP</b> have not been loaded for this store yet.</div>
+      <div class="chart-legend" id="chart3-legend" style="display:none">
+        <div class="leg-item"><span class="leg-bar" style="background:#94A3B8;opacity:.65"></span>On-hand</div>
+        <div class="leg-item" style="gap:3px"><span style="border-top:1.5px dashed var(--amber);width:16px;display:inline-block"></span>ROP</div>
+      </div>
     </div>
     <div class="chart-panel">
       <div class="chart-head">
-        <div><div class="chart-title">Inventory gap / net requirement</div><div class="chart-sub">Shortfalls dropping below reorder point (ROP)</div></div>
+        <div><div class="chart-title">Inventory gap / net requirement</div><div class="chart-sub">On-hand minus ROP, from your inventory file</div></div>
       </div>
-      <div class="pending-card">Awaiting inventory data<br><b>Net requirement</b> needs on-hand + safety stock to compute.</div>
+      <div class="chart-area" id="chart4"></div>
+      <div class="pending-card" id="chart4-pending">Awaiting inventory data<br><b>Net requirement</b> needs on-hand + ROP to compute.</div>
+      <div class="chart-legend" id="chart4-legend" style="display:none">
+        <div class="leg-item"><span style="width:9px;height:9px;background:var(--red);opacity:.4;border-radius:2px;display:inline-block"></span>Shortfall</div>
+        <div class="leg-item"><span style="width:9px;height:9px;background:var(--green);opacity:.35;border-radius:2px;display:inline-block"></span>Surplus</div>
+      </div>
     </div>
   </div>
   <!-- AI Strip -->
@@ -1202,18 +1220,13 @@ body{
       <div class="store-card">
         <div class="store-name-lg" id="s2-store-name">Store</div>
         <div class="store-meta" id="s2-store-meta" style="display:none"></div>
-        <div class="cap-donut-wrap" style="display:none">
-          <div class="cap-donut">
-            <svg viewBox="0 0 68 68"><circle cx="34" cy="34" r="28" fill="none" stroke="var(--surface3)" stroke-width="7"/><circle id="donut-arc" cx="34" cy="34" r="28" fill="none" stroke="var(--blue)" stroke-width="7" stroke-linecap="round" stroke-dasharray="175.9" stroke-dashoffset="175.9" transform="rotate(-90 34 34)"/></svg>
-            <div class="cap-donut-center"><div class="cap-donut-pct" id="s2-cap-pct">—</div><div class="cap-donut-lbl">cap</div></div>
-          </div>
-          <div class="cap-kv">
-            <div class="cap-kv-row"><span class="cap-kv-k">On-hand</span><span class="cap-kv-v" id="s2-onhand">—</span></div>
-            <div class="cap-kv-row"><span class="cap-kv-k">In-transit</span><span class="cap-kv-v" id="s2-intransit">—</span></div>
-            <div class="cap-kv-row"><span class="cap-kv-k">Open-to-ship</span><span class="cap-kv-v" id="s2-ots">—</span></div>
-          </div>
+        <div class="cap-kv" id="s2-inv-stats" style="display:none">
+          <div class="cap-kv-row"><span class="cap-kv-k">On-hand (total)</span><span class="cap-kv-v" id="s2-onhand">—</span></div>
+          <div class="cap-kv-row"><span class="cap-kv-k">Safety stock (total)</span><span class="cap-kv-v" id="s2-ss">—</span></div>
+          <div class="cap-kv-row"><span class="cap-kv-k">ROP (total)</span><span class="cap-kv-v" id="s2-rop">—</span></div>
+          <div class="cap-kv-row"><span class="cap-kv-k">Customer</span><span class="cap-kv-v" id="s2-customer">—</span></div>
         </div>
-        <div class="pending-card" style="padding:18px 14px;font-size:11.5px">Awaiting inventory data<br><b>On-hand, in-transit &amp; capacity</b> not uploaded yet.</div>
+        <div class="pending-card" id="s2-inv-pending" style="padding:18px 14px;font-size:11.5px">Awaiting inventory data<br><b>On-hand, safety stock &amp; ROP</b> not loaded yet.</div>
       </div>
       <div class="store-card">
         <div class="sec-label">Active demand signals</div>
@@ -1231,7 +1244,8 @@ body{
           <table class="data-table">
             <thead><tr>
               <th>SKU</th><th>Product</th><th class="r">Sensed dmd/mo</th>
-              <th class="r" style="color:var(--ink4)">On-hand</th><th class="r" style="color:var(--ink4)">Net req.</th><th style="color:var(--ink4)">Status</th>
+              <th class="r">On-hand</th><th class="r">Safety stock</th><th class="r" style="color:var(--blue)">ROP</th>
+              <th class="r">Net req.</th><th class="r">Replen qty</th><th>Status</th>
             </tr></thead>
             <tbody id="sku-tbody"></tbody>
           </table>
@@ -1355,6 +1369,8 @@ function normalizeStore(id, live){
         forecast: sk.forecast || [], sensed: sk.sensed || [], uplift: sk.uplift || 0,
       };
     }),
+    demandCustomers: live.demandCustomers || [],
+    customerSkuSeries: live.customerSkuSeries || {},
   };
 }
 
@@ -1400,6 +1416,9 @@ function selectStore(id){
   currentStore=id;
   $id('storeSelect').value=id;
   initSkuDropdown(id);
+  populateCustomerSelector(id);
+  applyCustomerFilterToStores(id);
+  buildSkuDataFromStores(); // customer filter just reset to 'all' for this store -- refresh demand snapshots
 
   // Sync location filter chips
   document.querySelectorAll('.loc-chip').forEach(c=>c.classList.remove('on'));
@@ -1480,22 +1499,26 @@ function renderAllCharts(id){
   const s=STORES[id],n=currentHorizon;
   const wk=Array.from({length:n},(_,i)=>'M'+(i+1));
   renderStackedBar('chart1',s.forecast.slice(0,n),s.sensed.slice(0,n),{labels:wk});
-  // Chart 2: daily Mon–Sun for current week (like the reference)
-  const dailyLabels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const dailyFactors=[0.82,0.91,0.97,1.18,1.08,1.32,0.68];
-  const weekAvgBase=s.forecast[0]/7, weekAvgSensed=s.sensed[0]/7;
-  const dailyBase=dailyFactors.map(f=>Math.round(weekAvgBase*f*4.2));
-  const dailySensed=dailyFactors.map(f=>Math.round(weekAvgSensed*f*4.2));
-  renderDualLine('chart2',dailySensed,dailyBase,{labels:dailyLabels,uplift:s.uplift});
-  renderOnHand('chart3',computeOH(s).slice(0,n),s.rop,{labels:wk});
-  renderGap('chart4',s.gap.slice(0,n),{labels:wk});
-  set('uplift-badge','+'+s.uplift+'% vs baseline');
-}
+  // Chart 2: same real monthly baseline/sensed series as chart1, just as a
+  // line comparison instead of a bar -- no fabricated daily breakdown.
+  renderDualLine('chart2',s.sensed.slice(0,n),s.forecast.slice(0,n),{labels:wk,uplift:s.uplift});
 
-function computeOH(s){
-  let oh=s.onHand;const r=[];
-  for(let i=0;i<8;i++){r.push(Math.max(0,oh));oh-=s.forecast[i]*0.82;if(i===3)oh+=s.onHand*0.44;}
-  return r;
+  const inv3=$id('chart3-pending'), leg3=$id('chart3-legend');
+  const inv4=$id('chart4-pending'), leg4=$id('chart4-legend');
+  if(s.hasInv && s.onHandSeries && s.onHandSeries.length){
+    if(inv3) inv3.style.display='none';
+    if(leg3) leg3.style.display='flex';
+    renderOnHand('chart3',s.onHandSeries.slice(0,n),s.rop,{labels:wk,replenQty:(s.replenQtySeries||[]).slice(0,n)});
+    if(inv4) inv4.style.display='none';
+    if(leg4) leg4.style.display='flex';
+    renderGap('chart4',s.gap.slice(0,n),{labels:wk});
+  } else {
+    if(inv3) inv3.style.display='block';
+    if(leg3) leg3.style.display='none';
+    if(inv4) inv4.style.display='block';
+    if(leg4) leg4.style.display='none';
+  }
+  set('uplift-badge','+'+s.uplift+'% vs baseline');
 }
 
 function svgBase(cid,W,H){const el=$id(cid);if(!el)return null;return{el,W:el.clientWidth||W,H:el.clientHeight||H}}
@@ -1530,7 +1553,7 @@ function renderDualLine(cid,sensed,baseline,opts){
   const b=svgBase(cid,400,160);if(!b)return;
   const{el,W,H}=b,pad={t:8,b:20,l:36,r:6},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b,n=sensed.length;
   const all=[...sensed,...baseline],mx=Math.max(...all)*1.06,mn=Math.min(...all)*0.95,rng=mx-mn||1;
-  const pt=(v,i)=>[pad.l+(i/(n-1))*cw,pad.t+ch-((v-mn)/rng)*ch];
+  const pt=(v,i)=>[pad.l+(n>1?(i/(n-1)):0.5)*cw,pad.t+ch-((v-mn)/rng)*ch];
   const yS=niceStep((mx-mn)/4),yB=Math.floor(mn/yS)*yS;
   let s=`<svg width="${W}" height="${H}"><defs><linearGradient id="area${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563EB" stop-opacity=".12"/><stop offset="100%" stop-color="#2563EB" stop-opacity=".01"/></linearGradient></defs>`;
   for(let i=0;i<=4;i++){const yv=yB+i*yS,y=pad.t+ch-((yv-mn)/rng)*ch;if(y<pad.t-2||y>pad.t+ch+2)continue;s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#E8ECF1" stroke-width="1"/><text x="${pad.l-4}" y="${y+4}" font-size="8.5" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;}
@@ -1555,19 +1578,22 @@ function renderOnHand(cid,data,rop,opts){
   for(let i=0;i<=4;i++){const yv=(i/4)*yM,y=pad.t+ch-(yv/yM)*ch;s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#E8ECF1" stroke-width="1"/><text x="${pad.l-4}" y="${y+4}" font-size="8.5" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;}
   const ropy=pad.t+ch-(rop/yM)*ch;
   s+=`<line x1="${pad.l}" y1="${ropy}" x2="${W-pad.r}" y2="${ropy}" stroke="#D97706" stroke-width="1.5" stroke-dasharray="4 3"/><text x="${W-pad.r-2}" y="${ropy-3}" font-size="8" fill="#D97706" text-anchor="end">ROP</text>`;
-  // Replen entries at W2, W4, W6, W8 (every other week)
-  const replenWeeks=[1,3,5,7];
+  // "Replen entry" highlight uses the real Replenishment quantity for that
+  // month (opts.replenQty), not a guessed pattern -- a month only shows the
+  // green portion if your file actually recorded a replenishment then.
+  const replenQty=opts.replenQty||[];
   data.forEach((v,i)=>{
     const bh=Math.max(3,(v/yM)*ch),x=pad.l+gap+i*(bw+gap),y=pad.t+ch-bh;
-    const isReplen=replenWeeks.includes(i);
-    // Base bar
-    const baseH=isReplen?Math.max(3,(v*0.6/yM)*ch):bh;
-    s+=`<rect x="${x}" y="${pad.t+ch-baseH}" width="${bw}" height="${baseH}" rx="2" fill="url(#boh${cid})" onclick="showInventoryDrillDown(${i})" onmouseenter="showTT(event,'${opts.labels[i]} on-hand: ${fmt(v)} u — click to drill down')" onmouseleave="hideTT()" style="cursor:pointer"/>`;
+    const rq=replenQty[i]||0;
+    const isReplen=rq>0 && v>0;
+    // Base bar: on-hand minus the portion that was this month's replenishment
+    const baseV=isReplen?Math.max(0,v-rq):v;
+    const baseH=isReplen?Math.max(3,(baseV/yM)*ch):bh;
+    s+=`<rect x="${x}" y="${pad.t+ch-baseH}" width="${bw}" height="${baseH}" rx="2" fill="url(#boh${cid})" onmouseenter="showTT(event,'${opts.labels[i]} on-hand: ${fmt(v)} u')" onmouseleave="hideTT()"/>`;
     if(isReplen){
       const rh=bh-baseH;
-      s+=`<rect x="${x}" y="${pad.t+ch-bh}" width="${bw}" height="${rh}" rx="2" fill="url(#brp${cid})" style="cursor:pointer"/>`;
+      s+=`<rect x="${x}" y="${pad.t+ch-bh}" width="${bw}" height="${rh}" rx="2" fill="url(#brp${cid})" onmouseenter="showTT(event,'${opts.labels[i]} replenishment: +${fmt(rq)} u')" onmouseleave="hideTT()"/>`;
     }
-    s+=`<text x="${x+bw/2}" y="${y-4}" font-size="7" fill="var(--blue)" text-anchor="middle" opacity=".8">▼</text>`;
     s+=`<text x="${x+bw/2}" y="${H-3}" font-size="8.5" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;
   });
   s+='</svg>';el.innerHTML=s;
@@ -1577,7 +1603,7 @@ function renderGap(cid,data,opts){
   const b=svgBase(cid,400,160);if(!b)return;
   const{el,W,H}=b,pad={t:8,b:20,l:40,r:6},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b,n=data.length;
   const mx=Math.max(...data,200),mn=Math.min(...data,-200),rng=mx-mn||1;
-  const pt=(v,i)=>[pad.l+(i/(n-1))*cw,pad.t+ch-((v-mn)/rng)*ch];
+  const pt=(v,i)=>[pad.l+(n>1?(i/(n-1)):0.5)*cw,pad.t+ch-((v-mn)/rng)*ch];
   const zY=pad.t+ch-((0-mn)/rng)*ch;
   const yS=niceStep((mx-mn)/4),yB=Math.floor(mn/yS)*yS;
   let s=`<svg width="${W}" height="${H}"><defs>
@@ -1761,7 +1787,36 @@ function renderStoreDetail(id){
       </div>
       <div class="sig-track"><div class="sig-fill ${sigCls[sig.t]}" style="width:${sig.on?Math.min(100,(sig.pct/6)*100):0}%;opacity:${sig.on?1:0.25}"></div></div>
     </div>`).join('');
-  const stEl=$id('s2-sensing-text');if(stEl) stEl.innerHTML=`Demand is tracking <strong>+${s.uplift}%</strong> above forecast this week, driven by active signals below.`;
+  const stEl=$id('s2-sensing-text');if(stEl) stEl.innerHTML=`Demand is tracking <strong>+${s.uplift}%</strong> above forecast this month, driven by active signals below.`;
+
+  const invStatsEl=$id('s2-inv-stats'), invPendingEl=$id('s2-inv-pending');
+  if(s.hasInv){
+    if(invStatsEl) invStatsEl.style.display='block';
+    if(invPendingEl) invPendingEl.style.display='none';
+    const totalOh = s.skus.reduce((a,sk)=>a+(sk.hasInv?sk.oh:0),0);
+    const totalSs = s.skus.reduce((a,sk)=>a+(sk.hasInv?sk.ss:0),0);
+    const totalRop = s.skus.reduce((a,sk)=>a+(sk.hasInv?sk.rop:0),0);
+    set('s2-onhand', totalOh.toLocaleString('en-GB')+' u');
+    set('s2-ss', totalSs.toLocaleString('en-GB')+' u');
+    set('s2-rop', totalRop.toLocaleString('en-GB')+' u');
+    set('s2-customer', currentCustomerFilter==='all' ? 'All customers' : currentCustomerFilter);
+  } else {
+    if(invStatsEl) invStatsEl.style.display='none';
+    if(invPendingEl) invPendingEl.style.display='block';
+  }
+
+  const ftEl=$id('s2-footer-text');
+  if(ftEl){
+    if(s.hasInv){
+      const flagged=s.skus.filter(sk=>sk.hasInv && (sk.st==='replenish'||sk.st==='low'));
+      ftEl.innerHTML = flagged.length
+        ? `<strong>${flagged.length} SKU${flagged.length>1?'s':''} flagged for replenishment</strong> · from your inventory file · Location ${s.name}`
+        : `<strong>No SKUs currently flagged for replenishment</strong> · all on-hand levels are above ROP`;
+    } else {
+      ftEl.innerHTML = `Replenishment status needs <b>on-hand inventory data</b> — not available yet.`;
+    }
+  }
+
   renderSKUTable(id,skuFilter);
 }
 
@@ -1770,14 +1825,18 @@ function renderSKUTable(id,filter){
   const tbody=$id('sku-tbody');if(!tbody)return;
   const rows=s.skus.filter(sk=>sk.id.toLowerCase().includes(search)||(sk.name||'').toLowerCase().includes(search));
   tbody.innerHTML=rows.length?rows.map(sk=>{
+    const inv=sk.hasInv;
     return`<tr>
     <td><div class="sku-id">${sk.id}</div></td>
     <td style="color:var(--ink2)">${sk.name||'—'}</td>
     <td class="num">${sk.dmd.toLocaleString('en-GB')}</td>
-    <td class="num" style="color:var(--ink5)">—</td>
-    <td class="num" style="color:var(--ink5)">—</td>
-    <td><span class="sbadge hold" style="opacity:.55">Pending</span></td>
-  </tr>`;}).join(''):`<tr><td colspan="6" style="text-align:center;padding:28px 0;color:var(--ink4);font-size:12px">No SKUs match this search</td></tr>`;
+    <td class="num">${inv?sk.oh.toLocaleString('en-GB'):'—'}</td>
+    <td class="num">${inv?sk.ss.toLocaleString('en-GB'):'—'}</td>
+    <td class="num" style="color:var(--blue);font-weight:700">${inv?sk.rop.toLocaleString('en-GB'):'—'}</td>
+    <td class="num" style="color:${inv&&sk.nr>0?'var(--red)':'var(--ink4)'}">${inv?(sk.nr||'-'):'—'}</td>
+    <td class="num" style="font-weight:${inv&&sk.rq?700:400};color:${inv&&sk.rq?'var(--ink)':'var(--ink4)'}">${inv?(sk.rq||'-'):'—'}</td>
+    <td>${inv?`<span class="sbadge ${sk.st}">${sk.st.charAt(0).toUpperCase()+sk.st.slice(1)}</span>`:`<span class="sbadge hold" style="opacity:.55">Pending</span>`}</td>
+  </tr>`;}).join(''):`<tr><td colspan="9" style="text-align:center;padding:28px 0;color:var(--ink4);font-size:12px">No SKUs match this search</td></tr>`;
 }
 
 /* ════════ FILTERS ════════ */
@@ -2397,6 +2456,11 @@ function dhAggregateData(wb, sheetName){
   });
 
   const storeWeek={}, storeSkuWeek={}, storeSkuNames={};
+  // Customer Name is optional on the demand file -- only populated (and
+  // only used to drive the Customer filter's charts) when the column is
+  // actually present in this particular file.
+  const storeCustomerSkuWeek={}, storeCustomers={};
+  const hasCustomerCol = rows.length>0 && ('Customer Name' in rows[0]);
 
   rows.forEach(r=>{
     const store=String(r['Store Name']||'').trim();
@@ -2418,6 +2482,20 @@ function dhAggregateData(wb, sheetName){
     if(!storeSkuWeek[store][skuId]) storeSkuWeek[store][skuId]={};
     if(!storeSkuWeek[store][skuId][wi]) storeSkuWeek[store][skuId][wi]={baseline:0,promo:0};
     storeSkuWeek[store][skuId][wi].baseline+=bl; storeSkuWeek[store][skuId][wi].promo+=pr;
+
+    if(hasCustomerCol){
+      const customer=String(r['Customer Name']||'').trim();
+      if(customer){
+        if(!storeCustomers[store]) storeCustomers[store]=new Set();
+        storeCustomers[store].add(customer);
+        if(!storeCustomerSkuWeek[store]) storeCustomerSkuWeek[store]={};
+        if(!storeCustomerSkuWeek[store][customer]) storeCustomerSkuWeek[store][customer]={};
+        if(!storeCustomerSkuWeek[store][customer][skuId]) storeCustomerSkuWeek[store][customer][skuId]={};
+        if(!storeCustomerSkuWeek[store][customer][skuId][wi]) storeCustomerSkuWeek[store][customer][skuId][wi]={baseline:0,promo:0};
+        storeCustomerSkuWeek[store][customer][skuId][wi].baseline+=bl;
+        storeCustomerSkuWeek[store][customer][skuId][wi].promo+=pr;
+      }
+    }
   });
 
   const result={};
@@ -2460,12 +2538,238 @@ function dhAggregateData(wb, sheetName){
         forecast:skuForecast, sensed:skuSensed, uplift:skuUplift,
       };
     });
+    // Per-customer, per-SKU series -- only built when the file actually has
+    // a Customer Name column. Same shape as the per-SKU series above, just
+    // scoped to one customer's rows instead of the whole store.
+    const customerSkuSeries={};
+    (storeCustomers[store]?Array.from(storeCustomers[store]):[]).forEach(customer=>{
+      customerSkuSeries[customer]={};
+      const bySku=(storeCustomerSkuWeek[store]||{})[customer]||{};
+      Object.keys(bySku).forEach(skuId=>{
+        const skuWeeks=bySku[skuId];
+        const cf=[], cs=[];
+        for(let w=0; w<numWeeks; w++){
+          const d=skuWeeks[w]||{baseline:0,promo:0};
+          cf.push(Math.round(d.baseline*100)/100);
+          cs.push(Math.round((d.baseline+d.promo)*100)/100);
+        }
+        const cLatest=skuWeeks[latest]||{baseline:0,promo:0};
+        const cBlLatest=cLatest.baseline||1;
+        const cUplift=Math.round((cLatest.promo/cBlLatest)*1000)/10;
+        customerSkuSeries[customer][skuId]={
+          dmd:Math.round(cLatest.baseline*100)/100,
+          forecast:cf, sensed:cs, uplift:cUplift,
+        };
+      });
+    });
+
     result[dhSlug(store)]={
       name:store, forecast:forecastArr, sensed:sensedArr,
       signals, uplift:promoPct, skus, weeks:numWeeks,
+      demandCustomers: storeCustomers[store] ? Array.from(storeCustomers[store]).sort() : [],
+      customerSkuSeries,
     };
   });
   return result;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   INVENTORY — second, separate source file (ROP, Safety stock,
+   On hand inventory, Replenishment quantity), joined onto STORES by
+   SKU + Store + Month, with Customer as a filterable dimension.
+   Everything here reads only real values from that file -- a SKU
+   with no matching inventory row stays marked "no data" (sk.hasInv
+   = false) rather than defaulting to a fabricated 0.
+════════════════════════════════════════════════════════════════ */
+
+const INV_REQUIRED_COLS = ['SKU Name','Customer Name','Store Name','Week Start Date','ROP','Safety stock','On hand inventory','Replenishment quantity'];
+var currentCustomerFilter = 'all';
+
+function dhFindInventorySheet(wb){
+  for(const name of wb.SheetNames){
+    const rawRows = XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:null});
+    if(!rawRows.length) continue;
+    const rows = dhNormalizeRows(rawRows);
+    if(INV_REQUIRED_COLS.every(c => c in rows[0])) return name;
+  }
+  return null;
+}
+
+function dhAggregateInventory(wb, sheetName){
+  const rows = dhNormalizeRows(XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {defval:0}));
+
+  const weekDatesByStore = {};
+  rows.forEach(r=>{
+    const store=String(r['Store Name']||'').trim(), wk=r['Week Start Date'];
+    if(!store || !wk) return;
+    if(!weekDatesByStore[store]) weekDatesByStore[store]=new Set();
+    weekDatesByStore[store].add(dhDateStr(wk));
+  });
+  const weekIdx={};
+  Object.keys(weekDatesByStore).forEach(store=>{
+    const sorted=Array.from(weekDatesByStore[store]).sort();
+    weekIdx[store]={};
+    sorted.forEach((d,i)=>weekIdx[store][d]=i);
+  });
+
+  // store -> customer -> skuId(slug, matches demand-side sk.id) -> weekIdx -> {rop,ss,onHand,replenQty}
+  const cell={}, storeCustomers={}, storeSkuNames={};
+
+  rows.forEach(r=>{
+    const store=String(r['Store Name']||'').trim();
+    const customer=String(r['Customer Name']||'').trim();
+    const sku=String(r['SKU Name']||'').trim();
+    const wk=r['Week Start Date'];
+    if(!store || !customer || !sku || !wk) return;
+    const wi=weekIdx[store][dhDateStr(wk)];
+    const skuId=dhSlug(sku);
+
+    if(!cell[store]) cell[store]={};
+    if(!cell[store][customer]) cell[store][customer]={};
+    if(!cell[store][customer][skuId]) cell[store][customer][skuId]={};
+    cell[store][customer][skuId][wi] = {
+      rop: Number(r['ROP']||0),
+      ss:  Number(r['Safety stock']||0),
+      onHand: Number(r['On hand inventory']||0),
+      replenQty: Number(r['Replenishment quantity']||0),
+    };
+
+    if(!storeSkuNames[store]) storeSkuNames[store]={};
+    storeSkuNames[store][skuId]=sku;
+
+    if(!storeCustomers[store]) storeCustomers[store]=new Set();
+    storeCustomers[store].add(customer);
+  });
+
+  const result={};
+  Object.keys(weekIdx).forEach(store=>{
+    result[dhSlug(store)] = {
+      name: store,
+      weeks: Object.keys(weekIdx[store]).length,
+      customers: Array.from(storeCustomers[store]||[]).sort(),
+      cell: cell[store] || {},
+      skuNames: storeSkuNames[store] || {},
+    };
+  });
+  return result;
+}
+
+/* Same formula the app has always used for status (CLAUDE.md section 12),
+   applied to real ROP/on-hand/net-requirement/sensed-demand values. */
+function dhDeriveInvStatus(oh, rop, nr, sensedPerMonth){
+  if(nr>0 && oh < rop*0.7) return 'low';
+  if(nr>0) return 'replenish';
+  if(sensedPerMonth>0 && oh > sensedPerMonth*6) return 'redeploy';
+  if(oh > rop) return 'ok';
+  return 'hold';
+}
+
+function populateCustomerSelector(storeId){
+  const node=$id('customer-filter-node'), sel=$id('customerFilterSelect');
+  if(!node || !sel) return;
+  const customers=(STORES[storeId] && STORES[storeId].invCustomers) || [];
+  if(!customers.length){ node.style.display='none'; currentCustomerFilter='all'; return; }
+  node.style.display='flex';
+  sel.innerHTML='<option value="all">All Customers</option>' +
+    customers.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join('');
+  sel.value='all';
+  currentCustomerFilter='all';
+}
+
+function selectCustomerFilter(val){
+  currentCustomerFilter=val;
+  applyCustomerFilterToStores(currentStore);
+  buildSkuDataFromStores(); // rebuild demand snapshots for the new customer selection
+  if(currentStore) renderAllCharts(currentStore);
+  if(document.getElementById('tab-store')?.classList.contains('active')) renderStoreDetail(currentStore);
+}
+
+/* Recomputes real oh/ss/rop/nr/rq/status per SKU, and the store-level
+   on-hand/ROP/gap month-series for charts 3 & 4, from window.DH_INVENTORY
+   for whichever customer(s) are currently selected. Independent of the
+   SKU demand filter -- inventory figures are real per-SKU data, not a
+   proportional share of a total. */
+function applyCustomerFilterToStores(storeId){
+  const store=STORES[storeId];
+  if(!store) return;
+  const inv=window.DH_INVENTORY && window.DH_INVENTORY[storeId];
+
+  if(!inv){
+    store.hasInv=false;
+    store.skus.forEach(sk=>{ sk.hasInv=false; });
+    return;
+  }
+
+  const customers = currentCustomerFilter==='all' ? inv.customers : [currentCustomerFilter];
+  const numWeeks = inv.weeks;
+
+  // Inventory can reference SKUs the demand file doesn't have (yet) -- add
+  // them to the table (with dmd:0, genuinely unknown, not fabricated)
+  // rather than silently dropping real inventory rows.
+  const existingIds = new Set(store.skus.map(sk=>sk.id));
+  Object.keys(inv.skuNames||{}).forEach(skuId=>{
+    if(existingIds.has(skuId)) return;
+    store.skus.push({
+      id: skuId, name: inv.skuNames[skuId], oh:0, it:0, dmd:0, ss:0, rop:0, nr:0, rq:0, st:'hold',
+      forecast: [], sensed: [], uplift: 0, hasInv:false,
+    });
+    existingIds.add(skuId);
+  });
+
+  store.skus.forEach(sk=>{
+    let oh=0, ss=0, rop=0, rq=0, found=false;
+    customers.forEach(cust=>{
+      const bySkuAtCust=inv.cell[cust]||{};
+      const cellForSku=bySkuAtCust[sk.id];
+      if(!cellForSku) return;
+      const latest=cellForSku[numWeeks-1];
+      if(!latest) return;
+      found=true;
+      oh+=latest.onHand; ss+=latest.ss; rop+=latest.rop; rq+=latest.replenQty;
+    });
+    sk.hasInv=found;
+    if(found){
+      sk.oh=oh; sk.ss=ss; sk.rop=rop; sk.rq=rq;
+      sk.nr=Math.max(0, rop-oh);
+      sk.st=dhDeriveInvStatus(oh, rop, sk.nr, sk.dmd);
+    }
+  });
+
+  const onHandArr=[], ropArr=[], replenQtyArr=[];
+  let anyMonth=false;
+  for(let w=0; w<numWeeks; w++){
+    let oh=0, rop=0, rq=0;
+    customers.forEach(cust=>{
+      const bySku=inv.cell[cust]||{};
+      Object.keys(bySku).forEach(skuId=>{
+        const c=bySku[skuId][w];
+        if(c){ oh+=c.onHand; rop+=c.rop; rq+=c.replenQty; anyMonth=true; }
+      });
+    });
+    onHandArr.push(oh); ropArr.push(rop); replenQtyArr.push(rq);
+  }
+
+  store.hasInv = anyMonth;
+  store.onHandSeries = onHandArr;
+  store.ropSeries = ropArr;
+  store.replenQtySeries = replenQtyArr;
+  store.rop = ropArr.length ? ropArr[ropArr.length-1] : 0;
+  store.onHand = onHandArr.length ? onHandArr[onHandArr.length-1] : 0;
+  store.gap = onHandArr.map((v,i)=>Math.round(v-(ropArr[i]||0)));
+}
+
+function dhMergeInventory(liveInv){
+  window.DH_INVENTORY = liveInv;
+  Object.keys(liveInv).forEach(storeId=>{
+    if(STORES[storeId]) STORES[storeId].invCustomers = liveInv[storeId].customers;
+  });
+  currentCustomerFilter='all';
+  if(currentStore){
+    populateCustomerSelector(currentStore);
+    applyCustomerFilterToStores(currentStore);
+    renderAllCharts(currentStore);
+    if(document.getElementById('tab-store')?.classList.contains('active')) renderStoreDetail(currentStore);
+  }
 }
 
 function dhApplyToStores(liveStores){
@@ -2478,6 +2782,8 @@ function dhApplyToStores(liveStores){
   buildSkuDataFromStores();
   if(currentStore){
     initSkuDropdown(currentStore);
+    populateCustomerSelector(currentStore);
+    applyCustomerFilterToStores(currentStore);
     updateKPIs(currentStore);
     renderAllCharts(currentStore);
     updateAIStrip(currentStore);
@@ -2523,16 +2829,18 @@ function dhRenderSummary(liveStores, fileName){
 /* ── end Data Hub ───────────────────────────────────────────── */
 
 /* ════════════════════════════════════════════════════════════════
-   REFRESH FROM SOURCE — re-reads the live Excel file over HTTP.
-   /source-data.xlsx is served by server.py, which reads whatever
-   absolute path is written in source_path.txt on the server — that
-   file can live anywhere on disk, it does not need to be inside this
+   REFRESH FROM SOURCE — re-reads the live Excel file(s) over HTTP.
+   /source-data.xlsx and /source-data-inventory.xlsx are served by
+   server.py, which reads whatever absolute paths are written in
+   source_path.txt and source_path_inventory.txt on the server — those
+   files can live anywhere on disk, they do not need to be inside this
    app's folder. Manual only — triggered by the Refresh button, no
-   polling/scheduler. Reuses the exact same parse/apply pipeline as a
-   Data Hub upload, just fetches the bytes instead of reading a
-   picked File.
+   polling/scheduler. The demand file is required; the inventory file
+   is optional (its failure doesn't block the demand refresh, since
+   plenty of setups won't have it wired up yet).
 ════════════════════════════════════════════════════════════════ */
 const LIVE_DATA_XLSX_URL = '/source-data.xlsx';
+const LIVE_INVENTORY_XLSX_URL = '/source-data-inventory.xlsx';
 
 async function refreshFromSource(){
   const btn = $id('refresh-btn'), label = $id('refresh-btn-label');
@@ -2542,16 +2850,37 @@ async function refreshFromSource(){
     const res = await fetch(LIVE_DATA_XLSX_URL + '?t=' + Date.now(), {cache:'no-store'});
     if(!res.ok) {
       const detail = await res.text().catch(()=> '');
-      throw new Error('HTTP ' + res.status + (detail ? ' — ' + detail.slice(0,180) : ''));
+      throw new Error('Demand file: HTTP ' + res.status + (detail ? ' — ' + detail.slice(0,180) : ''));
     }
     const buf = await res.arrayBuffer();
     const wb = XLSX.read(buf, {type:'array', cellDates:true});
     const sheetName = dhFindDataSheet(wb);
-    if(!sheetName) throw new Error('No sheet found with the expected columns: ' + DH_REQUIRED_COLS.join(', '));
+    if(!sheetName) throw new Error('No sheet found with the expected demand columns: ' + DH_REQUIRED_COLS.join(', '));
     const liveStores = dhAggregateData(wb, sheetName);
     dhApplyToStores(liveStores);
+
+    let invNote = '';
+    try {
+      const invRes = await fetch(LIVE_INVENTORY_XLSX_URL + '?t=' + Date.now(), {cache:'no-store'});
+      if(invRes.ok){
+        const invBuf = await invRes.arrayBuffer();
+        const invWb = XLSX.read(invBuf, {type:'array', cellDates:true});
+        const invSheetName = dhFindInventorySheet(invWb);
+        if(invSheetName){
+          dhMergeInventory(dhAggregateInventory(invWb, invSheetName));
+          invNote = ' + inventory';
+        } else {
+          console.warn('[Refresh] Inventory file reachable but no sheet matched the expected columns:', INV_REQUIRED_COLS);
+        }
+      } else {
+        console.warn('[Refresh] Inventory file not reachable (HTTP ' + invRes.status + ') — continuing with demand data only.');
+      }
+    } catch(invErr){
+      console.warn('[Refresh] Inventory refresh failed, continuing with demand data only:', invErr);
+    }
+
     dhRenderSummary(liveStores, 'source file');
-    showToast('✓ Refreshed from source file');
+    showToast('✓ Refreshed from source file' + invNote);
   } catch(err){
     showToast('Refresh failed — ' + err.message);
     console.error('[Refresh]', err);
@@ -2566,15 +2895,16 @@ async function refreshFromSource(){
 function applySkuFilterToStores(storeId) {
   if(!window.DH_AGG_DATA || !window.DH_AGG_DATA[storeId]) buildSkuDataFromStores();
 
+  // NOTE: .gap / .onHand / .rop / .onHandSeries / .ropSeries are owned by
+  // applyCustomerFilterToStores (real inventory data) -- this function only
+  // ever touches demand-derived fields, so it never clobbers them.
   if(currentSkuFilter === 'all') {
     // Restore store-level aggregate
     const agg = window.DH_AGG_DATA[storeId];
     STORES[storeId].forecast  = agg.forecast;
     STORES[storeId].sensed    = agg.sensed;
-    STORES[storeId].gap       = agg.gap;
     STORES[storeId].uplift    = agg.uplift;
     if(agg.signals) STORES[storeId].signals = agg.signals;
-    STORES[storeId].onHand    = agg.onHand;
     STORES[storeId].inTransit = agg.inTransit;
     STORES[storeId].ots       = agg.ots;
     STORES[storeId].capPct    = agg.capPct;
@@ -2589,7 +2919,6 @@ function applySkuFilterToStores(storeId) {
     if(!skuData) return;
     STORES[storeId].forecast  = skuData.forecast;
     STORES[storeId].sensed    = skuData.sensed;
-    STORES[storeId].gap       = skuData.gap;
     STORES[storeId].uplift    = skuData.uplift;
     if(skuData.signals) STORES[storeId].signals = skuData.signals;
     // KPI tile: in-transit for this SKU only
@@ -2621,16 +2950,60 @@ function buildSkuDataFromStores() {
   Object.keys(STORES).forEach(function(storeId) {
     var store = STORES[storeId];
     var skus  = store.skus || [];
-    // Total weekly demand across all SKUs (used to weight each SKU share)
     var totalDmd = skus.reduce(function(a,s){ return a + (s.dmd||0); }, 0) || 1;
 
-    // Save store-level aggregate (incl. signals) so "All Items" can always restore it
+    // If a specific customer is selected AND the demand file actually has
+    // customer-level rows for them, use that customer's real per-SKU series.
+    // Otherwise fall back to the store-wide (all-customers) series -- never
+    // fabricate a per-customer split that isn't backed by real rows.
+    var custData = (currentCustomerFilter && currentCustomerFilter!=='all' &&
+                     store.customerSkuSeries && store.customerSkuSeries[currentCustomerFilter])
+                   ? store.customerSkuSeries[currentCustomerFilter] : null;
+
+    var n = store.forecast.length;
+    var skuSeries = {};
+    skus.forEach(function(sku){
+      if(custData){
+        var c = custData[sku.id];
+        skuSeries[sku.id] = c
+          ? {dmd:c.dmd, forecast:c.forecast, sensed:c.sensed, uplift:c.uplift}
+          : {dmd:0, forecast:new Array(n).fill(0), sensed:new Array(n).fill(0), uplift:0};
+      } else {
+        var hasOwnSeries = Array.isArray(sku.forecast) && sku.forecast.length > 0;
+        if(hasOwnSeries){
+          skuSeries[sku.id] = {dmd:sku.dmd, forecast:sku.forecast.slice(), sensed:sku.sensed.slice(), uplift:sku.uplift};
+        } else {
+          var share = (sku.dmd || 0) / totalDmd;
+          skuSeries[sku.id] = {
+            dmd: sku.dmd,
+            forecast: store.forecast.map(function(v){ return Math.round(v * share); }),
+            sensed:   store.sensed.map(function(v){ return Math.round(v * share); }),
+            uplift: store.uplift,
+          };
+        }
+      }
+      // Reflect the customer selection in the "Sensed dmd/mo" SKU-table column too.
+      sku.dmd = skuSeries[sku.id].dmd;
+    });
+
+    // Store-level ("All Items") aggregate = sum of the (possibly customer-filtered) per-SKU series
+    var aggForecast = new Array(n).fill(0), aggSensed = new Array(n).fill(0);
+    skus.forEach(function(sku){
+      skuSeries[sku.id].forecast.forEach(function(v,i){ aggForecast[i]+=v; });
+      skuSeries[sku.id].sensed.forEach(function(v,i){ aggSensed[i]+=v; });
+    });
+    var latestIdx=n-1, aggBlLatest=aggForecast[latestIdx]||1;
+    var aggPromoLatest=aggSensed[latestIdx]-aggForecast[latestIdx];
+    var aggUplift=Math.round((aggPromoLatest/aggBlLatest)*1000)/10;
+
     window.DH_AGG_DATA[storeId] = {
-      forecast:  store.forecast.slice(),
-      sensed:    store.sensed.slice(),
+      forecast:  aggForecast,
+      sensed:    aggSensed,
       gap:       store.gap.slice(),
-      uplift:    store.uplift,
-      signals:   store.signals.map(function(s){ return Object.assign({}, s); }),
+      uplift:    aggUplift,
+      signals:   store.signals.map(function(s){
+        return s.t==='Promo' ? {t:'Promo', pct:aggUplift, on:aggUplift>0} : Object.assign({}, s);
+      }),
       onHand:    store.onHand,
       inTransit: store.inTransit,
       ots:       store.ots,
@@ -2641,21 +3014,9 @@ function buildSkuDataFromStores() {
 
     window.DH_SKU_DATA[storeId] = {};
     skus.forEach(function(sku) {
-      // Prefer the SKU's own per-month series (built from its actual Promo/Baseline
-      // rows) over an approximation -- a SKU with no promo of its own should show
-      // no uplift even if other SKUs in the store do.
-      var hasOwnSeries = Array.isArray(sku.forecast) && sku.forecast.length > 0;
-      var forecast, sensed;
-      if(hasOwnSeries){
-        forecast = sku.forecast.slice();
-        sensed   = sku.sensed.slice();
-      } else {
-        var share = (sku.dmd || 0) / totalDmd;
-        forecast = store.forecast.map(function(v){ return Math.round(v * share); });
-        sensed   = store.sensed.map(function(v){ return Math.round(v * share); });
-      }
+      var series = skuSeries[sku.id];
+      var forecast = series.forecast, sensed = series.sensed;
 
-      // Project gap for this individual SKU
       var gap     = [];
       var running = (sku.oh || 0) + (sku.it || 0);
       for(var w = 0; w < forecast.length; w++) {
@@ -2664,16 +3025,14 @@ function buildSkuDataFromStores() {
         if(w === 1) running += (sku.rq || 0);
       }
 
-      var skuUplift = (typeof sku.uplift === 'number') ? sku.uplift : store.uplift;
-
       window.DH_SKU_DATA[storeId][sku.id] = {
         name:     sku.name,
         forecast: forecast,
         sensed:   sensed,
         gap:      gap,
-        uplift:   skuUplift,
+        uplift:   series.uplift,
         signals:  store.signals.map(function(s){
-          return s.t === 'Promo' ? {t:'Promo', pct:skuUplift, on:skuUplift>0} : Object.assign({}, s);
+          return s.t === 'Promo' ? {t:'Promo', pct:series.uplift, on:series.uplift>0} : Object.assign({}, s);
         }),
         oh:  sku.oh  || 0,
         it:  sku.it  || 0,

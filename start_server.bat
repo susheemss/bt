@@ -16,4 +16,8 @@ REM  To view the dashboard: open http://localhost:8000/index.html
 REM  in a browser on this server.
 REM ─────────────────────────────────────────────────────────────
 cd /d "%~dp0"
-python server.py
+echo ==================================================== >> server_log.txt
+echo [%date% %time%] Starting from "%CD%" >> server_log.txt
+where python >> server_log.txt 2>&1
+python server.py >> server_log.txt 2>&1
+echo [%date% %time%] Server exited, errorlevel %errorlevel% >> server_log.txt

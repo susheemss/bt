@@ -1,14 +1,15 @@
 """
 Tiny static file server for the Decision Intelligence dashboard, plus
-one custom route that serves the live Excel source file from ANY
-absolute path on this server -- it does not have to be inside this
-app's folder at all.
+two custom routes that each serve a live Excel source file from ANY
+absolute path on this server -- neither has to be inside this app's
+folder at all.
 
-The path is read from source_path.txt (one line, plain absolute path,
-e.g. C:\\SomeOtherFolder\\output.xlsx) on every request to
-/source-data.xlsx, so you can change where it points without
-restarting this server -- just edit source_path.txt and click Refresh
-in the browser again.
+  /source-data.xlsx           <- path in source_path.txt            (demand)
+  /source-data-inventory.xlsx <- path in source_path_inventory.txt  (inventory)
+
+Each path is read from its config file on every request, so you can
+change where either one points without restarting this server -- just
+edit the .txt file and click Refresh in the browser again.
 
 Everything else (index.html, live_data.js, etc.) is served normally
 from this folder, exactly like `python -m http.server` did before.
@@ -24,8 +25,11 @@ from pathlib import Path
 PORT = 8000
 BIND = '127.0.0.1'
 APP_DIR = Path(__file__).parent
-CONFIG_FILE = APP_DIR / 'source_path.txt'
-SOURCE_ROUTE = '/source-data.xlsx'
+
+ROUTES = {
+    '/source-data.xlsx':           APP_DIR / 'source_path.txt',
+    '/source-data-inventory.xlsx': APP_DIR / 'source_path_inventory.txt',
+}
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -33,22 +37,23 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         super().__init__(*args, directory=str(APP_DIR), **kwargs)
 
     def do_GET(self):
-        if self.path.split('?')[0] == SOURCE_ROUTE:
-            self.serve_source_file()
+        route = self.path.split('?')[0]
+        if route in ROUTES:
+            self.serve_configured_file(ROUTES[route])
         else:
             super().do_GET()
 
-    def serve_source_file(self):
-        if not CONFIG_FILE.is_file():
-            self.send_plain_error(500, f'Config file not found: {CONFIG_FILE}. Create it with the full path to your Excel file on the first line.')
+    def serve_configured_file(self, config_file):
+        if not config_file.is_file():
+            self.send_plain_error(500, f'Config file not found: {config_file}. Create it with the full path to your Excel file on the first line.')
             return
-        raw_path = CONFIG_FILE.read_text(encoding='utf-8').strip()
+        raw_path = config_file.read_text(encoding='utf-8').strip()
         # Windows "Copy as path" wraps the path in double quotes -- strip
         # them so pasting that straight into the config file just works.
         if len(raw_path) >= 2 and raw_path[0] == '"' and raw_path[-1] == '"':
             raw_path = raw_path[1:-1]
         if not raw_path:
-            self.send_plain_error(500, f'{CONFIG_FILE.name} is empty -- put the full path to the Excel file in it.')
+            self.send_plain_error(500, f'{config_file.name} is empty -- put the full path to the Excel file in it.')
             return
         source_path = Path(raw_path)
         if not source_path.is_file():
@@ -79,9 +84,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 
 if __name__ == '__main__':
-    configured = CONFIG_FILE.read_text(encoding='utf-8').strip() if CONFIG_FILE.is_file() else '(source_path.txt not found yet)'
     with http.server.ThreadingHTTPServer((BIND, PORT), Handler) as httpd:
         print(f'Serving {APP_DIR} at http://{BIND}:{PORT}/')
-        print(f'Live source file route: http://{BIND}:{PORT}{SOURCE_ROUTE}')
-        print(f'Currently configured path: {configured}')
+        for route, cfg in ROUTES.items():
+            configured = cfg.read_text(encoding='utf-8').strip() if cfg.is_file() else f'({cfg.name} not found yet)'
+            print(f'  {route}  <-  {configured}')
         httpd.serve_forever()
