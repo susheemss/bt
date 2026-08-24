@@ -729,6 +729,61 @@ body{
 .toast.show{transform:translateY(0);opacity:1}
 .toast-icon{width:20px;height:20px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 
+/* ── AI Assistant preview (bottom-left) ─────────────────────
+   Showcase only -- pre-built questions with canned answers, not a live
+   model. Kept visually distinct from the real AI panels (purple dashed
+   border + "Preview" label everywhere) so it never reads as functioning
+   data the way the rest of the app's AI-labelled output does. */
+.chat-fab{
+  position:fixed;left:20px;bottom:20px;z-index:150;
+  width:52px;height:52px;border-radius:50%;
+  background:linear-gradient(135deg,var(--purple),var(--blue));
+  border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 18px rgba(124,58,237,.35),0 2px 6px rgba(15,23,42,.15);
+  transition:transform .15s ease;
+}
+.chat-fab:hover{transform:translateY(-2px) scale(1.04)}
+.chat-fab-dot{position:absolute;top:2px;right:2px;width:12px;height:12px;border-radius:50%;background:var(--green);border:2px solid #fff}
+.chat-panel{
+  position:fixed;left:20px;bottom:84px;z-index:150;
+  width:340px;max-width:calc(100vw - 40px);height:460px;max-height:calc(100vh - 120px);
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg,10px);
+  box-shadow:0 20px 50px rgba(15,23,42,.22);
+  display:flex;flex-direction:column;overflow:hidden;
+  transform:translateY(12px) scale(.98);opacity:0;pointer-events:none;
+  transition:transform .18s cubic-bezier(.4,0,.2,1),opacity .18s;
+}
+.chat-panel.open{transform:translateY(0) scale(1);opacity:1;pointer-events:auto}
+.chat-topbar{height:3px;flex-shrink:0;background:linear-gradient(90deg,var(--purple),var(--blue),var(--purple))}
+.chat-head{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;flex-shrink:0}
+.chat-head-icon{width:28px;height:28px;border-radius:8px;background:var(--purple-light);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--purple)}
+.chat-head-title{font-size:12.5px;font-weight:700;color:var(--ink)}
+.chat-head-sub{font-size:10px;color:var(--ink4);margin-top:1px}
+.chat-close{margin-left:auto;width:22px;height:22px;border:none;background:transparent;color:var(--ink4);cursor:pointer;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat-close:hover{background:var(--surface2);color:var(--ink2)}
+.chat-preview-note{margin:9px 12px 0;padding:6px 9px;border:1px dashed var(--purple);background:var(--purple-light);border-radius:6px;font-size:10px;line-height:1.4;color:#5B3FC4;flex-shrink:0}
+.chat-body{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px}
+.chat-msg{max-width:86%;padding:8px 11px;border-radius:11px;font-size:12px;line-height:1.5}
+.chat-msg.bot{align-self:flex-start;background:var(--surface2);color:var(--ink2);border-bottom-left-radius:3px}
+.chat-msg.user{align-self:flex-end;background:var(--blue);color:#fff;border-bottom-right-radius:3px}
+.chat-msg.typing{display:flex;gap:3px;align-items:center;padding:10px 12px}
+.chat-typing-dot{width:5px;height:5px;border-radius:50%;background:var(--ink4);animation:chatTyping 1s infinite ease-in-out}
+.chat-typing-dot:nth-child(2){animation-delay:.15s}
+.chat-typing-dot:nth-child(3){animation-delay:.3s}
+@keyframes chatTyping{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
+.chat-suggestions{flex-shrink:0;padding:8px 12px 4px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:6px}
+.chat-suggestions-label{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink4);margin-bottom:1px}
+.chat-chip{
+  text-align:left;font-family:'Inter',sans-serif;
+  padding:6px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);
+  font-size:11px;color:var(--ink2);cursor:pointer;transition:all .12s;
+}
+.chat-chip:hover{border-color:var(--purple);color:var(--purple);background:var(--purple-light)}
+.chat-chip:disabled{opacity:.4;cursor:default}
+.chat-inputrow{flex-shrink:0;padding:9px 12px 12px;display:flex;gap:7px}
+.chat-input-fake{flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--ink4);font-size:11.5px;cursor:not-allowed;user-select:none}
+
 @keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeIn .22s ease}
 @media(max-width:1280px){.kpi-row{grid-template-columns:repeat(3,1fr)}.charts-row{grid-template-columns:1fr}.dispatch-top,.dispatch-bottom{grid-template-columns:1fr}}
@@ -1023,6 +1078,35 @@ body{
 
 <!-- TOAST -->
 <div class="toast" id="toast"><div class="toast-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><span id="toastMsg"></span></div>
+
+<!-- ═══════════════════ AI ASSISTANT PREVIEW (showcase only) ═══════════════════
+     Pre-built questions with canned answers, to demonstrate a future
+     conversational capability. Not connected to live data or any of the
+     app's real calculations -- see chat-preview-note below, shown in the
+     panel itself so this is never mistaken for functioning output. -->
+<button class="chat-fab" id="chatFab" onclick="toggleChatPanel()" title="AI Assistant (preview)">
+  <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+  <span class="chat-fab-dot"></span>
+</button>
+<div class="chat-panel" id="chatPanel">
+  <div class="chat-topbar"></div>
+  <div class="chat-head">
+    <div class="chat-head-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"/></svg></div>
+    <div>
+      <div class="chat-head-title">AI Supply Chain Assistant</div>
+      <div class="chat-head-sub">Preview · pre-built questions</div>
+    </div>
+    <button class="chat-close" onclick="toggleChatPanel(false)" title="Close">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div class="chat-preview-note">Showcasing a future capability. Answers below are pre-written examples, not live results from your data.</div>
+  <div class="chat-body" id="chatBody"></div>
+  <div class="chat-suggestions" id="chatSuggestions">
+    <div class="chat-suggestions-label">Try asking</div>
+  </div>
+  <div class="chat-inputrow"><div class="chat-input-fake">Free-text chat — coming soon</div></div>
+</div>
 
 <div class="app">
 
@@ -3442,6 +3526,103 @@ window.addEventListener('load', function(){
   pbiRefreshLabels();
 });
 /* ── end Power BI report links ─────────────────────────────── */
+</script>
+<script>
+/* ── AI Assistant preview (showcase only) ────────────────────
+   Entirely self-contained: fixed Q&A pairs, no connection to STORES, live
+   data, or any calculation in the app. Exists purely to demonstrate what a
+   future conversational layer over this same data could look like. */
+(function(){
+  var CHAT_QA = [
+    {
+      q: 'Why would a SKU get flagged Replenish?',
+      a: 'Once wired to your live data, I’d flag Replenish whenever net requirement is above zero — sensed demand over lead time plus safety stock exceeds on-hand plus in-transit — and point you straight to the store, SKU and month where that crossed the ROP line.'
+    },
+    {
+      q: 'How would you pick which lanes to consolidate?',
+      a: 'I’d group net requirements across stores sharing a DC route and compare FTL, FTL-consolidated and Milk-run options, recommending whichever combination pushes truck fill toward the 85% target without exceeding any store’s open-to-ship headroom.'
+    },
+    {
+      q: 'How would you explain a demand uplift?',
+      a: 'I’d break the gap between sensed and baseline demand down by signal — promo, festival, weather, trend or event — so you can see which one is actually driving that month’s number instead of just the net percentage.'
+    },
+    {
+      q: 'What would a redeploy recommendation look like?',
+      a: 'Redeploy means one store is sitting on well above its sensed demand while another is short. I’d suggest moving the excess between the two stores directly instead of raising a fresh DC order for the short one.'
+    },
+    {
+      q: 'Will this answer questions about my actual data?',
+      a: 'That’s the plan for this panel — once connected, I’d query the same demand and inventory files driving the charts above and answer with your real numbers, not these pre-written examples.'
+    }
+  ];
+
+  var chatOpened = false, chatBusy = false;
+  var askedIdx = [];
+
+  function chatEl(id){ return document.getElementById(id); }
+
+  function renderChips(){
+    var wrap = chatEl('chatSuggestions');
+    if(!wrap) return;
+    var chips = wrap.querySelectorAll('.chat-chip');
+    chips.forEach(function(c){ c.remove(); });
+    CHAT_QA.forEach(function(pair, i){
+      var btn = document.createElement('button');
+      btn.className = 'chat-chip';
+      btn.type = 'button';
+      btn.textContent = pair.q;
+      btn.disabled = askedIdx.indexOf(i) !== -1 || chatBusy;
+      btn.onclick = function(){ askChatQuestion(i); };
+      wrap.appendChild(btn);
+    });
+  }
+
+  function addBubble(role, text){
+    var body = chatEl('chatBody');
+    var div = document.createElement('div');
+    div.className = 'chat-msg ' + role;
+    div.textContent = text;
+    body.appendChild(div);
+    body.scrollTop = body.scrollHeight;
+    return div;
+  }
+
+  function askChatQuestion(i){
+    if(chatBusy) return;
+    var pair = CHAT_QA[i];
+    if(!pair || askedIdx.indexOf(i) !== -1) return;
+    askedIdx.push(i);
+    chatBusy = true;
+    renderChips();
+    addBubble('user', pair.q);
+
+    var body = chatEl('chatBody');
+    var typing = document.createElement('div');
+    typing.className = 'chat-msg bot typing';
+    typing.innerHTML = '<span class="chat-typing-dot"></span><span class="chat-typing-dot"></span><span class="chat-typing-dot"></span>';
+    body.appendChild(typing);
+    body.scrollTop = body.scrollHeight;
+
+    setTimeout(function(){
+      typing.remove();
+      addBubble('bot', pair.a);
+      chatBusy = false;
+      renderChips();
+    }, 550 + Math.random() * 350);
+  }
+
+  window.toggleChatPanel = function(force){
+    var panel = chatEl('chatPanel');
+    if(!panel) return;
+    var open = typeof force === 'boolean' ? force : !panel.classList.contains('open');
+    panel.classList.toggle('open', open);
+    if(open && !chatOpened){
+      chatOpened = true;
+      addBubble('bot', 'Hi — this is a preview of an AI assistant we plan to build for this cockpit. Tap a question below to see the kind of answer it would give.');
+      renderChips();
+    }
+  };
+})();
 </script>
 </body>
 </html>
