@@ -1,193 +1,121 @@
-import { useState } from 'react'
-import { Truck, ShieldCheck, PackageCheck, Gauge, Container, CheckCircle2 } from 'lucide-react'
-import KpiTile from '../components/kpi/KpiTile'
 import Panel, { LegendDot } from '../components/ui/Panel'
+import PendingNote from '../components/ui/PendingNote'
 import DemandForecastChart from '../components/charts/DemandForecastChart'
 import DemandSensingChart from '../components/charts/DemandSensingChart'
 import OnHandDRPChart from '../components/charts/OnHandDRPChart'
 import InventoryGapChart from '../components/charts/InventoryGapChart'
-import AIRecommendationStrip from '../components/ai/AIRecommendationStrip'
-import { useAppStore, getSkuOptions } from '../store/useAppStore'
-import { STORES } from '../data/stores'
+import AITag from '../components/ai/AITag'
+import { useAppStore } from '../store/useAppStore'
+import { useStoreView, useDemandView } from '../hooks/useStoreView'
+import { Sparkles } from 'lucide-react'
 
 export default function Overview() {
-  const { currentStore, currentSkuFilter, setSkuFilter } = useAppStore()
-  const store = STORES[currentStore]
-  const kpis = store.kpis
-  const skuOptions = getSkuOptions(currentStore)
-  const [horizon, setHorizon] = useState<4 | 8>(8)
-  const [released, setReleased] = useState(false)
+  const currentStore = useAppStore((s) => s.currentStore)
+  const currentSkuFilter = useAppStore((s) => s.currentSkuFilter)
+  const currentCustomerFilter = useAppStore((s) => s.currentCustomerFilter)
+  const horizon = useAppStore((s) => s.horizon)
+  const refresh = useAppStore((s) => s.refresh)
 
-  function handleRelease() {
-    setReleased(true)
-    setTimeout(() => setReleased(false), 3200)
+  const store = useStoreView(currentStore)
+  const demand = useDemandView(currentStore)
+
+  if (!store || !demand) {
+    return (
+      <div className="max-w-lg mx-auto mt-16">
+        <PendingNote>
+          {refresh.status === 'loading'
+            ? 'Loading live data from the configured source files…'
+            : 'No data loaded yet. Use Refresh in the top bar, or visit Data Hub for details on the expected file format.'}
+        </PendingNote>
+      </div>
+    )
   }
 
-  // Filter-aware chart series
-  let forecast = store.forecast
-  let sensed = store.sensed
-  let gap = store.gap
+  const n = Math.min(horizon, store.weekKeys.length)
+  const labels = Array.from({ length: n }, (_, i) => `M${i + 1}`)
+  const forecast = demand.forecast.slice(0, n)
+  const sensed = demand.sensed.slice(0, n)
 
-  if (currentSkuFilter !== 'all') {
-    const sku = store.skus.find((s) => s.id === currentSkuFilter)
-    if (sku) {
-      const total = store.skus.reduce((a, s) => a + s.dmd, 0)
-      const ratio = total > 0 ? sku.dmd / total : 1
-      forecast = store.forecast.map((v) => Math.round(v * ratio))
-      sensed = store.sensed.map((v) => Math.round(v * ratio))
-      gap = store.gap.map((v) => Math.round(v * ratio))
-    }
-  }
-
-  forecast = forecast.slice(0, horizon)
-  sensed = sensed.slice(0, horizon)
-  gap = gap.slice(0, horizon)
+  // Chart 3/4 respect the SKU filter -- otherwise "replenishment" could
+  // reflect a completely different SKU's reorder landing in the same month.
+  const selectedSku = currentSkuFilter === 'all' ? null : store.skus.find((s) => s.id === currentSkuFilter) ?? null
+  const onHandSeries = (selectedSku ? selectedSku.onHandSeries : store.onHandSeries).slice(0, n)
+  const replenQtySeries = (selectedSku ? selectedSku.replenQtySeries : store.replenQtySeries).slice(0, n)
+  const ropSeries = (selectedSku ? selectedSku.ropSeries : store.ropSeries).slice(0, n)
+  const gapSeries = (selectedSku ? selectedSku.gapSeries : store.gap).slice(0, n)
 
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="flex items-center gap-1.5">
-          <span className="field-label">SKU</span>
-          <select
-            value={currentSkuFilter}
-            onChange={(e) => setSkuFilter(e.target.value)}
-            className="select min-w-[200px]"
-          >
-            {skuOptions.map((o) => (
-              <option key={o.id} value={o.id}>{o.name}</option>
-            ))}
-          </select>
-        </div>
+      {demand.customerScopeMismatch && (
+        <PendingNote>
+          <b className="text-ink3">Showing all customers.</b> The demand file has no rows for{' '}
+          <b>{currentCustomerFilter}</b> — demand charts are store-wide here, while the inventory panels below stay
+          filtered to that customer.
+        </PendingNote>
+      )}
 
-        <div className="flex items-center gap-1.5">
-          <span className="field-label">Horizon</span>
-          <div className="seg">
-            {([4, 8] as const).map((h) => (
-              <span
-                key={h}
-                className={`seg-item ${horizon === h ? 'seg-item-active' : ''}`}
-                onClick={() => setHorizon(h)}
-              >
-                {h} weeks
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="ml-auto flex items-center gap-2 text-[11px] text-ink4">
-          <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
-          Demand sensing live · last run 09:42
-        </div>
-      </div>
-
-      {/* KPI row */}
-      <div className="grid grid-cols-5 gap-3">
-        <KpiTile
-          label="Service level" value={kpis.sl}
-          delta={kpis.slD} deltaClass={kpis.slC}
-          icon={<ShieldCheck size={15} />}
-          spark={store.sensed.map((s, i) => s / (store.forecast[i] || 1))}
-          sparkColor="#1A8754"
-        />
-        <KpiTile
-          label="Fill rate" value={kpis.fr}
-          delta={kpis.frD} deltaClass={kpis.frC}
-          icon={<PackageCheck size={15} />}
-          spark={store.forecast}
-          sparkColor="#8B95A5"
-        />
-        <KpiTile
-          label="Capacity utilisation" value={kpis.cu}
-          delta={kpis.cuD} deltaClass={kpis.cuC}
-          icon={<Gauge size={15} />}
-        />
-        <KpiTile
-          label="In-transit units" value={kpis.it}
-          delta={kpis.itD} deltaClass={kpis.itC}
-          icon={<Container size={15} />}
-        />
-        <KpiTile
-          label="Transportation cost MTD" value={kpis.tc}
-          delta={kpis.tcD} deltaClass={kpis.tcC}
-          highlight icon={<Truck size={15} />}
-          spark={[...store.gap].reverse().map((g) => Math.abs(g))}
-          sparkColor="#2E6BE6"
-        />
-      </div>
-
-      {/* Chart panels */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <Panel
-          title="Demand forecast — baseline"
-          subtitle={`Units per week · W1–W${horizon}`}
-          legend={
-            <>
-              <LegendDot color="#2E6BE6" label="Baseline" />
-              <LegendDot color="#6C5CE7" label="Uplift" />
-            </>
-          }
+          title="Demand forecast"
+          subtitle={`Units / month · baseline vs AI sensed uplift · M1–M${n}`}
+          legend={<><LegendDot color="#2E6BE6" label="Baseline" /><LegendDot color="#6C5CE7" label="AI uplift" /></>}
         >
-          <DemandForecastChart forecast={forecast} sensed={sensed} />
+          <DemandForecastChart labels={labels} forecast={forecast} sensed={sensed} />
         </Panel>
 
         <Panel
           title="Demand sensing vs baseline"
-          subtitle="Sensed demand · AI technology"
-          badge={
-            <span className="chip bg-green-light text-green font-bold num">+{store.uplift.toFixed(1)}%</span>
-          }
-          legend={
-            <>
-              <LegendDot color="#8B95A5" label="Baseline" dashed />
-              <LegendDot color="#6C5CE7" label="Sensed" />
-            </>
-          }
+          subtitle="Monthly overlay · dashed = baseline, solid = sensed"
+          badge={<span className="chip bg-purple-light text-purple font-bold num">{demand.uplift >= 0 ? '+' : ''}{demand.uplift.toFixed(1)}%</span>}
+          legend={<><LegendDot color="#8B95A5" label="Baseline" dashed /><LegendDot color="#6C5CE7" label="Sensed" /></>}
         >
-          <DemandSensingChart forecast={forecast} sensed={sensed} />
+          <DemandSensingChart labels={labels} forecast={forecast} sensed={sensed} />
         </Panel>
 
         <Panel
-          title="On-hand inventory — DRP"
-          subtitle="Projected draw-down vs ROP"
-          legend={
-            <>
-              <LegendDot color="#2E6BE6" label="On-hand" />
-              <LegendDot color="#C93B3B" label="Below ROP" />
-            </>
-          }
+          title="On-hand inventory"
+          subtitle={`M1–M${n} · from your inventory file`}
+          legend={<><LegendDot color="#94A3B8" label="On-hand" /><LegendDot color="#16A34A" label="Replen qty" /></>}
         >
-          <OnHandDRPChart gap={gap} rop={store.rop} onHand={store.onHand} />
+          <OnHandDRPChart labels={labels} onHandSeries={onHandSeries} replenQtySeries={replenQtySeries} ropSeries={ropSeries} />
         </Panel>
 
         <Panel
           title="Inventory gap / net requirement"
-          subtitle="Below zero = shortfall"
-          legend={
-            <>
-              <LegendDot color="#2E6BE6" label="Surplus" />
-              <LegendDot color="#C93B3B" label="Shortfall" />
-            </>
-          }
+          subtitle="On-hand minus ROP, from your inventory file"
+          legend={<><LegendDot color="#16A34A" label="Surplus" /><LegendDot color="#DC2626" label="Shortfall" /></>}
         >
-          <InventoryGapChart gap={gap} />
+          <InventoryGapChart labels={labels} gap={gapSeries} />
         </Panel>
       </div>
 
-      {/* AI recommendation strip */}
-      <AIRecommendationStrip
-        recs={store.aiRecs}
-        saving={store.saving}
-        storeId={currentStore}
-        onRelease={handleRelease}
-      />
-
-      {released && (
-        <div className="toast">
-          <CheckCircle2 size={15} className="text-green" />
-          DRP order released to DC · Store #{currentStore}
+      {/* AI recommendation strip -- honest empty state. Nothing in either
+          source file gives freight cost or truck capacity, so this panel
+          has never had real recommendations to show; it stays a clearly
+          labelled preview of what it will do once that data exists. */}
+      <section className="rounded-lg overflow-hidden border border-purple/25 bg-surface">
+        <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, #6C5CE7, #2E6BE6, #6C5CE7)' }} />
+        <div className="p-4 flex items-start gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2.5">
+              <AITag label="AI technology" />
+              <span className="text-[11px] text-ink4">Replenishment recommendations</span>
+            </div>
+            <PendingNote>
+              AI replenishment recommendations need <b className="text-ink3">on-hand inventory and freight-cost data</b> together
+              to compute lane consolidation and redeploy suggestions — freight cost isn't available yet.
+            </PendingNote>
+          </div>
+          <div className="w-[210px] flex-shrink-0 border-l border-border pl-4 flex flex-col justify-center gap-1">
+            <div className="text-[11px] font-medium text-ink4 uppercase tracking-wide">Est. freight saving</div>
+            <div className="text-[22px] font-bold text-ink5 leading-7 num">—</div>
+            <div className="text-[11px] text-ink4 mb-3">per cycle vs un-optimised</div>
+            <button className="btn-purple w-full opacity-40 cursor-not-allowed" disabled>
+              <Sparkles size={13} /> Release DRP order to DC
+            </button>
+          </div>
         </div>
-      )}
+      </section>
     </div>
   )
 }
