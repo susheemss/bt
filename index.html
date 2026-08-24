@@ -323,7 +323,19 @@ body{
 .chart-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2px}
 .chart-title{font-size:12.5px;font-weight:600;color:var(--ink);letter-spacing:-.005em}
 .chart-sub{font-size:10.5px;color:var(--ink4);margin-bottom:8px;line-height:1.4}
+/* Height was a flat 148px regardless of width. Below the 1280px breakpoint
+   (charts-row rule further down) charts-row drops to a single column, so
+   each chart panel's width nearly doubles while the height stays fixed --
+   the exact elongated/stretched look reported from the office server,
+   where the browser window is narrower than the 1440px this was designed
+   against. aspect-ratio keeps every chart the same proportions at any
+   window width; height:148px remains the fallback for a browser that
+   predates aspect-ratio (an explicit height would otherwise override it,
+   so it only applies once aspect-ratio itself is confirmed supported). */
 .chart-area{height:148px;position:relative}
+@supports (aspect-ratio:1/1){
+  .chart-area{height:auto;aspect-ratio:4.3/1;min-height:120px}
+}
 .chart-legend{display:flex;align-items:center;gap:14px;margin-top:9px;flex-wrap:wrap}
 .leg-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink4)}
 .leg-bar{width:10px;height:10px;border-radius:2px;display:inline-block}
