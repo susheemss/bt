@@ -1130,6 +1130,7 @@ body{
           </button>
         </div>
       </div>
+      <div id="demand-scope-warn" style="display:none;margin:0 0 6px;padding:6px 9px;border:1px solid #F0C97A;background:#FEF6E7;border-radius:var(--radius);font-size:11px;line-height:1.45;color:#7A5514"></div>
       <div class="chart-area" id="chart1"></div>
       <div class="chart-legend">
         <div class="leg-item"><span class="leg-bar" style="background:#94A3B8;opacity:.7"></span>Baseline forecast</div>
@@ -1502,10 +1503,33 @@ function setHorizon(n){
   renderAllCharts(currentStore);
 }
 
+/* Says so on screen when the demand charts cannot honour the current
+   Customer selection, instead of quietly showing store-wide numbers next to
+   an inventory panel that did filter. Usually a spelling difference between
+   the two files rather than genuinely missing rows. */
+function updateDemandScopeWarning(id){
+  const el=$id('demand-scope-warn');
+  if(!el) return;
+  const st=STORES[id]||{};
+  if(!currentCustomerFilter || currentCustomerFilter==='all'){ el.style.display='none'; return; }
+  const demC=st.demandCustomers||[];
+  const hasDemandRows=!!(st.customerSkuSeries && st.customerSkuSeries[currentCustomerFilter]);
+  if(hasDemandRows){ el.style.display='none'; return; }
+  const near=demC.filter(c=>c.toLowerCase().replace(/\s+/g,' ').trim()===
+                            String(currentCustomerFilter).toLowerCase().replace(/\s+/g,' ').trim());
+  el.innerHTML = demC.length===0
+    ? `<b>Showing all customers.</b> The demand file has no <code>Customer Name</code> column, so demand cannot be split by customer. The inventory panels below are filtered to <b>${currentCustomerFilter}</b>.`
+    : (near.length
+       ? `<b>Showing all customers.</b> The demand file spells this customer <b>${near[0]}</b>, which does not match the inventory file's <b>${currentCustomerFilter}</b> exactly. Align the spelling in both files to filter demand.`
+       : `<b>Showing all customers.</b> The demand file has no rows for <b>${currentCustomerFilter}</b> — demand is store-wide here, while the inventory panels below are filtered to that customer.`);
+  el.style.display='block';
+}
+
 /* ════════ CHARTS ════════ */
 function renderAllCharts(id){
   const s=STORES[id],n=currentHorizon;
   const wk=Array.from({length:n},(_,i)=>'M'+(i+1));
+  updateDemandScopeWarning(id);
   renderStackedBar('chart1',s.forecast.slice(0,n),s.sensed.slice(0,n),{labels:wk});
   // Chart 2: same real monthly baseline/sensed series as chart1, just as a
   // line comparison instead of a bar -- no fabricated daily breakdown.
@@ -2777,14 +2801,88 @@ function dhDeriveInvStatus(oh, rop, nr, sensedPerMonth){
   return 'hold';
 }
 
+/* ── Diagnostic ───────────────────────────────────────────────
+   Run  dhDiagnose()  in the browser console (F12) to see exactly which
+   rows feed each panel and where the demand and inventory files disagree.
+   dhDiagnose('Location 817') limits it to one store.                     */
+function dhDiagnose(storeFilter){
+  const norm=s=>String(s).toLowerCase().replace(/\s+/g,' ').trim();
+  const report=[];
+  Object.keys(STORES).forEach(sid=>{
+    const st=STORES[sid];
+    if(storeFilter && norm(st.name)!==norm(storeFilter) && sid!==storeFilter) return;
+    const inv=(window.DH_INVENTORY||{})[sid];
+    const demC=st.demandCustomers||[], invC=(st.invCustomers)||[];
+    const demSku=(st.skus||[]).filter(k=>Array.isArray(k.forecast)&&k.forecast.length).map(k=>k.name);
+    const invSku=inv?Object.values(inv.skuNames||{}):[];
+    const cmp=(a,b)=>{
+      const bn=b.map(norm);
+      return a.filter(x=>!bn.includes(norm(x)));
+    };
+    const caseOnly=(a,b)=>a.filter(x=>!b.includes(x)&&b.map(norm).includes(norm(x)));
+    report.push({
+      store: st.name,
+      demandMonths: (st.weekKeys||[]).length,
+      inventoryMonths: inv?(inv.weekKeys||[]).length:0,
+      monthsOnlyInDemand: inv?cmp(st.weekKeys||[],inv.weekKeys||[]):(st.weekKeys||[]),
+      monthsOnlyInInventory: inv?cmp(inv.weekKeys||[],st.weekKeys||[]):[],
+      demandCustomers: demC,
+      inventoryCustomers: invC,
+      customersOnlyInDemand: cmp(demC,invC),
+      customersOnlyInInventory: cmp(invC,demC),
+      customersDifferingByCaseOrSpacingOnly: caseOnly(invC,demC),
+      skusOnlyInDemand: cmp(demSku,invSku),
+      skusOnlyInInventory: cmp(invSku,demSku),
+      skusDifferingByCaseOrSpacingOnly: caseOnly(invSku,demSku),
+    });
+  });
+  console.log('%c=== Data reconciliation: demand file vs inventory file ===','font-weight:bold');
+  report.forEach(r=>{
+    console.log('%c'+r.store,'font-weight:bold;color:#2E6BE6');
+    console.log('  months      demand='+r.demandMonths+'  inventory='+r.inventoryMonths);
+    if(r.monthsOnlyInDemand.length)    console.log('    only in demand   :',r.monthsOnlyInDemand.join(', '));
+    if(r.monthsOnlyInInventory.length) console.log('    only in inventory:',r.monthsOnlyInInventory.join(', '));
+    console.log('  customers   demand=['+r.demandCustomers.join(' | ')+']');
+    console.log('              inventory=['+r.inventoryCustomers.join(' | ')+']');
+    if(r.customersOnlyInInventory.length) console.log('    %cin inventory but NOT matched in demand -> demand falls back to store-wide:','color:#C93B3B',r.customersOnlyInInventory);
+    if(r.customersOnlyInDemand.length)    console.log('    in demand but not in inventory:',r.customersOnlyInDemand);
+    if(r.customersDifferingByCaseOrSpacingOnly.length) console.log('    %cdiffer only by case/spacing (fixable typo):','color:#D97706',r.customersDifferingByCaseOrSpacingOnly);
+    if(r.skusOnlyInInventory.length) console.log('    SKUs in inventory only:',r.skusOnlyInInventory);
+    if(r.skusOnlyInDemand.length)    console.log('    SKUs in demand only  :',r.skusOnlyInDemand);
+    if(r.skusDifferingByCaseOrSpacingOnly.length) console.log('    %cSKUs differing only by case/spacing:','color:#D97706',r.skusDifferingByCaseOrSpacingOnly);
+  });
+  console.log('\nCurrent view: store='+(STORES[currentStore]||{}).name+
+              '  customer='+currentCustomerFilter+'  sku='+currentSkuFilter+
+              '  horizon=M1..M'+currentHorizon);
+  const cur=STORES[currentStore]||{};
+  console.log('  demand forecast being plotted :',(cur.forecast||[]).slice(0,currentHorizon));
+  console.log('  demand sensed  being plotted  :',(cur.sensed||[]).slice(0,currentHorizon));
+  console.log('  demand scope is customer-filtered:',
+    !!(currentCustomerFilter!=='all' && cur.customerSkuSeries && cur.customerSkuSeries[currentCustomerFilter]));
+  return report;
+}
+window.dhDiagnose=dhDiagnose;
+
 function populateCustomerSelector(storeId){
   const node=$id('customer-filter-node'), sel=$id('customerFilterSelect');
   if(!node || !sel) return;
-  const customers=(STORES[storeId] && STORES[storeId].invCustomers) || [];
+  const st=STORES[storeId]||{};
+  // The list is the union of both files. It used to come only from the
+  // inventory file, so a customer the demand file spells differently (or
+  // does not have at all) still appeared in the dropdown, and the demand
+  // charts silently fell back to the store-wide series while the inventory
+  // charts filtered correctly -- two panels describing different scopes with
+  // nothing on screen saying so. Options are now tagged with what backs them.
+  const invC=st.invCustomers||[], demC=st.demandCustomers||[];
+  const customers=Array.from(new Set([...invC,...demC])).sort();
   if(!customers.length){ node.style.display='none'; currentCustomerFilter='all'; return; }
   node.style.display='flex';
   sel.innerHTML='<option value="all">All Customers</option>' +
-    customers.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join('');
+    customers.map(c=>{
+      const inInv=invC.includes(c), inDem=demC.includes(c);
+      const tag=inInv&&inDem?'':(inDem?' (no inventory rows)':' (no demand rows)');
+      return `<option value="${c.replace(/"/g,'&quot;')}">${c}${tag}</option>`;
+    }).join('');
   sel.value='all';
   currentCustomerFilter='all';
 }
@@ -3098,7 +3196,6 @@ function buildSkuDataFromStores() {
   Object.keys(STORES).forEach(function(storeId) {
     var store = STORES[storeId];
     var skus  = store.skus || [];
-    var totalDmd = skus.reduce(function(a,s){ return a + (s.dmd||0); }, 0) || 1;
 
     // If a specific customer is selected AND the demand file actually has
     // customer-level rows for them, use that customer's real per-SKU series.
@@ -3121,12 +3218,15 @@ function buildSkuDataFromStores() {
         if(hasOwnSeries){
           skuSeries[sku.id] = {dmd:sku.dmd, forecast:sku.forecast.slice(), sensed:sku.sensed.slice(), uplift:sku.uplift};
         } else {
-          var share = (sku.dmd || 0) / totalDmd;
+          // No demand rows for this SKU (e.g. it only exists in the inventory
+          // file). Previously this synthesised a series by multiplying the
+          // store total by the SKU's share of latest-month demand -- a curve
+          // that appears nowhere in the source file. Report zero instead.
           skuSeries[sku.id] = {
             dmd: sku.dmd,
-            forecast: store.forecast.map(function(v){ return Math.round(v * share); }),
-            sensed:   store.sensed.map(function(v){ return Math.round(v * share); }),
-            uplift: store.uplift,
+            forecast: new Array(n).fill(0),
+            sensed:   new Array(n).fill(0),
+            uplift: 0,
           };
         }
       }
