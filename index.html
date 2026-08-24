@@ -1038,6 +1038,7 @@ body{
   <div class="tnav-sep"></div>
   <div class="tnav-tabs">
     <div class="tnav-tab active" id="nav-overview" onclick="showScreen('overview')">Overview</div>
+    <div class="tnav-tab" id="nav-kpi" onclick="showScreen('kpi')">KPI</div>
     <div class="tnav-tab" id="nav-store" onclick="showScreen('store')">Locations <span class="tnav-badge" id="shortfall-badge" style="display:none">0</span></div>
     <div class="tnav-tab" id="nav-dispatch" onclick="showScreen('dispatch')">Replenishment</div>
     <div class="tnav-sep"></div>
@@ -1109,17 +1110,6 @@ body{
 <!-- ═══════════════════ SCREEN 1 — OVERVIEW ═══════════════════ -->
 <div class="tab-content active" id="tab-overview">
 <div class="content">
-  <!-- KPI row -->
-  <div class="pending-wrap">
-    <div class="kpi-row pending-dim" id="kpi-row">
-      <div class="kpi"><div class="kpi-label">Service level</div><div class="kpi-value" id="kpi-sl">—</div><div class="kpi-delta delta-neu" id="kpi-sl-d"></div></div>
-      <div class="kpi"><div class="kpi-label">Fill rate</div><div class="kpi-value" id="kpi-fr">—</div><div class="kpi-delta delta-neu" id="kpi-fr-d"></div></div>
-      <div class="kpi"><div class="kpi-label">Capacity util.</div><div class="kpi-value" id="kpi-cu">—</div><div class="kpi-delta delta-neu" id="kpi-cu-d"></div></div>
-      <div class="kpi"><div class="kpi-label">In-transit units</div><div class="kpi-value" id="kpi-it">—</div><div class="kpi-delta delta-neu" id="kpi-it-d"></div></div>
-      <div class="kpi hi"><div class="kpi-label">Transport cost (MTD)</div><div class="kpi-value" id="kpi-tc">—</div><div class="kpi-delta delta-neu" id="kpi-tc-d"></div></div>
-    </div>
-    <div class="pending-note"><div class="pending-note-inner">Service level, fill rate, capacity, in-transit and transport-cost KPIs need <b>on-hand inventory and freight data</b> — not available yet.</div></div>
-  </div>
   <!-- Charts 2x2 -->
   <div class="charts-row">
     <div class="chart-panel">
@@ -1205,6 +1195,22 @@ body{
       </div>
     </div>
     <div class="pending-note"><div class="pending-note-inner">AI replenishment recommendations need <b>on-hand inventory and freight-cost data</b> — not available yet.</div></div>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════ SCREEN — KPI ═══════════════════ -->
+<div class="tab-content" id="tab-kpi">
+<div class="content">
+  <div class="pending-wrap">
+    <div class="kpi-row pending-dim" id="kpi-row">
+      <div class="kpi"><div class="kpi-label">Service level</div><div class="kpi-value" id="kpi-sl">—</div><div class="kpi-delta delta-neu" id="kpi-sl-d"></div></div>
+      <div class="kpi"><div class="kpi-label">Fill rate</div><div class="kpi-value" id="kpi-fr">—</div><div class="kpi-delta delta-neu" id="kpi-fr-d"></div></div>
+      <div class="kpi"><div class="kpi-label">Capacity util.</div><div class="kpi-value" id="kpi-cu">—</div><div class="kpi-delta delta-neu" id="kpi-cu-d"></div></div>
+      <div class="kpi"><div class="kpi-label">In-transit units</div><div class="kpi-value" id="kpi-it">—</div><div class="kpi-delta delta-neu" id="kpi-it-d"></div></div>
+      <div class="kpi hi"><div class="kpi-label">Transport cost (MTD)</div><div class="kpi-value" id="kpi-tc">—</div><div class="kpi-delta delta-neu" id="kpi-tc-d"></div></div>
+    </div>
+    <div class="pending-note"><div class="pending-note-inner">Service level, fill rate, capacity, in-transit and transport-cost KPIs need <b>on-hand inventory and freight data</b> — not available yet.</div></div>
   </div>
 </div>
 </div>
@@ -1427,6 +1433,7 @@ function showScreen(name){
   $id('tab-'+name).classList.add('active');
   const nav=$id('nav-'+name);if(nav)nav.classList.add('active');
   if(name==='store') renderStoreDetail(currentStore);
+  if(name==='kpi') updateKPIs(currentStore);
   if(name==='datahub') {}  /* Data Hub has no init render needed */
   /* Screen 3 (dispatch) is a static "awaiting data" placeholder — no per-store render */
   window.scrollTo(0,0);
@@ -1469,6 +1476,8 @@ function selectStore(id){
     },900);
   } else if(activeTab==='tab-store'){
     renderStoreDetail(id);
+  } else if(activeTab==='tab-kpi'){
+    updateKPIs(id);
   }
 }
 
