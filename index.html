@@ -2267,10 +2267,6 @@ const WEEK_DATES=[
   {label:'M5',range:'Mar 2026'},{label:'M6',range:'Apr 2026'},
   {label:'M7',range:'May 2026'},{label:'M8',range:'Jun 2026'}
 ];
-const CAT_MIX=[[32,26,25,17],[35,24,24,17],[33,27,24,16],[38,22,23,17],[31,28,24,17],[36,25,23,16],[34,26,24,16],[35,25,24,16]];
-const CAT_COLORS=['var(--blue)','var(--green)','var(--amber)','var(--ink4)'];
-const CAT_NAMES=['Juices & Beverages','Hair Care','Oral Care','Health & Wellness'];
-
 function showDrillDown(weekIdx){
   const s=STORES[currentStore],wd=WEEK_DATES[weekIdx]||WEEK_DATES[0];
   const baseline=s.forecast[weekIdx]||0,sensed=s.sensed[weekIdx]||0,uplift=sensed-baseline;
@@ -2279,7 +2275,6 @@ function showDrillDown(weekIdx){
   set('dp-week-label',`${wd.label} — Demand detail`);set('dp-meta',`${wd.range} · ${s.name}`);
   const activeSignals=s.signals.filter(sg=>sg.on);
   const signalUnits=activeSignals.map(sg=>({name:sg.t,units:Math.round(baseline*(sg.pct/100))}));
-  const mix=CAT_MIX[weekIdx]||CAT_MIX[0];
   const sorted=[...s.skus].sort((a,b)=>b.dmd-a.dmd).slice(0,5);
   const hasInventoryData=s.skus.some(sk=>sk.rop>0||sk.oh>0);
   const stockHealth=hasInventoryData?s.skus.map(sk=>{
@@ -2307,9 +2302,6 @@ function showDrillDown(weekIdx){
   const sigCol={Promo:'var(--purple)',Festival:'var(--amber)',Weather:'var(--blue)',Trend:'var(--green)',Event:'var(--red)'};
   signalUnits.forEach(sg=>{const col=sigCol[sg.name]||'var(--ink4)';html+=`<div class="swf-row"><span class="swf-label">${sg.name} signal</span><div class="swf-bar-wrap"><div class="swf-bar" style="width:${Math.round((sg.units/maxSig)*100)}%;background:${col}"></div></div><span class="swf-val" style="color:${col}">+${sg.units} u</span></div>`;});
   html+=`<div class="swf-row" style="margin-top:4px;padding-top:7px;border-top:1px solid var(--border)"><span class="swf-label" style="font-weight:600;color:var(--ink)">Sensed total</span><div class="swf-bar-wrap"><div class="swf-bar" style="width:100%;background:var(--ink)"></div></div><span class="swf-val" style="font-weight:700;color:var(--ink)">${sensed.toLocaleString()} u</span></div></div></div>`;
-  html+=`<div class="drill-section"><div class="drill-section-title">Category breakdown</div><div class="cat-rows">`;
-  mix.forEach((pct,ci)=>{const units=Math.round(sensed*pct/100);html+=`<div class="cat-row"><span class="cat-dot" style="background:${CAT_COLORS[ci]}"></span><span class="cat-name">${CAT_NAMES[ci]}</span><div class="cat-bar-wrap"><div class="cat-bar" style="width:${pct*2.5}%;background:${CAT_COLORS[ci]};opacity:.75"></div></div><span class="cat-pct">${pct}%</span><span class="cat-units">${units} u</span></div>`;});
-  html+=`</div></div>`;
   html+=`<div class="drill-section"><div class="drill-section-title">Top 5 SKUs by demand</div><table class="drill-table"><thead><tr><th>SKU</th><th>Product</th><th class="r">Fcst units</th><th class="r">vs last wk</th></tr></thead><tbody>`;
   sorted.forEach((sk,i)=>{const units=Math.round(sk.dmd*(1+[.08,.15,-.05,.04,-.03][i]||0));const delta=[8,15,-5,4,-3][i];const dClass=delta>=0?'delta-up':'delta-down';html+=`<tr><td style="font-family:monospace;font-size:11.5px;font-weight:600">${sk.id}</td><td style="font-size:11.5px;color:var(--ink2)">${sk.name}</td><td class="r">${units}</td><td class="r"><span class="${dClass}" style="font-size:11.5px">${delta>=0?'↑':'↓'}${Math.abs(delta)}%</span></td></tr>`;});
   html+=`</tbody></table></div>`;
