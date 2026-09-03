@@ -1670,7 +1670,7 @@ function renderAllCharts(id){
     if(inv2) inv2.style.display='block';
     if(leg2) leg2.style.display='none';
   }
-  set('uplift-badge', sensSource ? '+'+sensSource.sensingUplift+'% vs baseline' : '');
+  set('uplift-badge', sensSource ? (sensSource.sensingUplift>=0?'+':'')+sensSource.sensingUplift+'% vs baseline' : '');
 
   const inv3=$id('chart3-pending'), leg3=$id('chart3-legend');
   const inv4=$id('chart4-pending'), leg4=$id('chart4-legend');
