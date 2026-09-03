@@ -1225,13 +1225,14 @@ body{
     </div>
     <div class="chart-panel">
       <div class="chart-head">
-        <div><div class="chart-title">Demand sensing vs baseline</div><div class="chart-sub">Monthly overlay · dashed = baseline · solid = sensed</div></div>
+        <div><div class="chart-title">Demand sensing vs baseline</div><div class="chart-sub">Monthly overlay · dashed = baseline · solid = sensed · from your demand sensing file</div></div>
         <span class="ai-tag">AI sensing</span>
       </div>
       <div class="chart-area" id="chart2"></div>
-      <div class="chart-legend">
-        <div class="leg-item"><span class="leg-line" style="background:var(--blue)"></span>Sensed demand</div>
-        <div class="leg-item"><span class="leg-line" style="background:var(--ink5);border-top:1.5px dashed var(--ink4)"></span>Baseline</div>
+      <div class="pending-card" id="chart2-pending">Awaiting demand sensing data<br><b>Total demand and sensed forecast</b> have not been loaded for this selection yet.</div>
+      <div class="chart-legend" id="chart2-legend" style="display:none">
+        <div class="leg-item"><span class="leg-line" style="background:var(--blue)"></span>Sensed forecast</div>
+        <div class="leg-item"><span class="leg-line" style="background:var(--ink5);border-top:1.5px dashed var(--ink4)"></span>Total demand</div>
         <span id="uplift-badge" class="ai-tag" style="margin-left:auto"></span>
       </div>
     </div>
@@ -1472,10 +1473,16 @@ function normalizeStore(id, live){
       return {
         id:sk.id, name:sk.name, oh:0, it:0, dmd:sk.dmd||0, ss:0, rop:0, nr:0, rq:0, st:'hold',
         forecast: sk.forecast || [], sensed: sk.sensed || [], uplift: sk.uplift || 0,
+        hasSensing:false, sensingForecast:new Array(weeks).fill(null), sensingSensed:new Array(weeks).fill(null), sensingUplift:0,
       };
     }),
     demandCustomers: live.demandCustomers || [],
     customerSkuSeries: live.customerSkuSeries || {},
+    // Demand sensing vs baseline (chart2) is a separate live source from the
+    // Baseline/Promo demand file above -- see SENSING_REQUIRED_COLS. Kept
+    // apart from .forecast/.sensed so it never collides with them.
+    hasSensing:false, sensingCustomers:[],
+    sensingForecast:new Array(weeks).fill(null), sensingSensed:new Array(weeks).fill(null), sensingUplift:0,
   };
 }
 
@@ -1635,10 +1642,35 @@ function renderAllCharts(id){
   const s=STORES[id],n=currentHorizon;
   const wk=Array.from({length:n},(_,i)=>'M'+(i+1));
   updateDemandScopeWarning(id);
+  computeSensingSeries(id);
   renderStackedBar('chart1',s.forecast.slice(0,n),s.sensed.slice(0,n),{labels:wk});
-  // Chart 2: same real monthly baseline/sensed series as chart1, just as a
-  // line comparison instead of a bar -- no fabricated daily breakdown.
-  renderDualLine('chart2',s.sensed.slice(0,n),s.forecast.slice(0,n),{labels:wk,uplift:s.uplift});
+
+  // Chart 2 reads a separate live source (Total Demand / Sensed Forecast),
+  // not the Baseline/Promo demand file chart1 uses -- see
+  // computeSensingSeries(). Respects the SKU filter the same way chart3/4
+  // do, so a specific SKU's sensing line is that SKU's own file rows, not
+  // a proportional share of the store total.
+  const inv2=$id('chart2-pending'), leg2=$id('chart2-legend');
+  const hasRealSensing=arr=>Array.isArray(arr)&&arr.slice(0,n).some(v=>v!==null&&v!==undefined&&!isNaN(v));
+  let sensSource=null;
+  if(currentSkuFilter==='all'){
+    if(s.hasSensing && hasRealSensing(s.sensingForecast)) sensSource=s;
+  } else {
+    const selSkuS=(s.skus||[]).find(sk=>sk.id===currentSkuFilter);
+    if(selSkuS && selSkuS.hasSensing && hasRealSensing(selSkuS.sensingForecast)){
+      sensSource={sensingForecast:selSkuS.sensingForecast, sensingSensed:selSkuS.sensingSensed, sensingUplift:selSkuS.sensingUplift};
+    }
+  }
+  if(sensSource){
+    if(inv2) inv2.style.display='none';
+    if(leg2) leg2.style.display='flex';
+    renderDualLine('chart2',sensSource.sensingSensed.slice(0,n),sensSource.sensingForecast.slice(0,n),{labels:wk,uplift:sensSource.sensingUplift});
+  } else {
+    const c2=$id('chart2'); if(c2) c2.innerHTML='';
+    if(inv2) inv2.style.display='block';
+    if(leg2) leg2.style.display='none';
+  }
+  set('uplift-badge', sensSource ? '+'+sensSource.sensingUplift+'% vs baseline' : '');
 
   const inv3=$id('chart3-pending'), leg3=$id('chart3-legend');
   const inv4=$id('chart4-pending'), leg4=$id('chart4-legend');
@@ -1674,7 +1706,6 @@ function renderAllCharts(id){
     if(inv4) inv4.style.display='block';
     if(leg4) leg4.style.display='none';
   }
-  set('uplift-badge','+'+s.uplift+'% vs baseline');
 }
 
 function svgBase(cid,W,H){const el=$id(cid);if(!el)return null;return{el,W:el.clientWidth||W,H:el.clientHeight||H}}
@@ -1705,20 +1736,51 @@ function renderStackedBar(cid,baseline,sensed,opts){
   s+='</svg>';el.innerHTML=s;
 }
 
+/* sensed/baseline can each independently be null for a given month -- the
+   real sensing file has rows with Total Demand but a blank Sensed Forecast.
+   Each line is drawn as its own set of broken runs so a gap in one series
+   never bridges over, or gets confused with, a gap in the other. */
 function renderDualLine(cid,sensed,baseline,opts){
   const b=svgBase(cid,400,160);if(!b)return;
   const{el,W,H}=b,pad={t:8,b:20,l:36,r:6},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b,n=sensed.length;
-  const all=[...sensed,...baseline],mx=Math.max(...all)*1.06,mn=Math.min(...all)*0.95,rng=mx-mn||1;
-  const pt=(v,i)=>[pad.l+(n>1?(i/(n-1)):0.5)*cw,pad.t+ch-((v-mn)/rng)*ch];
+  const isNum=v=>v!==null&&v!==undefined&&!isNaN(v);
+  const real=[...sensed,...baseline].filter(isNum);
+  if(!real.length){el.innerHTML='';return;}
+  const mx=Math.max(...real)*1.06,mn=Math.min(...real)*0.95,rng=(mx-mn)||1;
+  const xgap=cw*0.06/(n+1),slot=(cw-xgap*(n+1))/n;
+  const xAt=i=>pad.l+xgap+i*(slot+xgap)+slot/2;
+  const pt=(v,i)=>[xAt(i),pad.t+ch-((v-mn)/rng)*ch];
   const yS=niceStep((mx-mn)/4),yB=Math.floor(mn/yS)*yS;
   let s=`<svg width="${W}" height="${H}"><defs><linearGradient id="area${cid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2563EB" stop-opacity=".12"/><stop offset="100%" stop-color="#2563EB" stop-opacity=".01"/></linearGradient></defs>`;
   for(let i=0;i<=4;i++){const yv=yB+i*yS,y=pad.t+ch-((yv-mn)/rng)*ch;if(y<pad.t-2||y>pad.t+ch+2)continue;s+=`<line x1="${pad.l}" y1="${y}" x2="${W-pad.r}" y2="${y}" stroke="#E8ECF1" stroke-width="1"/><text x="${pad.l-4}" y="${y+4}" font-size="8.5" fill="#8B95A5" text-anchor="end">${fmt(yv)}</text>`;}
-  const aPts=[...sensed.map(pt),...baseline.map(pt).reverse()];
-  s+=`<polygon points="${aPts.map(p=>p.join(',')).join(' ')}" fill="url(#area${cid})"/>`;
-  s+=`<polyline points="${baseline.map(pt).map(p=>p.join(',')).join(' ')}" fill="none" stroke="#B0B8C8" stroke-width="1.5" stroke-dasharray="4 3"/>`;
-  s+=`<polyline points="${sensed.map(pt).map(p=>p.join(',')).join(' ')}" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
-  sensed.forEach((v,i)=>{const[x,y]=pt(v,i);s+=`<circle cx="${x}" cy="${y}" r="3" fill="#2563EB" onmouseenter="showTT(event,'${opts.labels[i]} sensed: ${fmt(v)} u (+${opts.uplift}%)')" onmouseleave="hideTT()" style="cursor:pointer"/>`;});
-  sensed.forEach((_,i)=>{const[x]=pt(0,i);s+=`<text x="${x}" y="${H-3}" font-size="8.5" fill="#8B95A5" text-anchor="middle">${opts.labels[i]}</text>`;});
+
+  function runsOf(arr){
+    const out=[]; let cur=null;
+    arr.forEach((v,i)=>{ if(!isNum(v)){cur=null; return;} if(!cur){cur=[]; out.push(cur);} cur.push(i); });
+    return out;
+  }
+  // Fill only where BOTH series have a real value that month, per contiguous run.
+  const bothRuns=[]; let cur=null;
+  for(let i=0;i<n;i++){ if(isNum(sensed[i])&&isNum(baseline[i])){ if(!cur){cur=[]; bothRuns.push(cur);} cur.push(i);} else cur=null; }
+  bothRuns.forEach(run=>{
+    if(run.length<2) return;
+    const top=run.map(i=>pt(sensed[i],i)), bot=run.map(i=>pt(baseline[i],i)).reverse();
+    s+=`<polygon points="${[...top,...bot].map(p=>p.join(',')).join(' ')}" fill="url(#area${cid})"/>`;
+  });
+  runsOf(baseline).forEach(run=>{
+    if(run.length<2) return;
+    s+=`<polyline points="${run.map(i=>pt(baseline[i],i).join(',')).join(' ')}" fill="none" stroke="#B0B8C8" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+  });
+  runsOf(sensed).forEach(run=>{
+    if(run.length<2) return;
+    s+=`<polyline points="${run.map(i=>pt(sensed[i],i).join(',')).join(' ')}" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  });
+  sensed.forEach((v,i)=>{if(!isNum(v))return;const[x,y]=pt(v,i);s+=`<circle cx="${x}" cy="${y}" r="3" fill="#2563EB" onmouseenter="showTT(event,'${opts.labels[i]} sensed forecast: ${fmtExact(v)} u')" onmouseleave="hideTT()" style="cursor:pointer"/>`;});
+  baseline.forEach((v,i)=>{if(!isNum(v))return;const[x,y]=pt(v,i);s+=`<circle cx="${x}" cy="${y}" r="2.5" fill="#B0B8C8" onmouseenter="showTT(event,'${opts.labels[i]} total demand: ${fmtExact(v)} u')" onmouseleave="hideTT()" style="cursor:pointer"/>`;});
+  for(let i=0;i<n;i++){
+    const x=xAt(i), hasAny=isNum(sensed[i])||isNum(baseline[i]);
+    s+=`<text x="${x}" y="${H-3}" font-size="8.5" fill="${hasAny?'#8B95A5':'#C4CBD6'}" text-anchor="middle">${opts.labels[i]}</text>`;
+  }
   s+='</svg>';el.innerHTML=s;
 }
 
@@ -2898,6 +2960,186 @@ function dhDeriveInvStatus(oh, rop, nr, sensedPerMonth){
   return 'hold';
 }
 
+/* ── Demand sensing vs baseline (chart2) — a separate live source ───────
+   Same two-file pattern as inventory: its own file, its own config path,
+   its own month set projected onto the demand file's axis by calendar
+   month. Total Demand -> the chart's "baseline" line, Sensed Forecast ->
+   the "sensed" line. A row can have Total Demand but a BLANK Sensed
+   Forecast (seen in the real file) -- defval:null on this parse keeps
+   that blank as null rather than SheetJS's usual defval:0, so a missing
+   forecast for one month never reads as "AI sensed zero demand". */
+const SENSING_REQUIRED_COLS = ['SKU Name','Customer Name','Store Name','Week Start Date','Total Demand','Sensed Forecast'];
+
+function dhFindSensingSheet(wb){
+  for(const name of wb.SheetNames){
+    const rawRows = XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:null});
+    if(!rawRows.length) continue;
+    const rows = dhNormalizeRows(rawRows);
+    if(SENSING_REQUIRED_COLS.every(c => c in rows[0])) return name;
+  }
+  return null;
+}
+
+function dhAggregateSensing(wb, sheetName){
+  const rows = dhNormalizeRows(XLSX.utils.sheet_to_json(wb.Sheets[sheetName], {defval:null}));
+
+  const weekDatesByStore = {};
+  rows.forEach(r=>{
+    const store=String(r['Store Name']||'').trim(), wk=r['Week Start Date'];
+    if(!store || !wk) return;
+    if(!weekDatesByStore[store]) weekDatesByStore[store]=new Set();
+    weekDatesByStore[store].add(dhDateStr(wk));
+  });
+  const weekIdx={};
+  Object.keys(weekDatesByStore).forEach(store=>{
+    const sorted=Array.from(weekDatesByStore[store]).sort();
+    weekIdx[store]={};
+    sorted.forEach((d,i)=>weekIdx[store][d]=i);
+  });
+
+  // store -> customer -> skuId(slug, matches demand-side sk.id) -> weekIdx -> {totalDemand,sensedForecast}
+  const cell={}, storeCustomers={}, storeSkuNames={};
+  const isBlank=v=>v===null||v===undefined||v==='';
+
+  rows.forEach(r=>{
+    const store=String(r['Store Name']||'').trim();
+    const customer=String(r['Customer Name']||'').trim();
+    const sku=String(r['SKU Name']||'').trim();
+    const wk=r['Week Start Date'];
+    if(!store || !customer || !sku || !wk) return;
+    const wi=weekIdx[store][dhDateStr(wk)];
+    const skuId=dhSlug(sku);
+
+    if(!cell[store]) cell[store]={};
+    if(!cell[store][customer]) cell[store][customer]={};
+    if(!cell[store][customer][skuId]) cell[store][customer][skuId]={};
+    cell[store][customer][skuId][wi] = {
+      totalDemand:   isBlank(r['Total Demand'])    ? null : Number(r['Total Demand']),
+      sensedForecast: isBlank(r['Sensed Forecast']) ? null : Number(r['Sensed Forecast']),
+    };
+
+    if(!storeSkuNames[store]) storeSkuNames[store]={};
+    storeSkuNames[store][skuId]=sku;
+
+    if(!storeCustomers[store]) storeCustomers[store]=new Set();
+    storeCustomers[store].add(customer);
+  });
+
+  const result={};
+  Object.keys(weekIdx).forEach(store=>{
+    result[dhSlug(store)] = {
+      name: store,
+      weekKeys: Object.keys(weekIdx[store]).sort(),
+      customers: Array.from(storeCustomers[store]||[]).sort(),
+      cell: cell[store] || {},
+      skuNames: storeSkuNames[store] || {},
+    };
+  });
+  return result;
+}
+
+/* Recomputes store-level and per-SKU sensingForecast/sensingSensed series
+   from window.DH_SENSING for whichever customer(s) are currently selected.
+   Same month-axis-alignment and null-preservation approach as
+   applyCustomerFilterToStores() for inventory -- see the comments there. */
+function computeSensingSeries(storeId){
+  const store=STORES[storeId];
+  if(!store) return;
+  const sens=window.DH_SENSING && window.DH_SENSING[storeId];
+
+  if(!sens){
+    store.hasSensing=false;
+    store.skus.forEach(sk=>{ sk.hasSensing=false; });
+    return;
+  }
+
+  const customers = currentCustomerFilter==='all' ? sens.customers : [currentCustomerFilter];
+  const axis = (store.weekKeys && store.weekKeys.length) ? store.weekKeys : (sens.weekKeys||[]);
+  const axisPos = {};
+  axis.forEach((d,i)=>{ axisPos[d]=i; });
+  const sensKeys = sens.weekKeys || [];
+  const sensToAxis = sensKeys.map(d => (d in axisPos) ? axisPos[d] : -1);
+  const N = axis.length;
+  const addAt = (arr,i,v)=>{ arr[i] = (arr[i]===null?0:arr[i]) + v; };
+
+  // Sensing can reference SKUs the demand file doesn't have (yet) -- add
+  // them to the roster (dmd:0, genuinely unknown, not fabricated) rather
+  // than silently dropping real sensing rows.
+  const existingIds = new Set(store.skus.map(sk=>sk.id));
+  Object.keys(sens.skuNames||{}).forEach(skuId=>{
+    if(existingIds.has(skuId)) return;
+    store.skus.push({
+      id: skuId, name: sens.skuNames[skuId], oh:0, it:0, dmd:0, ss:0, rop:0, nr:0, rq:0, st:'hold',
+      forecast: [], sensed: [], uplift: 0, hasInv:false,
+      hasSensing:false, sensingForecast:new Array(N).fill(null), sensingSensed:new Array(N).fill(null), sensingUplift:0,
+    });
+    existingIds.add(skuId);
+  });
+
+  store.skus.forEach(sk=>{
+    const skForecast=new Array(N).fill(null), skSensed=new Array(N).fill(null);
+    let found=false, latestF=null, latestS=null;
+    customers.forEach(cust=>{
+      const bySkuAtCust=sens.cell[cust]||{};
+      const cellForSku=bySkuAtCust[sk.id];
+      if(!cellForSku) return;
+      for(let w=0; w<sensKeys.length; w++){
+        const c=cellForSku[w];
+        if(!c) continue;
+        const a=sensToAxis[w];
+        if(a<0) continue;
+        if(c.totalDemand!==null) addAt(skForecast,a,c.totalDemand);
+        if(c.sensedForecast!==null) addAt(skSensed,a,c.sensedForecast);
+      }
+    });
+    // Uplift badge: the latest month where this SKU has BOTH a real total
+    // demand and a real sensed forecast -- not just the file's last month,
+    // which may have one value blank (as the real file does).
+    for(let a=N-1; a>=0; a--){
+      if(skForecast[a]!==null && skSensed[a]!==null){ found=true; latestF=skForecast[a]; latestS=skSensed[a]; break; }
+    }
+    sk.hasSensing = skForecast.some(v=>v!==null) || skSensed.some(v=>v!==null);
+    sk.sensingForecast=skForecast; sk.sensingSensed=skSensed;
+    sk.sensingUplift = found ? Math.round(((latestS-latestF)/(latestF||1))*1000)/10 : 0;
+  });
+
+  const forecastArr=new Array(N).fill(null), sensedArr=new Array(N).fill(null);
+  let anyMonth=false, latestF=null, latestS=null;
+  for(let w=0; w<sensKeys.length; w++){
+    const a=sensToAxis[w];
+    if(a<0) continue;
+    customers.forEach(cust=>{
+      const bySku=sens.cell[cust]||{};
+      Object.keys(bySku).forEach(skuId=>{
+        const c=bySku[skuId][w];
+        if(!c) return;
+        if(c.totalDemand!==null){ addAt(forecastArr,a,c.totalDemand); anyMonth=true; }
+        if(c.sensedForecast!==null){ addAt(sensedArr,a,c.sensedForecast); anyMonth=true; }
+      });
+    });
+  }
+  for(let a=N-1; a>=0; a--){
+    if(forecastArr[a]!==null && sensedArr[a]!==null){ latestF=forecastArr[a]; latestS=sensedArr[a]; break; }
+  }
+
+  store.hasSensing = anyMonth;
+  store.sensingForecast = forecastArr;
+  store.sensingSensed = sensedArr;
+  store.sensingUplift = latestF!==null ? Math.round(((latestS-latestF)/(latestF||1))*1000)/10 : 0;
+}
+
+function dhMergeSensing(liveSensing){
+  window.DH_SENSING = liveSensing;
+  Object.keys(liveSensing).forEach(storeId=>{
+    if(STORES[storeId]) STORES[storeId].sensingCustomers = liveSensing[storeId].customers;
+  });
+  if(currentStore){
+    populateCustomerSelector(currentStore);
+    renderAllCharts(currentStore);
+    if(document.getElementById('tab-store')?.classList.contains('active')) renderStoreDetail(currentStore);
+  }
+}
+
 /* ── Diagnostic ───────────────────────────────────────────────
    Run  dhDiagnose()  in the browser console (F12) to see exactly which
    rows feed each panel and where the demand and inventory files disagree.
@@ -2970,14 +3212,17 @@ function populateCustomerSelector(storeId){
   // charts silently fell back to the store-wide series while the inventory
   // charts filtered correctly -- two panels describing different scopes with
   // nothing on screen saying so. Options are now tagged with what backs them.
-  const invC=st.invCustomers||[], demC=st.demandCustomers||[];
-  const customers=Array.from(new Set([...invC,...demC])).sort();
+  const invC=st.invCustomers||[], demC=st.demandCustomers||[], sensC=st.sensingCustomers||[];
+  const customers=Array.from(new Set([...invC,...demC,...sensC])).sort();
   if(!customers.length){ node.style.display='none'; currentCustomerFilter='all'; return; }
   node.style.display='flex';
   sel.innerHTML='<option value="all">All Customers</option>' +
     customers.map(c=>{
-      const inInv=invC.includes(c), inDem=demC.includes(c);
-      const tag=inInv&&inDem?'':(inDem?' (no inventory rows)':' (no demand rows)');
+      const missing=[];
+      if(!demC.includes(c)) missing.push('demand');
+      if(!invC.includes(c)) missing.push('inventory');
+      if(sensC.length && !sensC.includes(c)) missing.push('sensing');
+      const tag = missing.length ? ` (no ${missing.join('/')} rows)` : '';
       return `<option value="${c.replace(/"/g,'&quot;')}">${c}${tag}</option>`;
     }).join('');
   sel.value='all';
@@ -3184,6 +3429,7 @@ function dhRenderSummary(liveStores, fileName){
 ════════════════════════════════════════════════════════════════ */
 const LIVE_DATA_XLSX_URL = '/source-data.xlsx';
 const LIVE_INVENTORY_XLSX_URL = '/source-data-inventory.xlsx';
+const LIVE_SENSING_XLSX_URL = '/source-data-sensing.xlsx';
 
 async function refreshFromSource(){
   const btn = $id('refresh-btn'), label = $id('refresh-btn-label');
@@ -3222,8 +3468,28 @@ async function refreshFromSource(){
       console.warn('[Refresh] Inventory refresh failed, continuing with demand data only:', invErr);
     }
 
+    let sensNote = '';
+    try {
+      const sensRes = await fetch(LIVE_SENSING_XLSX_URL + '?t=' + Date.now(), {cache:'no-store'});
+      if(sensRes.ok){
+        const sensBuf = await sensRes.arrayBuffer();
+        const sensWb = XLSX.read(sensBuf, {type:'array', cellDates:true});
+        const sensSheetName = dhFindSensingSheet(sensWb);
+        if(sensSheetName){
+          dhMergeSensing(dhAggregateSensing(sensWb, sensSheetName));
+          sensNote = ' + sensing';
+        } else {
+          console.warn('[Refresh] Sensing file reachable but no sheet matched the expected columns:', SENSING_REQUIRED_COLS);
+        }
+      } else {
+        console.warn('[Refresh] Sensing file not reachable (HTTP ' + sensRes.status + ') — continuing without it.');
+      }
+    } catch(sensErr){
+      console.warn('[Refresh] Sensing refresh failed, continuing without it:', sensErr);
+    }
+
     dhRenderSummary(liveStores, 'source file');
-    showToast('✓ Refreshed from source file' + invNote);
+    showToast('✓ Refreshed from source file' + invNote + sensNote);
   } catch(err){
     showToast('Refresh failed — ' + err.message);
     console.error('[Refresh]', err);

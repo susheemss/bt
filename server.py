@@ -29,6 +29,7 @@ APP_DIR = Path(__file__).parent
 ROUTES = {
     '/source-data.xlsx':           APP_DIR / 'source_path.txt',
     '/source-data-inventory.xlsx': APP_DIR / 'source_path_inventory.txt',
+    '/source-data-sensing.xlsx':   APP_DIR / 'source_path_sensing.txt',
 }
 
 
