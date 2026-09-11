@@ -154,6 +154,10 @@ export function parseDemandWorkbook(wb: XLSX.WorkBook, sheetName: string): Recor
         ropSeries: new Array(numWeeks).fill(null),
         replenQtySeries: new Array(numWeeks).fill(null),
         gapSeries: new Array(numWeeks).fill(null),
+        hasSensing: false,
+        sensingForecast: new Array(numWeeks).fill(null),
+        sensingSensed: new Array(numWeeks).fill(null),
+        sensingUplift: 0,
       }
     })
 
@@ -201,6 +205,11 @@ export function parseDemandWorkbook(wb: XLSX.WorkBook, sheetName: string): Recor
       ropSeries: new Array(numWeeks).fill(null),
       replenQtySeries: new Array(numWeeks).fill(null),
       gap: new Array(numWeeks).fill(null),
+      hasSensing: false,
+      sensingCustomers: [],
+      sensingForecast: new Array(numWeeks).fill(null),
+      sensingSensed: new Array(numWeeks).fill(null),
+      sensingUplift: 0,
     }
   })
   return result

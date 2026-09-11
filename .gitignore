@@ -6,3 +6,8 @@ dist
 server_log.txt
 inventory_fixture_exact.xlsx
 Demand_Sensing_Exact.xlsx
+openrouter_api_key.txt
+__pycache__/
+ifs_di2_demand_sensing_modified.csv
+monthly_inventory_replenishment_output_modified.csv
+Test_No_SafetyStock.xlsx

@@ -4,11 +4,12 @@ interface Props {
   labels: string[]
   forecast: number[]
   sensed: number[]
+  onBarClick?: (index: number) => void
 }
 
 const axis = { fontSize: 10, fill: '#8B95A5' }
 
-export default function DemandForecastChart({ labels, forecast, sensed }: Props) {
+export default function DemandForecastChart({ labels, forecast, sensed, onBarClick }: Props) {
   const data = forecast.map((v, i) => ({
     month: labels[i],
     baseline: v,
@@ -16,7 +17,7 @@ export default function DemandForecastChart({ labels, forecast, sensed }: Props)
   }))
 
   return (
-    <ResponsiveContainer width="100%" height={172}>
+    <ResponsiveContainer width="100%" height="100%" minHeight={172}>
       <BarChart data={data} barSize={16} margin={{ top: 8, right: 4, left: -14, bottom: 0 }}>
         <CartesianGrid strokeDasharray="2 4" stroke="#E8ECF1" vertical={false} />
         <XAxis dataKey="month" tick={axis} axisLine={{ stroke: '#E2E6EB' }} tickLine={false} />
@@ -27,8 +28,22 @@ export default function DemandForecastChart({ labels, forecast, sensed }: Props)
           contentStyle={{ fontSize: 11, borderRadius: 6, border: '1px solid #E2E6EB', boxShadow: '0 4px 12px rgba(16,24,40,0.08)', padding: '6px 10px' }}
           formatter={(v: number, name: string) => [v.toLocaleString(), name === 'baseline' ? 'Baseline forecast' : 'Sensing uplift']}
         />
-        <Bar dataKey="baseline" stackId="a" fill="#2E6BE6" radius={[0, 0, 2, 2]} />
-        <Bar dataKey="uplift" stackId="a" fill="#6C5CE7" radius={[2, 2, 0, 0]} />
+        <Bar
+          dataKey="baseline"
+          stackId="a"
+          fill="#2E6BE6"
+          radius={[0, 0, 2, 2]}
+          cursor={onBarClick ? 'pointer' : undefined}
+          onClick={(_, index) => onBarClick?.(index)}
+        />
+        <Bar
+          dataKey="uplift"
+          stackId="a"
+          fill="#6C5CE7"
+          radius={[2, 2, 0, 0]}
+          cursor={onBarClick ? 'pointer' : undefined}
+          onClick={(_, index) => onBarClick?.(index)}
+        />
       </BarChart>
     </ResponsiveContainer>
   )

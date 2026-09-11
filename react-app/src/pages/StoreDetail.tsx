@@ -28,7 +28,7 @@ export default function StoreDetail() {
   if (!store) {
     return (
       <div className="max-w-lg mx-auto mt-16">
-        <PendingNote>No data loaded yet. Use Refresh in the top bar, or visit Data Hub for details.</PendingNote>
+        <PendingNote>No data loaded yet. Use Refresh in the top bar to load it.</PendingNote>
       </div>
     )
   }
@@ -38,7 +38,7 @@ export default function StoreDetail() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-1.5 text-[11.5px] text-ink4">
-        <button onClick={() => navigate('/overview')} className="hover:text-blue font-medium">Network overview</button>
+        <button onClick={() => navigate('/overview')} className="hover:text-blue font-medium">Demand Overview</button>
         <ChevronRight size={12} />
         <span className="text-ink2 font-semibold">{store.name} · SKU replenishment detail</span>
       </div>

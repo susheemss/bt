@@ -6,8 +6,8 @@ import Overview from './pages/Overview'
 import Kpi from './pages/Kpi'
 import StoreDetail from './pages/StoreDetail'
 import Dispatch from './pages/Dispatch'
-import DataHub from './pages/DataHub'
-import ChatPreview from './components/ai/ChatPreview'
+import ChatAssistant from './components/ai/ChatAssistant'
+import DrillDownPanel from './components/drilldown/DrillDownPanel'
 import { useAppStore } from './store/useAppStore'
 
 function StatusBar() {
@@ -22,9 +22,7 @@ function StatusBar() {
         <span className={`w-1.5 h-1.5 rounded-full ${refresh.status === 'success' ? 'bg-green' : refresh.status === 'error' ? 'bg-red' : 'bg-ink5'}`} />
         {refresh.status === 'success' ? 'Connected · live source files' : refresh.status === 'loading' ? 'Refreshing…' : refresh.status === 'error' ? 'Refresh failed' : 'Not connected'}
       </span>
-      {refresh.lastRefreshedAt && <span>Data as of {new Date(refresh.lastRefreshedAt).toLocaleString()}</span>}
       <span className="ml-auto hidden sm:inline">{storeOrder.length} store{storeOrder.length === 1 ? '' : 's'} · {skuCount} SKU positions · 1 DC</span>
-      <span className="text-ink5">Enterprise preview</span>
     </footer>
   )
 }
@@ -50,13 +48,13 @@ export default function App() {
               <Route path="/kpi" element={<Kpi />} />
               <Route path="/stores/:storeId" element={<StoreDetail />} />
               <Route path="/replenishment" element={<Dispatch />} />
-              <Route path="/data-hub" element={<DataHub />} />
               <Route path="*" element={<Navigate to="/overview" replace />} />
             </Routes>
           </main>
           <StatusBar />
         </div>
-        <ChatPreview />
+        <ChatAssistant />
+        <DrillDownPanel />
       </div>
     </HashRouter>
   )

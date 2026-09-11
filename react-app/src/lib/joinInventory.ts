@@ -40,6 +40,10 @@ export function mergeInventoryRoster(store: LiveStore, inv: InvStoreData | undef
       ropSeries: [],
       replenQtySeries: [],
       gapSeries: [],
+      hasSensing: false,
+      sensingForecast: [],
+      sensingSensed: [],
+      sensingUplift: 0,
     })
     existingIds.add(skuId)
   })
@@ -88,7 +92,8 @@ export function computeInventoryView(
       ss = 0,
       rop = 0,
       rq = 0,
-      found = false
+      found = false,
+      ssFound = false
     const skOnHand: Series = new Array(N).fill(null)
     const skRop: Series = new Array(N).fill(null)
     const skReplenQty: Series = new Array(N).fill(null)
@@ -114,9 +119,12 @@ export function computeInventoryView(
         if (!c) continue
         found = true
         oh += c.onHand
-        ss += c.ss
         rop += c.rop
         rq += c.replenQty
+        if (c.ss !== null) {
+          ss += c.ss
+          ssFound = true
+        }
         break
       }
     })
@@ -132,7 +140,7 @@ export function computeInventoryView(
       ...sk,
       hasInv: true,
       oh,
-      ss,
+      ss: ssFound ? ss : null,
       rop,
       nr,
       rq,

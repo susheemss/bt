@@ -35,7 +35,7 @@ export default function Kpi() {
         Service level, fill rate, capacity utilisation, in-transit units and transportation cost all need{' '}
         <b className="text-ink3">on-hand inventory and freight data</b> together — freight cost isn't part of either
         source file yet. On-hand and ROP for <b className="text-ink3">{store.name}</b> are already live on the
-        Network overview and Stores pages.
+        Demand Overview and Stores pages.
       </PendingNote>
     </div>
   )

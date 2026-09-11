@@ -18,9 +18,13 @@ Run:   python server.py
 Stop:  close this window / Ctrl+C
 Bound to 127.0.0.1 only -- reachable only from a browser on this same
 server, not from other PCs on the network.
+
+  POST /api/chat  -- AI assistant. See chat_backend.py.
 """
 import http.server
+import json
 from pathlib import Path
+import chat_backend
 
 PORT = 8000
 BIND = '127.0.0.1'
@@ -43,6 +47,46 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.serve_configured_file(ROUTES[route])
         else:
             super().do_GET()
+
+    def do_POST(self):
+        if self.path.split('?')[0] == '/api/chat':
+            self.handle_chat()
+        else:
+            self.send_plain_error(404, 'Not found')
+
+    def handle_chat(self):
+        try:
+            length = int(self.headers.get('Content-Length', 0))
+            if length <= 0 or length > 20_000_000:
+                self.send_json_error(400, 'Missing or oversized request body')
+                return
+            body = json.loads(self.rfile.read(length).decode('utf-8'))
+            message = (body.get('message') or '').strip()
+            if not message:
+                self.send_json_error(400, "Missing 'message'")
+                return
+            history = body.get('history') or []
+            data = body.get('data') or {}
+            answer = chat_backend.handle_chat(message, history, data)
+            self.send_json(200, {'answer': answer})
+        except chat_backend.ChatError as e:
+            self.send_json_error(502, str(e))
+        except json.JSONDecodeError:
+            self.send_json_error(400, 'Invalid JSON body')
+        except Exception as e:
+            self.send_json_error(500, f'Unexpected error: {e}')
+
+    def send_json(self, code, obj):
+        body = json.dumps(obj).encode('utf-8')
+        self.send_response(code)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Content-Length', str(len(body)))
+        self.send_header('Cache-Control', 'no-store')
+        self.end_headers()
+        self.wfile.write(body)
+
+    def send_json_error(self, code, message):
+        self.send_json(code, {'error': message})
 
     def serve_configured_file(self, config_file):
         if not config_file.is_file():

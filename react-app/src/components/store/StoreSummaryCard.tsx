@@ -1,4 +1,3 @@
-import AITag from '../ai/AITag'
 import type { LiveStore } from '../../types'
 import { fmtExact } from '../../utils/supplyChain'
 
@@ -17,6 +16,11 @@ interface Props {
 
 export default function StoreSummaryCard({ store, customerFilter }: Props) {
   const activeSignals = store.signals.filter((s) => s.on)
+  // Null-aware total: an SKU whose Safety stock is null (file has no such
+  // column) contributes nothing rather than being treated as a real zero,
+  // and the whole stat reads "—" if no SKU ever had a real value.
+  const ssSkus = store.skus.filter((sk) => sk.hasInv && sk.ss !== null)
+  const totalSs = ssSkus.length ? ssSkus.reduce((a, sk) => a + (sk.ss ?? 0), 0) : null
 
   return (
     <div className="panel p-4 flex flex-col gap-4 h-full">
@@ -33,6 +37,7 @@ export default function StoreSummaryCard({ store, customerFilter }: Props) {
         <div className="grid grid-cols-2 gap-2">
           {[
             { label: 'On-hand', value: fmtExact(store.onHand) },
+            { label: 'Safety stock', value: fmtExact(totalSs) },
             { label: 'ROP', value: fmtExact(store.rop) },
           ].map((stat) => (
             <div key={stat.label} className="bg-surface2 border border-border rounded-md px-2.5 py-2">
@@ -61,15 +66,6 @@ export default function StoreSummaryCard({ store, customerFilter }: Props) {
         ) : (
           <div className="text-[11px] text-ink4">No active signals this horizon</div>
         )}
-      </div>
-
-      {/* AI note -- real uplift, computed from Promo Units vs Baseline in the latest month */}
-      <div className="mt-auto rounded-md border border-dashed border-purple/45 bg-purple-light/30 p-3">
-        <AITag label="AI-Powered sensing" />
-        <p className="text-[11.5px] text-ink3 leading-relaxed mt-2">
-          AI technology detects <span className="font-bold text-purple num">{store.uplift >= 0 ? '+' : ''}{store.uplift.toFixed(1)}%</span> demand
-          uplift vs baseline this horizon.
-        </p>
       </div>
     </div>
   )

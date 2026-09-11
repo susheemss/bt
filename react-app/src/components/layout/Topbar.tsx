@@ -3,10 +3,9 @@ import { RefreshCw, Search, HelpCircle, ChevronRight, Loader2 } from 'lucide-rea
 import { useAppStore } from '../../store/useAppStore'
 
 const PAGE_META: Record<string, { section: string; title: string }> = {
-  '/overview': { section: 'Planning', title: 'Network overview' },
-  '/kpi': { section: 'Planning', title: 'Network KPIs' },
+  '/overview': { section: 'Planning', title: 'Demand Overview' },
+  '/kpi': { section: 'Planning', title: 'Demand KPI' },
   '/replenishment': { section: 'Planning', title: 'Replenishment & DC dispatch' },
-  '/data-hub': { section: 'Configuration', title: 'Data Hub' },
 }
 
 export default function Topbar() {
@@ -28,7 +27,7 @@ export default function Topbar() {
   const store = currentStore ? stores[currentStore] : null
   const meta = isStores
     ? { section: 'Planning', title: store ? `${store.name} — SKU replenishment detail` : 'Store detail' }
-    : PAGE_META[location.pathname] ?? { section: 'Planning', title: 'Network overview' }
+    : PAGE_META[location.pathname] ?? { section: 'Planning', title: 'Demand Overview' }
 
   const showFilters = (location.pathname === '/overview' || location.pathname === '/kpi' || isStores) && !!store
 
@@ -36,7 +35,7 @@ export default function Topbar() {
   // customer known to only one file still shows up, tagged, rather than
   // vanishing silently.
   const customerOptions = store
-    ? Array.from(new Set([...(store.invCustomers ?? []), ...(store.demandCustomers ?? [])])).sort()
+    ? Array.from(new Set([...(store.invCustomers ?? []), ...(store.demandCustomers ?? []), ...(store.sensingCustomers ?? [])])).sort()
     : []
 
   return (
@@ -81,7 +80,12 @@ export default function Topbar() {
                 {customerOptions.map((c) => {
                   const inInv = (store.invCustomers ?? []).includes(c)
                   const inDem = (store.demandCustomers ?? []).includes(c)
-                  const tag = inInv && inDem ? '' : inDem ? ' (no inventory rows)' : ' (no demand rows)'
+                  const sensC = store.sensingCustomers ?? []
+                  const missing: string[] = []
+                  if (!inDem) missing.push('demand')
+                  if (!inInv) missing.push('inventory')
+                  if (sensC.length && !sensC.includes(c)) missing.push('sensing')
+                  const tag = missing.length ? ` (no ${missing.join('/')} rows)` : ''
                   return <option key={c} value={c}>{c}{tag}</option>
                 })}
               </select>

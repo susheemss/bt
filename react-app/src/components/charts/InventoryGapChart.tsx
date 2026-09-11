@@ -17,7 +17,7 @@ export default function InventoryGapChart({ labels, gap }: Props) {
   const hasData = gap.some((v) => v !== null)
   if (!hasData) {
     return (
-      <div className="h-[172px] flex items-center justify-center text-center text-[11.5px] text-ink4 leading-relaxed px-6">
+      <div className="h-full min-h-[172px] flex items-center justify-center text-center text-[11.5px] text-ink4 leading-relaxed px-6">
         Awaiting inventory data for this selection.
       </div>
     )
@@ -30,7 +30,7 @@ export default function InventoryGapChart({ labels, gap }: Props) {
   const zeroOffset = max <= 0 ? 0 : max / (max - min || 1)
 
   return (
-    <ResponsiveContainer width="100%" height={172}>
+    <ResponsiveContainer width="100%" height="100%" minHeight={172}>
       <AreaChart data={data} margin={{ top: 8, right: 4, left: -14, bottom: 0 }}>
         <defs>
           <linearGradient id="gapSplit" x1="0" y1="0" x2="0" y2="1">

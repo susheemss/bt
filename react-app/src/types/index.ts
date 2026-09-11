@@ -44,6 +44,13 @@ export interface SkuRow {
   ropSeries: Series
   replenQtySeries: Series
   gapSeries: Series
+  // Demand sensing vs baseline chart -- a separate live source from
+  // forecast/sensed above (Total Demand / Sensed Forecast columns, not
+  // Baseline (units) / Promo Units). See lib/parseSensing.ts.
+  hasSensing: boolean
+  sensingForecast: Series
+  sensingSensed: Series
+  sensingUplift: number
 }
 
 export interface LiveStore {
@@ -65,6 +72,11 @@ export interface LiveStore {
   ropSeries: Series
   replenQtySeries: Series
   gap: Series
+  hasSensing: boolean
+  sensingCustomers: string[]
+  sensingForecast: Series
+  sensingSensed: Series
+  sensingUplift: number
 }
 
 /** Shape for a future real AI recommendation (order / lane consolidation /

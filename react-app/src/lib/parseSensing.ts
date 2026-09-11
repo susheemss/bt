@@ -2,21 +2,7 @@ import * as XLSX from 'xlsx'
 import { dateKey } from './dates'
 import { slug } from './slug'
 
-// Safety stock is deliberately NOT required -- it's a pure display field,
-// never read by deriveInvStatus() or the net-requirement calculation.
-// Requiring it here meant a file missing that one column silently dropped
-// the entire inventory dataset (on-hand, ROP, replenishment qty included),
-// not just the Safety stock figure -- same bug found and fixed in the
-// HTML build.
-export const INVENTORY_REQUIRED_COLS = [
-  'SKU Name',
-  'Customer Name',
-  'Store Name',
-  'Week Start Date',
-  'ROP',
-  'On hand inventory',
-  'Replenishment quantity',
-]
+export const SENSING_REQUIRED_COLS = ['SKU Name', 'Customer Name', 'Store Name', 'Week Start Date', 'Total Demand', 'Sensed Forecast']
 
 function normalizeKey(k: string): string {
   let s = String(k)
@@ -33,39 +19,38 @@ function normalizeRows(rows: Record<string, unknown>[]): Record<string, unknown>
   })
 }
 
-export function findInventorySheet(wb: XLSX.WorkBook): string | null {
+export function findSensingSheet(wb: XLSX.WorkBook): string | null {
   for (const name of wb.SheetNames) {
     const rawRows = XLSX.utils.sheet_to_json(wb.Sheets[name], { defval: null }) as Record<string, unknown>[]
     if (!rawRows.length) continue
     const rows = normalizeRows(rawRows)
-    if (INVENTORY_REQUIRED_COLS.every((c) => c in rows[0])) return name
+    if (SENSING_REQUIRED_COLS.every((c) => c in rows[0])) return name
   }
   return null
 }
 
-export interface InvCell {
-  rop: number
-  /** null when the file has no Safety stock column at all (vs a real 0). */
-  ss: number | null
-  onHand: number
-  replenQty: number
+export interface SensingCell {
+  totalDemand: number | null
+  sensedForecast: number | null
 }
 
-export interface InvStoreData {
+export interface SensingStoreData {
   name: string
   weekKeys: string[]
   customers: string[]
-  /** customer -> skuId(slug) -> weekIdx(within THIS file's own axis) -> cell */
-  cell: Record<string, Record<string, Record<number, InvCell>>>
+  cell: Record<string, Record<string, Record<number, SensingCell>>>
   skuNames: Record<string, string>
 }
 
-/* Faithful port of the HTML build's dhAggregateInventory(). Indexes the
-   inventory file's own month set independently of the demand file's --
-   the two are reconciled onto a shared axis later in joinInventory(), by
-   calendar month, not by index. */
-export function parseInventoryWorkbook(wb: XLSX.WorkBook, sheetName: string): Record<string, InvStoreData> {
-  const rawRows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: 0 }) as Record<string, unknown>[]
+const isBlank = (v: unknown) => v === null || v === undefined || v === ''
+
+/* Faithful port of the HTML build's dhAggregateSensing(). Parsed with
+   defval:null (not the usual defval:0) so a row with Total Demand present
+   but a blank Sensed Forecast keeps that blank as null -- the real source
+   file has exactly this case, and defaulting it to 0 would read as "AI
+   sensed zero demand" for that month, which was never actually recorded. */
+export function parseSensingWorkbook(wb: XLSX.WorkBook, sheetName: string): Record<string, SensingStoreData> {
+  const rawRows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: null }) as Record<string, unknown>[]
   const rows = normalizeRows(rawRows)
 
   const weekDatesByStore: Record<string, Set<string>> = {}
@@ -82,10 +67,9 @@ export function parseInventoryWorkbook(wb: XLSX.WorkBook, sheetName: string): Re
     sorted.forEach((d, i) => (weekIdx[store][d] = i))
   })
 
-  const cell: Record<string, Record<string, Record<string, Record<number, InvCell>>>> = {}
+  const cell: Record<string, Record<string, Record<string, Record<number, SensingCell>>>> = {}
   const storeCustomers: Record<string, Set<string>> = {}
   const storeSkuNames: Record<string, Record<string, string>> = {}
-  const hasSafetyStockCol = rows.length > 0 && 'Safety stock' in rows[0]
 
   rows.forEach((r) => {
     const store = String(r['Store Name'] ?? '').trim()
@@ -99,17 +83,15 @@ export function parseInventoryWorkbook(wb: XLSX.WorkBook, sheetName: string): Re
     const bySkuAtCust = ((cell[store] ??= {})[customer] ??= {})
     const bySku = (bySkuAtCust[skuId] ??= {})
     bySku[wi] = {
-      rop: Number(r['ROP'] ?? 0),
-      ss: hasSafetyStockCol ? Number(r['Safety stock'] ?? 0) : null,
-      onHand: Number(r['On hand inventory'] ?? 0),
-      replenQty: Number(r['Replenishment quantity'] ?? 0),
+      totalDemand: isBlank(r['Total Demand']) ? null : Number(r['Total Demand']),
+      sensedForecast: isBlank(r['Sensed Forecast']) ? null : Number(r['Sensed Forecast']),
     }
 
     ;((storeSkuNames[store] ??= {})[skuId] ??= sku)
     ;(storeCustomers[store] ??= new Set()).add(customer)
   })
 
-  const result: Record<string, InvStoreData> = {}
+  const result: Record<string, SensingStoreData> = {}
   Object.keys(weekIdx).forEach((store) => {
     result[slug(store)] = {
       name: store,

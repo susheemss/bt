@@ -3,21 +3,25 @@ import * as XLSX from 'xlsx'
 import type { LiveStore, RefreshState } from '../types'
 import { DEMAND_REQUIRED_COLS, findDemandSheet, parseDemandWorkbook } from '../lib/parseDemand'
 import { INVENTORY_REQUIRED_COLS, findInventorySheet, parseInventoryWorkbook, type InvStoreData } from '../lib/parseInventory'
+import { SENSING_REQUIRED_COLS, findSensingSheet, parseSensingWorkbook, type SensingStoreData } from '../lib/parseSensing'
 import { mergeInventoryRoster } from '../lib/joinInventory'
+import { mergeSensingRoster } from '../lib/joinSensing'
 
-/* Same two routes the existing server.py already exposes -- each reads a
+/* Same three routes the existing server.py already exposes -- each reads a
    path from a local config .txt file on every request and serves whatever
    Excel file is at that path, so this fetch is agnostic to where the real
    source files actually live on disk. Root-absolute, since server.py
-   registers these two routes at the server root regardless of which
-   subfolder actually serves this build's index.html. */
+   registers these routes at the server root regardless of which subfolder
+   actually serves this build's index.html. */
 const DEMAND_URL = '/source-data.xlsx'
 const INVENTORY_URL = '/source-data-inventory.xlsx'
+const SENSING_URL = '/source-data-sensing.xlsx'
 
 interface AppState {
   stores: Record<string, LiveStore>
   storeOrder: string[]
   invData: Record<string, InvStoreData>
+  sensingData: Record<string, SensingStoreData>
   currentStore: string | null
   currentSkuFilter: string
   currentCustomerFilter: string
@@ -30,10 +34,21 @@ interface AppState {
   refreshFromSource: () => Promise<void>
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
+// Console debug hook, mirroring the HTML build's dhDiagnose(): run
+// __appStore().stores in DevTools to inspect the live parsed data.
+declare global {
+  interface Window {
+    __appStore?: () => AppState
+  }
+}
+
+export const useAppStore = create<AppState>((set, get) => {
+  if (typeof window !== 'undefined') window.__appStore = () => get()
+  return {
   stores: {},
   storeOrder: [],
   invData: {},
+  sensingData: {},
   currentStore: null,
   currentSkuFilter: 'all',
   currentCustomerFilter: 'all',
@@ -72,7 +87,7 @@ export const useAppStore = create<AppState>((set, get) => ({
           if (invSheetName) {
             invData = parseInventoryWorkbook(invWb, invSheetName)
             stores = Object.fromEntries(
-              Object.entries(demandStores).map(([id, store]) => [id, mergeInventoryRoster(store, invData[id])])
+              Object.entries(stores).map(([id, store]) => [id, mergeInventoryRoster(store, invData[id])])
             )
             invNote = 'inventory'
           } else {
@@ -85,6 +100,30 @@ export const useAppStore = create<AppState>((set, get) => ({
         console.warn('[Refresh] Inventory refresh failed, continuing with demand data only:', invErr)
       }
 
+      let sensNote: string | null = null
+      let sensingData: Record<string, SensingStoreData> = {}
+      try {
+        const sensRes = await fetch(SENSING_URL + '?t=' + Date.now(), { cache: 'no-store' })
+        if (sensRes.ok) {
+          const sensBuf = await sensRes.arrayBuffer()
+          const sensWb = XLSX.read(sensBuf, { type: 'array', cellDates: true })
+          const sensSheetName = findSensingSheet(sensWb)
+          if (sensSheetName) {
+            sensingData = parseSensingWorkbook(sensWb, sensSheetName)
+            stores = Object.fromEntries(
+              Object.entries(stores).map(([id, store]) => [id, mergeSensingRoster(store, sensingData[id])])
+            )
+            sensNote = 'sensing'
+          } else {
+            console.warn('[Refresh] Sensing file reachable but no sheet matched the expected columns:', SENSING_REQUIRED_COLS)
+          }
+        } else {
+          console.warn('[Refresh] Sensing file not reachable (HTTP ' + sensRes.status + ') — continuing without it.')
+        }
+      } catch (sensErr) {
+        console.warn('[Refresh] Sensing refresh failed, continuing without it:', sensErr)
+      }
+
       const prevStore = get().currentStore
       const nextStore = prevStore && stores[prevStore] ? prevStore : storeOrder[0] ?? null
 
@@ -92,12 +131,13 @@ export const useAppStore = create<AppState>((set, get) => ({
         stores,
         storeOrder,
         invData,
+        sensingData,
         currentStore: nextStore,
         currentSkuFilter: 'all',
         currentCustomerFilter: 'all',
         refresh: {
           status: 'success',
-          message: '✓ Refreshed from source file' + (invNote ? ' + ' + invNote : ''),
+          message: '✓ Refreshed from source file' + (invNote ? ' + ' + invNote : '') + (sensNote ? ' + ' + sensNote : ''),
           lastRefreshedAt: Date.now(),
           demandFileNote: `${storeOrder.length} store${storeOrder.length === 1 ? '' : 's'}`,
           inventoryFileNote: invNote,
@@ -109,4 +149,5 @@ export const useAppStore = create<AppState>((set, get) => ({
       console.error('[Refresh]', err)
     }
   },
-}))
+  }
+})

@@ -764,7 +764,8 @@ body{
 .chat-close:hover{background:var(--surface2);color:var(--ink2)}
 .chat-preview-note{margin:9px 12px 0;padding:6px 9px;border:1px dashed var(--purple);background:var(--purple-light);border-radius:6px;font-size:10px;line-height:1.4;color:#5B3FC4;flex-shrink:0}
 .chat-body{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px}
-.chat-msg{max-width:86%;padding:8px 11px;border-radius:11px;font-size:12px;line-height:1.5}
+.chat-msg{max-width:86%;padding:8px 11px;border-radius:11px;font-size:12px;line-height:1.5;white-space:pre-wrap}
+.chat-msg strong{font-weight:700}
 .chat-msg.bot{align-self:flex-start;background:var(--surface2);color:var(--ink2);border-bottom-left-radius:3px}
 .chat-msg.user{align-self:flex-end;background:var(--blue);color:#fff;border-bottom-right-radius:3px}
 .chat-msg.typing{display:flex;gap:3px;align-items:center;padding:10px 12px}
@@ -782,7 +783,13 @@ body{
 .chat-chip:hover{border-color:var(--purple);color:var(--purple);background:var(--purple-light)}
 .chat-chip:disabled{opacity:.4;cursor:default}
 .chat-inputrow{flex-shrink:0;padding:9px 12px 12px;display:flex;gap:7px}
-.chat-input-fake{flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--ink4);font-size:11.5px;cursor:not-allowed;user-select:none}
+.chat-input{flex:1;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--ink);font-size:11.5px;font-family:'Inter',sans-serif;outline:none}
+.chat-input:focus{border-color:var(--purple)}
+.chat-input:disabled{background:var(--surface2);color:var(--ink4);cursor:not-allowed}
+.chat-send{flex-shrink:0;width:32px;height:32px;border:none;border-radius:8px;background:var(--purple);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:opacity .12s}
+.chat-send:hover{opacity:.85}
+.chat-send:disabled{opacity:.4;cursor:not-allowed}
+.chat-msg.error{background:var(--red-light,#FDE8E8);color:#9B2C2C}
 
 @keyframes fadeIn{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}
 .fade-in{animation:fadeIn .22s ease}
@@ -1079,12 +1086,13 @@ body{
 <!-- TOAST -->
 <div class="toast" id="toast"><div class="toast-icon"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><span id="toastMsg"></span></div>
 
-<!-- ═══════════════════ AI ASSISTANT PREVIEW (showcase only) ═══════════════════
-     Pre-built questions with canned answers, to demonstrate a future
-     conversational capability. Not connected to live data or any of the
-     app's real calculations -- see chat-preview-note below, shown in the
-     panel itself so this is never mistaken for functioning output. -->
-<button class="chat-fab" id="chatFab" onclick="toggleChatPanel()" title="AI Assistant (preview)">
+<!-- ═══════════════════ AI ASSISTANT ═══════════════════
+     Answers only via tool calls into the data currently loaded in this
+     browser (see chat-backend.py) -- the model never sees or invents raw
+     numbers itself, it calls a tool and reports the real result back. If
+     openrouter_api_key.txt isn't set up on the server, the request fails
+     and that failure is shown here honestly, not papered over. -->
+<button class="chat-fab" id="chatFab" onclick="toggleChatPanel()" title="AI Assistant">
   <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
   <span class="chat-fab-dot"></span>
 </button>
@@ -1094,18 +1102,23 @@ body{
     <div class="chat-head-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"/></svg></div>
     <div>
       <div class="chat-head-title">AI Supply Chain Assistant</div>
-      <div class="chat-head-sub">Preview · pre-built questions</div>
+      <div class="chat-head-sub">Beta · answers from your loaded data</div>
     </div>
     <button class="chat-close" onclick="toggleChatPanel(false)" title="Close">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
     </button>
   </div>
-  <div class="chat-preview-note">Showcasing a future capability. Answers below are pre-written examples, not live results from your data.</div>
+  <div class="chat-preview-note">Answers use tool calls into the store/SKU data currently loaded here — real on-hand, ROP, net requirement, demand and sensing figures, not invented ones.</div>
   <div class="chat-body" id="chatBody"></div>
   <div class="chat-suggestions" id="chatSuggestions">
-    <div class="chat-suggestions-label">Try asking</div>
+    <div class="chat-suggestions-label">Suggested questions</div>
   </div>
-  <div class="chat-inputrow"><div class="chat-input-fake">Free-text chat — coming soon</div></div>
+  <div class="chat-inputrow">
+    <input type="text" id="chatInput" class="chat-input" placeholder="Ask about your data…" onkeydown="if(event.key==='Enter')sendChatMessage()">
+    <button class="chat-send" id="chatSendBtn" onclick="sendChatMessage()" title="Send">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
 </div>
 
 <div class="app">
@@ -3801,73 +3814,95 @@ window.addEventListener('load', function(){
 /* ── end Power BI report links ─────────────────────────────── */
 </script>
 <script>
-/* ── AI Assistant preview (showcase only) ────────────────────
-   Entirely self-contained: fixed Q&A pairs, no connection to STORES, live
-   data, or any calculation in the app. Exists purely to demonstrate what a
-   future conversational layer over this same data could look like. */
+/* ── AI Assistant ─────────────────────────────────────────────
+   Sends the question, recent turns, and the browser's already-parsed
+   STORES object to POST /api/chat. The backend (chat_backend.py) gives an
+   LLM a fixed set of tools that look up real values from that data --
+   it never invents a number itself. See chat_backend.py for the tool
+   definitions this depends on staying in sync with (field names like
+   sk.oh/.ss/.rop/.nr/.rq/.st, store.forecast/.sensed/.uplift,
+   store.sensingForecast/.sensingSensed/.sensingUplift, .weekKeys,
+   .invCustomers/.demandCustomers). */
 (function(){
-  var CHAT_QA = [
-    {
-      q: 'Why would a SKU get flagged Replenish?',
-      a: 'Once wired to your live data, I’d flag Replenish whenever net requirement is above zero — sensed demand over lead time plus safety stock exceeds on-hand plus in-transit — and point you straight to the store, SKU and month where that crossed the ROP line.'
-    },
-    {
-      q: 'How would you pick which lanes to consolidate?',
-      a: 'I’d group net requirements across stores sharing a DC route and compare FTL, FTL-consolidated and Milk-run options, recommending whichever combination pushes truck fill toward the 85% target without exceeding any store’s open-to-ship headroom.'
-    },
-    {
-      q: 'How would you explain a demand uplift?',
-      a: 'I’d break the gap between sensed and baseline demand down by signal — promo, festival, weather, trend or event — so you can see which one is actually driving that month’s number instead of just the net percentage.'
-    },
-    {
-      q: 'What would a redeploy recommendation look like?',
-      a: 'Redeploy means one store is sitting on well above its sensed demand while another is short. I’d suggest moving the excess between the two stores directly instead of raising a fresh DC order for the short one.'
-    },
-    {
-      q: 'Will this answer questions about my actual data?',
-      a: 'That’s the plan for this panel — once connected, I’d query the same demand and inventory files driving the charts above and answer with your real numbers, not these pre-written examples.'
-    }
-  ];
-
   var chatOpened = false, chatBusy = false;
-  var askedIdx = [];
+  var history = []; // [{role:'user'|'assistant', content:string}]
 
   function chatEl(id){ return document.getElementById(id); }
+
+  function currentStoreName(){
+    var s = (typeof STORES!=='undefined' && typeof currentStore!=='undefined') ? STORES[currentStore] : null;
+    return s ? s.name : null;
+  }
+
+  function suggestionList(){
+    var name = currentStoreName();
+    var list = [];
+    if(name){
+      list.push('Which SKUs at ' + name + ' need replenishing?');
+      list.push('What is the on-hand and ROP for ' + name + '?');
+      list.push('How is demand sensing tracking vs baseline at ' + name + '?');
+    } else {
+      list.push('What stores are loaded?');
+    }
+    return list;
+  }
 
   function renderChips(){
     var wrap = chatEl('chatSuggestions');
     if(!wrap) return;
     var chips = wrap.querySelectorAll('.chat-chip');
     chips.forEach(function(c){ c.remove(); });
-    CHAT_QA.forEach(function(pair, i){
+    suggestionList().forEach(function(q){
       var btn = document.createElement('button');
       btn.className = 'chat-chip';
       btn.type = 'button';
-      btn.textContent = pair.q;
-      btn.disabled = askedIdx.indexOf(i) !== -1 || chatBusy;
-      btn.onclick = function(){ askChatQuestion(i); };
+      btn.textContent = q;
+      btn.disabled = chatBusy;
+      btn.onclick = function(){ sendChatMessage(q); };
       wrap.appendChild(btn);
     });
+  }
+
+  // Bot answers are LLM-generated prose using light markdown (**bold**,
+  // "- " bullets). HTML-escape the raw text FIRST, then only apply our own
+  // fixed substitutions on top of the now-inert text -- the model's output
+  // can never inject a real tag this way, only trigger the exact patterns
+  // this function recognises.
+  function mdToSafeHtml(text){
+    var esc = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    esc = esc.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    esc = esc.replace(/^[-*] /gm, '• ');
+    return esc;
   }
 
   function addBubble(role, text){
     var body = chatEl('chatBody');
     var div = document.createElement('div');
     div.className = 'chat-msg ' + role;
-    div.textContent = text;
+    if(role.indexOf('user') !== -1) div.textContent = text;
+    else div.innerHTML = mdToSafeHtml(text);
     body.appendChild(div);
     body.scrollTop = body.scrollHeight;
     return div;
   }
 
-  function askChatQuestion(i){
-    if(chatBusy) return;
-    var pair = CHAT_QA[i];
-    if(!pair || askedIdx.indexOf(i) !== -1) return;
-    askedIdx.push(i);
-    chatBusy = true;
+  function setBusy(b){
+    chatBusy = b;
+    var input = chatEl('chatInput'), btn = chatEl('chatSendBtn');
+    if(input) input.disabled = b;
+    if(btn) btn.disabled = b;
     renderChips();
-    addBubble('user', pair.q);
+  }
+
+  window.sendChatMessage = function(presetText){
+    if(chatBusy) return;
+    var input = chatEl('chatInput');
+    var text = (typeof presetText === 'string' ? presetText : (input ? input.value : '')).trim();
+    if(!text) return;
+    if(input) input.value = '';
+    addBubble('user', text);
+    history.push({role:'user', content:text});
+    setBusy(true);
 
     var body = chatEl('chatBody');
     var typing = document.createElement('div');
@@ -3875,14 +3910,41 @@ window.addEventListener('load', function(){
     typing.innerHTML = '<span class="chat-typing-dot"></span><span class="chat-typing-dot"></span><span class="chat-typing-dot"></span>';
     body.appendChild(typing);
     body.scrollTop = body.scrollHeight;
+    // Free-tier models can genuinely take 15-30s+ per round trip, and a
+    // question needing a tool call means two round trips -- without this,
+    // a slow-but-working response looks identical to a frozen one.
+    var slowNoteTimer = setTimeout(function(){
+      typing.innerHTML += '<div style="font-size:10px;color:var(--ink4);margin-top:4px">Free-tier models can take up to a minute — still working…</div>';
+      body.scrollTop = body.scrollHeight;
+    }, 6000);
 
-    setTimeout(function(){
-      typing.remove();
-      addBubble('bot', pair.a);
-      chatBusy = false;
-      renderChips();
-    }, 550 + Math.random() * 350);
-  }
+    fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        message: text,
+        history: history.slice(0, -1), // prior turns; current question is sent separately
+        data: {stores: (typeof STORES!=='undefined') ? STORES : {}},
+      }),
+    })
+      .then(function(res){ return res.json().then(function(j){ return {ok:res.ok, body:j}; }); })
+      .then(function(r){
+        clearTimeout(slowNoteTimer);
+        typing.remove();
+        if(r.ok && r.body && r.body.answer){
+          addBubble('bot', r.body.answer);
+          history.push({role:'assistant', content:r.body.answer});
+        } else {
+          addBubble('bot error', 'Could not get an answer — ' + (r.body && r.body.error ? r.body.error : 'unknown error') + '. If this is the first time, check that openrouter_api_key.txt is set up on the server.');
+        }
+      })
+      .catch(function(err){
+        clearTimeout(slowNoteTimer);
+        typing.remove();
+        addBubble('bot error', 'Could not reach the server — ' + err.message);
+      })
+      .finally(function(){ setBusy(false); });
+  };
 
   window.toggleChatPanel = function(force){
     var panel = chatEl('chatPanel');
@@ -3891,7 +3953,7 @@ window.addEventListener('load', function(){
     panel.classList.toggle('open', open);
     if(open && !chatOpened){
       chatOpened = true;
-      addBubble('bot', 'Hi — this is a preview of an AI assistant we plan to build for this cockpit. Tap a question below to see the kind of answer it would give.');
+      addBubble('bot', 'Hi — ask me about the data currently loaded here: on-hand, ROP, net requirement, demand forecast or sensed demand for any store, SKU or customer.');
       renderChips();
     }
   };
