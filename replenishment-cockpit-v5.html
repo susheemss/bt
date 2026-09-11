@@ -1507,6 +1507,7 @@ function fmt(v){
    figure that came straight out of the source file -- tooltips especially --
    use the exact recorded value instead, so nothing is rounded away. */
 function fmtExact(v){
+  if(v===null||v===undefined||Number.isNaN(v)) return '—';
   return Number(v).toLocaleString('en-GB',{maximumFractionDigits:2});
 }
 function niceStep(r){const e=Math.pow(10,Math.floor(Math.log10(r||1)));return r/e>=5?5*e:r/e>=2?2*e:e}
@@ -2088,10 +2089,11 @@ function renderStoreDetail(id){
     if(invStatsEl) invStatsEl.style.display='block';
     if(invPendingEl) invPendingEl.style.display='none';
     const totalOh = s.skus.reduce((a,sk)=>a+(sk.hasInv?sk.oh:0),0);
-    const totalSs = s.skus.reduce((a,sk)=>a+(sk.hasInv?sk.ss:0),0);
+    const ssSkus = s.skus.filter(sk=>sk.hasInv && sk.ss!==null);
+    const totalSs = ssSkus.reduce((a,sk)=>a+sk.ss,0);
     const totalRop = s.skus.reduce((a,sk)=>a+(sk.hasInv?sk.rop:0),0);
     set('s2-onhand', totalOh.toLocaleString('en-GB')+' u');
-    set('s2-ss', totalSs.toLocaleString('en-GB')+' u');
+    set('s2-ss', ssSkus.length ? totalSs.toLocaleString('en-GB')+' u' : '—');
     set('s2-rop', totalRop.toLocaleString('en-GB')+' u');
     set('s2-customer', currentCustomerFilter==='all' ? 'All customers' : currentCustomerFilter);
   } else {
@@ -2877,7 +2879,15 @@ function dhAggregateData(wb, sheetName){
    = false) rather than defaulting to a fabricated 0.
 ════════════════════════════════════════════════════════════════ */
 
-const INV_REQUIRED_COLS = ['SKU Name','Customer Name','Store Name','Week Start Date','ROP','Safety stock','On hand inventory','Replenishment quantity'];
+// Safety stock is intentionally NOT in this list. It's a pure display
+// field -- nothing in this app's status/net-requirement/replenishment
+// logic reads it -- so a file missing that one column shouldn't block the
+// on-hand, ROP and replenishment-qty data the rest of the inventory
+// pipeline actually needs. It used to be required here, which meant
+// removing that single column made dhFindInventorySheet find no match at
+// all and silently dropped the entire inventory file, not just the
+// Safety stock figure.
+const INV_REQUIRED_COLS = ['SKU Name','Customer Name','Store Name','Week Start Date','ROP','On hand inventory','Replenishment quantity'];
 var currentCustomerFilter = 'all';
 
 function dhFindInventorySheet(wb){
@@ -2909,6 +2919,10 @@ function dhAggregateInventory(wb, sheetName){
 
   // store -> customer -> skuId(slug, matches demand-side sk.id) -> weekIdx -> {rop,ss,onHand,replenQty}
   const cell={}, storeCustomers={}, storeSkuNames={};
+  // Distinguishes "column not in this file at all" (ss stays null,
+  // genuinely unknown) from "column present with a real 0 value" -- the
+  // same optional-column pattern the demand parser uses for Customer Name.
+  const hasSafetyStockCol = rows.length>0 && ('Safety stock' in rows[0]);
 
   rows.forEach(r=>{
     const store=String(r['Store Name']||'').trim();
@@ -2924,7 +2938,7 @@ function dhAggregateInventory(wb, sheetName){
     if(!cell[store][customer][skuId]) cell[store][customer][skuId]={};
     cell[store][customer][skuId][wi] = {
       rop: Number(r['ROP']||0),
-      ss:  Number(r['Safety stock']||0),
+      ss:  hasSafetyStockCol ? Number(r['Safety stock']||0) : null,
       onHand: Number(r['On hand inventory']||0),
       replenQty: Number(r['Replenishment quantity']||0),
     };
@@ -3283,7 +3297,7 @@ function applyCustomerFilterToStores(storeId){
   });
 
   store.skus.forEach(sk=>{
-    let oh=0, ss=0, rop=0, rq=0, found=false;
+    let oh=0, ss=0, rop=0, rq=0, found=false, ssFound=false;
     // Full per-month series for this one SKU (summed across the selected
     // customer(s) only) -- this is what the SKU-filtered on-hand/gap chart
     // uses, so "replenishment" there always reflects this SKU's own ROP
@@ -3308,7 +3322,8 @@ function applyCustomerFilterToStores(storeId){
         const c=cellForSku[w];
         if(!c) continue;
         found=true;
-        oh+=c.onHand; ss+=c.ss; rop+=c.rop; rq+=c.replenQty;
+        oh+=c.onHand; rop+=c.rop; rq+=c.replenQty;
+        if(c.ss!==null){ ss+=c.ss; ssFound=true; }
         break;
       }
     });
@@ -3316,7 +3331,7 @@ function applyCustomerFilterToStores(storeId){
     sk.onHandSeries=skOnHand; sk.ropSeries=skRop; sk.replenQtySeries=skReplenQty;
     sk.gapSeries=skOnHand.map((v,i)=> v===null ? null : Math.round(v-(skRop[i]||0)));
     if(found){
-      sk.oh=oh; sk.ss=ss; sk.rop=rop; sk.rq=rq;
+      sk.oh=oh; sk.ss=ssFound?ss:null; sk.rop=rop; sk.rq=rq;
       sk.nr=Math.max(0, rop-oh);
       sk.st=dhDeriveInvStatus(oh, rop, sk.nr, sk.dmd);
     }
