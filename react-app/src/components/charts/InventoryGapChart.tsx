@@ -30,31 +30,35 @@ export default function InventoryGapChart({ labels, gap }: Props) {
   const zeroOffset = max <= 0 ? 0 : max / (max - min || 1)
 
   return (
-    <ResponsiveContainer width="100%" height="100%" minHeight={172}>
-      <AreaChart data={data} margin={{ top: 8, right: 4, left: -14, bottom: 0 }}>
-        <defs>
-          <linearGradient id="gapSplit" x1="0" y1="0" x2="0" y2="1">
-            <stop offset={0} stopColor="#16A34A" stopOpacity={0.18} />
-            <stop offset={zeroOffset} stopColor="#16A34A" stopOpacity={0.02} />
-            <stop offset={zeroOffset} stopColor="#DC2626" stopOpacity={0.02} />
-            <stop offset={1} stopColor="#DC2626" stopOpacity={0.18} />
-          </linearGradient>
-          <linearGradient id="gapStroke" x1="0" y1="0" x2="0" y2="1">
-            <stop offset={Math.max(zeroOffset - 0.01, 0)} stopColor="#16A34A" />
-            <stop offset={Math.min(zeroOffset + 0.01, 1)} stopColor="#DC2626" />
-          </linearGradient>
-        </defs>
-        <CartesianGrid strokeDasharray="2 4" stroke="#E8ECF1" vertical={false} />
-        <XAxis dataKey="month" tick={axis} axisLine={{ stroke: '#E2E6EB' }} tickLine={false} />
-        <YAxis tick={axis} axisLine={false} tickLine={false} width={44}
-               tickFormatter={(v: number) => Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)} />
-        <Tooltip
-          contentStyle={{ fontSize: 11, borderRadius: 6, border: '1px solid #E2E6EB', boxShadow: '0 4px 12px rgba(16,24,40,0.08)', padding: '6px 10px' }}
-          formatter={(v: number) => [v.toLocaleString(), v < 0 ? 'Shortfall vs ROP' : 'Surplus over ROP']}
-        />
-        <ReferenceLine y={0} stroke="#1C2128" strokeWidth={1} strokeDasharray="3 3" opacity={0.35} />
-        <Area type="monotone" dataKey="gap" stroke="url(#gapStroke)" strokeWidth={2} fill="url(#gapSplit)" connectNulls={false} activeDot={{ r: 3.5 }} />
-      </AreaChart>
-    </ResponsiveContainer>
+    // See DemandForecastChart.tsx for why this is absolutely positioned rather
+    // than sized via height:100% as a normal-flow flex child.
+    <div className="absolute inset-0 min-h-[172px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 8, right: 4, left: -14, bottom: 0 }}>
+          <defs>
+            <linearGradient id="gapSplit" x1="0" y1="0" x2="0" y2="1">
+              <stop offset={0} stopColor="#16A34A" stopOpacity={0.18} />
+              <stop offset={zeroOffset} stopColor="#16A34A" stopOpacity={0.02} />
+              <stop offset={zeroOffset} stopColor="#DC2626" stopOpacity={0.02} />
+              <stop offset={1} stopColor="#DC2626" stopOpacity={0.18} />
+            </linearGradient>
+            <linearGradient id="gapStroke" x1="0" y1="0" x2="0" y2="1">
+              <stop offset={Math.max(zeroOffset - 0.01, 0)} stopColor="#16A34A" />
+              <stop offset={Math.min(zeroOffset + 0.01, 1)} stopColor="#DC2626" />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="2 4" stroke="#E8ECF1" vertical={false} />
+          <XAxis dataKey="month" tick={axis} axisLine={{ stroke: '#E2E6EB' }} tickLine={false} />
+          <YAxis tick={axis} axisLine={false} tickLine={false} width={44}
+                 tickFormatter={(v: number) => Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)} />
+          <Tooltip
+            contentStyle={{ fontSize: 11, borderRadius: 6, border: '1px solid #E2E6EB', boxShadow: '0 4px 12px rgba(16,24,40,0.08)', padding: '6px 10px' }}
+            formatter={(v: number) => [v.toLocaleString(), v < 0 ? 'Shortfall vs ROP' : 'Surplus over ROP']}
+          />
+          <ReferenceLine y={0} stroke="#1C2128" strokeWidth={1} strokeDasharray="3 3" opacity={0.35} />
+          <Area type="monotone" dataKey="gap" stroke="url(#gapStroke)" strokeWidth={2} fill="url(#gapSplit)" connectNulls={false} activeDot={{ r: 3.5 }} />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
   )
 }

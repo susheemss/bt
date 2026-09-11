@@ -40,7 +40,7 @@
   .panel-sub {
     @apply text-[11px] text-ink4;
   }
-  .panel-bd { @apply px-3 pb-3; }
+  .panel-bd { @apply px-3 pb-3 relative; }
 
   /* ---------- KPI tiles ---------- */
   .kpi-tile {

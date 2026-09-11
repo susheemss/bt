@@ -32,28 +32,32 @@ export default function DemandSensingChart({ labels, sensed, totalDemand }: Prop
   }))
 
   return (
-    <ResponsiveContainer width="100%" height="100%" minHeight={172}>
-      <ComposedChart data={data} margin={{ top: 8, right: 4, left: -14, bottom: 0 }}>
-        <defs>
-          <linearGradient id="sensedFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#6C5CE7" stopOpacity={0.14} />
-            <stop offset="100%" stopColor="#6C5CE7" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <CartesianGrid strokeDasharray="2 4" stroke="#E8ECF1" vertical={false} />
-        <XAxis dataKey="month" tick={axis} axisLine={{ stroke: '#E2E6EB' }} tickLine={false} />
-        <YAxis tick={axis} axisLine={false} tickLine={false} width={44}
-               tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)}
-               domain={['dataMin - 5', 'dataMax + 5']} />
-        <Tooltip
-          contentStyle={{ fontSize: 11, borderRadius: 6, border: '1px solid #E2E6EB', boxShadow: '0 4px 12px rgba(16,24,40,0.08)', padding: '6px 10px' }}
-          formatter={(v: number, name: string) => [v.toLocaleString(), name === 'totalDemand' ? 'Total demand' : 'Sensed forecast']}
-        />
-        <Area type="monotone" dataKey="sensed" stroke="none" fill="url(#sensedFill)" connectNulls={false} />
-        <Line type="monotone" dataKey="totalDemand" name="totalDemand" stroke="#8B95A5" strokeDasharray="5 3" strokeWidth={1.5} dot={false} connectNulls={false} />
-        <Line type="monotone" dataKey="sensed" name="sensed" stroke="#6C5CE7" strokeWidth={2.2}
-              dot={{ r: 2.5, fill: '#6C5CE7', strokeWidth: 0 }} activeDot={{ r: 4 }} connectNulls={false} />
-      </ComposedChart>
-    </ResponsiveContainer>
+    // See DemandForecastChart.tsx for why this is absolutely positioned rather
+    // than sized via height:100% as a normal-flow flex child.
+    <div className="absolute inset-0 min-h-[172px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={data} margin={{ top: 8, right: 4, left: -14, bottom: 0 }}>
+          <defs>
+            <linearGradient id="sensedFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#6C5CE7" stopOpacity={0.14} />
+              <stop offset="100%" stopColor="#6C5CE7" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="2 4" stroke="#E8ECF1" vertical={false} />
+          <XAxis dataKey="month" tick={axis} axisLine={{ stroke: '#E2E6EB' }} tickLine={false} />
+          <YAxis tick={axis} axisLine={false} tickLine={false} width={44}
+                 tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)}
+                 domain={['dataMin - 5', 'dataMax + 5']} />
+          <Tooltip
+            contentStyle={{ fontSize: 11, borderRadius: 6, border: '1px solid #E2E6EB', boxShadow: '0 4px 12px rgba(16,24,40,0.08)', padding: '6px 10px' }}
+            formatter={(v: number, name: string) => [v.toLocaleString(), name === 'totalDemand' ? 'Total demand' : 'Sensed forecast']}
+          />
+          <Area type="monotone" dataKey="sensed" stroke="none" fill="url(#sensedFill)" connectNulls={false} />
+          <Line type="monotone" dataKey="totalDemand" name="totalDemand" stroke="#8B95A5" strokeDasharray="5 3" strokeWidth={1.5} dot={false} connectNulls={false} />
+          <Line type="monotone" dataKey="sensed" name="sensed" stroke="#6C5CE7" strokeWidth={2.2}
+                dot={{ r: 2.5, fill: '#6C5CE7', strokeWidth: 0 }} activeDot={{ r: 4 }} connectNulls={false} />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
   )
 }

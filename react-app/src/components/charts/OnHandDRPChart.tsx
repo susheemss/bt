@@ -37,38 +37,42 @@ export default function OnHandDRPChart({ labels, onHandSeries, replenQtySeries, 
   }))
 
   return (
-    <ResponsiveContainer width="100%" height="100%" minHeight={172}>
-      <ComposedChart data={data} barSize={18} margin={{ top: 8, right: 4, left: -14, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="2 4" stroke="#E8ECF1" vertical={false} />
-        <XAxis dataKey="month" tick={axis} axisLine={{ stroke: '#E2E6EB' }} tickLine={false} />
-        <YAxis tick={axis} axisLine={false} tickLine={false} width={44}
-               tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)} />
-        <Tooltip
-          cursor={{ fill: 'rgba(46,107,230,0.05)' }}
-          contentStyle={{ fontSize: 11, borderRadius: 6, border: '1px solid #E2E6EB', boxShadow: '0 4px 12px rgba(16,24,40,0.08)', padding: '6px 10px' }}
-          formatter={(v: number, name: string) => [
-            v.toLocaleString(),
-            name === 'onHand' ? 'On-hand' : name === 'replenQty' ? 'Replenishment qty' : 'ROP',
-          ]}
-        />
-        <Bar
-          dataKey="onHand"
-          stackId="stock"
-          fill="#94A3B8"
-          radius={[0, 0, 2, 2]}
-          cursor={onBarClick ? 'pointer' : undefined}
-          onClick={(_, index) => onBarClick?.(index)}
-        />
-        <Bar
-          dataKey="replenQty"
-          stackId="stock"
-          fill="#16A34A"
-          radius={[2, 2, 0, 0]}
-          cursor={onBarClick ? 'pointer' : undefined}
-          onClick={(_, index) => onBarClick?.(index)}
-        />
-        <Line type="stepAfter" dataKey="rop" stroke="#D97706" strokeDasharray="4 3" strokeWidth={1.4} dot={false} connectNulls />
-      </ComposedChart>
-    </ResponsiveContainer>
+    // See DemandForecastChart.tsx for why this is absolutely positioned rather
+    // than sized via height:100% as a normal-flow flex child.
+    <div className="absolute inset-0 min-h-[172px]">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={data} barSize={18} margin={{ top: 8, right: 4, left: -14, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="2 4" stroke="#E8ECF1" vertical={false} />
+          <XAxis dataKey="month" tick={axis} axisLine={{ stroke: '#E2E6EB' }} tickLine={false} />
+          <YAxis tick={axis} axisLine={false} tickLine={false} width={44}
+                 tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : String(v)} />
+          <Tooltip
+            cursor={{ fill: 'rgba(46,107,230,0.05)' }}
+            contentStyle={{ fontSize: 11, borderRadius: 6, border: '1px solid #E2E6EB', boxShadow: '0 4px 12px rgba(16,24,40,0.08)', padding: '6px 10px' }}
+            formatter={(v: number, name: string) => [
+              v.toLocaleString(),
+              name === 'onHand' ? 'On-hand' : name === 'replenQty' ? 'Replenishment qty' : 'ROP',
+            ]}
+          />
+          <Bar
+            dataKey="onHand"
+            stackId="stock"
+            fill="#94A3B8"
+            radius={[0, 0, 2, 2]}
+            cursor={onBarClick ? 'pointer' : undefined}
+            onClick={(_, index) => onBarClick?.(index)}
+          />
+          <Bar
+            dataKey="replenQty"
+            stackId="stock"
+            fill="#16A34A"
+            radius={[2, 2, 0, 0]}
+            cursor={onBarClick ? 'pointer' : undefined}
+            onClick={(_, index) => onBarClick?.(index)}
+          />
+          <Line type="stepAfter" dataKey="rop" stroke="#D97706" strokeDasharray="4 3" strokeWidth={1.4} dot={false} connectNulls />
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
   )
 }
