@@ -14,6 +14,13 @@ import { buildChatPayload } from '../../lib/chatPayload'
 
 type Msg = { role: 'user' | 'bot' | 'error'; text: string }
 
+// Set only in the Vercel preview build (.env.vercel) -- that deployment has
+// no /api/chat backend (chat_backend.py doesn't run there), so the widget
+// shows an honest "not available" state instead of every question failing
+// with a network error. The server.py-served build never sets this, so
+// chat behaves exactly as before there.
+const CHAT_DISABLED = import.meta.env.VITE_CHAT_DISABLED === 'true'
+
 /** Renders **bold** and "- " bullets as real React elements -- no HTML
  *  string is ever built from model output, so there's nothing to escape
  *  and no injection surface, unlike an innerHTML-based approach. */
@@ -62,13 +69,20 @@ export default function ChatAssistant() {
     setOpen(true)
     if (!opened) {
       setOpened(true)
-      setMessages([{ role: 'bot', text: 'Hi — ask me about the data currently loaded here: on-hand, ROP, net requirement, demand forecast or sensed demand for any store, SKU or customer.' }])
+      setMessages([
+        {
+          role: 'bot',
+          text: CHAT_DISABLED
+            ? "The AI chat assistant isn't available in this preview build — it needs a live backend that only runs on the full deployment."
+            : 'Hi — ask me about the data currently loaded here: on-hand, ROP, net requirement, demand forecast or sensed demand for any store, SKU or customer.',
+        },
+      ])
     }
   }
 
   async function send(text: string) {
     const q = text.trim()
-    if (!q || busy) return
+    if (!q || busy || CHAT_DISABLED) return
     setInput('')
     setMessages((m) => [...m, { role: 'user', text: q }])
     setBusy(true)
@@ -166,7 +180,7 @@ export default function ChatAssistant() {
             )}
           </div>
 
-          {!messages.some((m) => m.role === 'user') && (
+          {!CHAT_DISABLED && !messages.some((m) => m.role === 'user') && (
             <div className="flex-shrink-0 px-3 pt-2 pb-1 border-t border-border flex flex-col gap-1.5">
               <div className="text-[9px] font-bold tracking-wide uppercase text-ink4 mb-0.5">Suggested questions</div>
               {suggestions.map((q) => (
@@ -185,15 +199,15 @@ export default function ChatAssistant() {
             <input
               type="text"
               value={input}
-              disabled={busy}
+              disabled={busy || CHAT_DISABLED}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') send(input) }}
-              placeholder="Ask about your data…"
+              placeholder={CHAT_DISABLED ? 'Not available in this preview' : 'Ask about your data…'}
               className="flex-1 px-2.5 py-2 border border-border rounded-md bg-surface text-ink text-[11.5px] outline-none focus:border-purple disabled:bg-surface2 disabled:text-ink4"
             />
             <button
               onClick={() => send(input)}
-              disabled={busy}
+              disabled={busy || CHAT_DISABLED}
               className="flex-shrink-0 w-8 h-8 rounded-md bg-purple text-white flex items-center justify-center disabled:opacity-40"
               title="Send"
             >
