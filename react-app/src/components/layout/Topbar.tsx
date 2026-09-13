@@ -1,5 +1,5 @@
 import { useLocation } from 'react-router-dom'
-import { RefreshCw, Search, HelpCircle, ChevronRight, Loader2 } from 'lucide-react'
+import { RefreshCw, Search, ChevronRight, Loader2 } from 'lucide-react'
 import { useAppStore } from '../../store/useAppStore'
 
 const PAGE_META: Record<string, { section: string; title: string }> = {
@@ -114,9 +114,6 @@ export default function Topbar() {
       >
         {refresh.status === 'loading' ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
         Refresh
-      </button>
-      <button className="btn-ghost !px-2 hidden sm:flex" title="Help">
-        <HelpCircle size={14} />
       </button>
     </header>
   )
