@@ -51,7 +51,7 @@ export default function OnHandDRPChart({ labels, onHandSeries, replenQtySeries, 
     // than sized via height:100% as a normal-flow flex child.
     <div className="absolute inset-0 min-h-[172px]">
       <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart data={data} barSize={18} margin={{ top: 20, right: 4, left: -14, bottom: 0 }}>
+        <ComposedChart data={data} barCategoryGap="24%" margin={{ top: 20, right: 4, left: -14, bottom: 0 }}>
           <defs>
             <linearGradient id="ohOnHandGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#8B95A5" stopOpacity={0.85} />
