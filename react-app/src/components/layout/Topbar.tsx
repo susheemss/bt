@@ -92,13 +92,15 @@ export default function Topbar() {
             </div>
           )}
 
-          <div className="seg">
-            {([4, 8] as const).map((h) => (
-              <span key={h} className={`seg-item ${horizon === h ? 'seg-item-active' : ''}`} onClick={() => setHorizon(h)}>
-                {h}mo
-              </span>
-            ))}
-          </div>
+          {!isStores && (
+            <div className="seg">
+              {([4, 8] as const).map((h) => (
+                <span key={h} className={`seg-item ${horizon === h ? 'seg-item-active' : ''}`} onClick={() => setHorizon(h)}>
+                  {h}mo
+                </span>
+              ))}
+            </div>
+          )}
         </>
       )}
 

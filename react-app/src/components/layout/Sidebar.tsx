@@ -63,21 +63,6 @@ export default function Sidebar() {
           </div>
         </div>
       </nav>
-
-      {/* User footer */}
-      <div className="px-3 py-3 border-t border-white/[0.07]">
-        <div className="flex items-center gap-2.5 px-1.5">
-          <div
-            className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #6C5CE7, #2E6BE6)' }}
-          >
-            SP
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-[12px] font-semibold text-white/90 truncate leading-tight">Supply Planner</div>
-          </div>
-        </div>
-      </div>
     </aside>
   )
 }

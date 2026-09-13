@@ -49,7 +49,6 @@ export default function Overview() {
   // reasoning as chart3/4.
   const sensingForecast = (selectedSku ? selectedSku.sensingForecast : store.sensingForecast).slice(0, n)
   const sensingSensed = (selectedSku ? selectedSku.sensingSensed : store.sensingSensed).slice(0, n)
-  const sensingUplift = selectedSku ? selectedSku.sensingUplift : store.sensingUplift
 
   const drillDownCtx = {
     store,
@@ -85,8 +84,6 @@ export default function Overview() {
 
         <Panel
           title="Demand sensing vs baseline"
-          subtitle="Monthly overlay · dashed = total demand, solid = sensed · from your demand sensing file"
-          badge={<span className="chip bg-purple-light text-purple font-bold num">{sensingUplift >= 0 ? '+' : ''}{sensingUplift.toFixed(1)}%</span>}
           legend={<><LegendDot color="#8B95A5" label="Total demand" dashed /><LegendDot color="#6C5CE7" label="Sensed forecast" /></>}
         >
           <DemandSensingChart labels={labels} sensed={sensingSensed} totalDemand={sensingForecast} />
