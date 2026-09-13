@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { RefreshCw, Search, ChevronRight, Loader2 } from 'lucide-react'
+import { RefreshCw, Search, ChevronRight, Loader2, FileDown } from 'lucide-react'
 import { useAppStore } from '../../store/useAppStore'
+import { buildChatPayload } from '../../lib/chatPayload'
+import { buildReportData } from '../../lib/reportData'
 
 const PAGE_META: Record<string, { section: string; title: string }> = {
   '/overview': { section: 'Planning', title: 'Demand Overview' },
@@ -13,6 +16,8 @@ export default function Topbar() {
   const location = useLocation()
   const stores = useAppStore((s) => s.stores)
   const storeOrder = useAppStore((s) => s.storeOrder)
+  const invData = useAppStore((s) => s.invData)
+  const sensingData = useAppStore((s) => s.sensingData)
   const currentStore = useAppStore((s) => s.currentStore)
   const setStore = useAppStore((s) => s.setStore)
   const currentSkuFilter = useAppStore((s) => s.currentSkuFilter)
@@ -23,6 +28,24 @@ export default function Topbar() {
   const setHorizon = useAppStore((s) => s.setHorizon)
   const refresh = useAppStore((s) => s.refresh)
   const refreshFromSource = useAppStore((s) => s.refreshFromSource)
+  const [reportBusy, setReportBusy] = useState(false)
+
+  // Whole-network snapshot, same join buildChatPayload uses for the chat
+  // assistant -- independent of whatever store/customer filter is currently
+  // selected, since the report is always a network-wide S&OP summary.
+  async function handleReport() {
+    setReportBusy(true)
+    try {
+      const { stores: joined } = buildChatPayload(stores, invData, sensingData, 'all')
+      const data = buildReportData(joined)
+      // pptxgenjs is a large library (~1MB) -- loaded only when Report is
+      // actually clicked, not bundled into every page's initial load.
+      const { generateReport } = await import('../../lib/generateReport')
+      await generateReport(data)
+    } finally {
+      setReportBusy(false)
+    }
+  }
 
   const isStores = location.pathname.startsWith('/stores/')
   const store = currentStore ? stores[currentStore] : null
@@ -115,6 +138,15 @@ export default function Topbar() {
       >
         {refresh.status === 'loading' ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
         Refresh
+      </button>
+      <button
+        className="btn-ghost !px-2.5 !text-[11px] !font-semibold gap-1.5"
+        title="Download a network-wide S&OP summary (.pptx) built from the currently loaded data"
+        onClick={handleReport}
+        disabled={storeOrder.length === 0 || reportBusy}
+      >
+        {reportBusy ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />}
+        Report
       </button>
     </header>
   )
