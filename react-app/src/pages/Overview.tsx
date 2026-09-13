@@ -77,7 +77,7 @@ export default function Overview() {
         <Panel
           title="Demand forecast"
           subtitle="Units / month · baseline vs AI sensed uplift · click any bar to drill down"
-          legend={<><LegendDot color="#2E6BE6" label="Baseline" /><LegendDot color="#6C5CE7" label="AI uplift" /></>}
+          legend={<><LegendDot color="#8B95A5" label="Baseline" /><LegendDot color="#2E6BE6" label="AI uplift" /></>}
         >
           <DemandForecastChart labels={labels} forecast={forecast} sensed={sensed} onBarClick={handleDemandBarClick} />
         </Panel>
