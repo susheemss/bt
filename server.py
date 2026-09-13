@@ -19,7 +19,8 @@ Stop:  close this window / Ctrl+C
 Bound to 127.0.0.1 only -- reachable only from a browser on this same
 server, not from other PCs on the network.
 
-  POST /api/chat  -- AI assistant. See chat_backend.py.
+  POST /api/chat            -- AI assistant. See chat_backend.py.
+  POST /api/redeploy-agent  -- redeploy-matching agent. See chat_backend.py.
 """
 import http.server
 import json
@@ -49,18 +50,26 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             super().do_GET()
 
     def do_POST(self):
-        if self.path.split('?')[0] == '/api/chat':
+        route = self.path.split('?')[0]
+        if route == '/api/chat':
             self.handle_chat()
+        elif route == '/api/redeploy-agent':
+            self.handle_redeploy_agent()
         else:
             self.send_plain_error(404, 'Not found')
 
+    def _read_json_body(self):
+        length = int(self.headers.get('Content-Length', 0))
+        if length <= 0 or length > 20_000_000:
+            return None
+        return json.loads(self.rfile.read(length).decode('utf-8'))
+
     def handle_chat(self):
         try:
-            length = int(self.headers.get('Content-Length', 0))
-            if length <= 0 or length > 20_000_000:
+            body = self._read_json_body()
+            if body is None:
                 self.send_json_error(400, 'Missing or oversized request body')
                 return
-            body = json.loads(self.rfile.read(length).decode('utf-8'))
             message = (body.get('message') or '').strip()
             if not message:
                 self.send_json_error(400, "Missing 'message'")
@@ -68,6 +77,22 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             history = body.get('history') or []
             data = body.get('data') or {}
             answer = chat_backend.handle_chat(message, history, data)
+            self.send_json(200, {'answer': answer})
+        except chat_backend.ChatError as e:
+            self.send_json_error(502, str(e))
+        except json.JSONDecodeError:
+            self.send_json_error(400, 'Invalid JSON body')
+        except Exception as e:
+            self.send_json_error(500, f'Unexpected error: {e}')
+
+    def handle_redeploy_agent(self):
+        try:
+            body = self._read_json_body()
+            if body is None:
+                self.send_json_error(400, 'Missing or oversized request body')
+                return
+            data = body.get('data') or {}
+            answer = chat_backend.handle_redeploy_agent(data)
             self.send_json(200, {'answer': answer})
         except chat_backend.ChatError as e:
             self.send_json_error(502, str(e))

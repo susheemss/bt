@@ -311,11 +311,161 @@ TOOL_IMPL = {
 }
 
 
-def _call_openrouter(messages, api_key, model):
+# ════════════════════════════════════════════════════════════════
+# REDEPLOY-MATCHING AGENT -- a second, narrower agent with its own fixed
+# task and its own small toolset (kept separate from TOOL_SCHEMAS/TOOL_IMPL
+# above so the general Q&A assistant's behavior is unchanged). The model
+# decides WHICH SKUs are worth matching and WHY; the transfer quantity
+# itself always comes from get_redeploy_match's own computation below, never
+# from the model's own arithmetic -- same "tool-calling only, never state a
+# number you didn't get from a tool" rule the rest of this file follows.
+# ════════════════════════════════════════════════════════════════
+
+REDEPLOY_SYSTEM_PROMPT = (
+    "You are a network redeployment analyst for a supply-chain cockpit covering "
+    "several stores. Your task: find real opportunities to move overstocked "
+    "inventory from one store to another store that is short on the exact same "
+    "SKU, instead of that store placing a new replenishment order.\n\n"
+    "Method, in order:\n"
+    "1. Call list_overstock_skus to see every SKU flagged Redeploy (real surplus "
+    "above ROP) across all stores.\n"
+    "2. Call list_shortfall_skus to see every SKU flagged Replenish or Low (real "
+    "net requirement) across all stores.\n"
+    "3. Match SKU names that appear in BOTH lists at DIFFERENT stores.\n"
+    "4. For every match worth reporting, call get_redeploy_match with the exact "
+    "sku / source_store / target_store to get the verified transfer quantity. "
+    "Never compute or state a transfer quantity yourself -- always get it from "
+    "this tool, and only report the number it returns.\n"
+    "5. When a SKU's surplus could cover more than one shortfall store, prefer "
+    "the store whose status is 'low' (more urgent) over 'replenish'.\n\n"
+    "Present the result as a short markdown bullet list, one line per "
+    "recommended transfer: SKU, from store, to store, suggested quantity, and "
+    "a short reason (e.g. target status). If a SKU is overstocked with no "
+    "matching shortfall anywhere, or a shortfall has no matching overstock "
+    "anywhere, leave it out rather than forcing a match. If there are no "
+    "matches at all, say so plainly, in one short sentence of prose -- don't "
+    "invent one. Always answer in plain prose/markdown text. Never answer "
+    "with a raw JSON object or a code block, even when the result is empty."
+)
+
+TOOL_SCHEMAS_REDEPLOY = [
+    {
+        "type": "function",
+        "function": {
+            "name": "list_overstock_skus",
+            "description": (
+                "List every SKU across all stores currently flagged Redeploy "
+                "(overstocked), with its real on-hand, ROP and surplus "
+                "(on-hand minus ROP)."
+            ),
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_shortfall_skus",
+            "description": (
+                "List every SKU across all stores currently flagged Replenish "
+                "or Low, with its real net requirement and status."
+            ),
+            "parameters": {"type": "object", "properties": {}, "required": []},
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_redeploy_match",
+            "description": (
+                "Given one SKU, a source store (where it's overstocked) and a "
+                "target store (where it's short), returns the verified real "
+                "surplus, shortfall and suggested transfer quantity -- the "
+                "smaller of the two, computed here, not by you."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "sku": {"type": "string", "description": "Exact SKU name"},
+                    "source_store": {"type": "string", "description": "Store with the surplus"},
+                    "target_store": {"type": "string", "description": "Store with the shortfall"},
+                },
+                "required": ["sku", "source_store", "target_store"],
+            },
+        },
+    },
+]
+
+
+def tool_list_overstock_skus(data, args):
+    out = []
+    for store in data.get('stores', {}).values():
+        for sk in store.get('skus', []):
+            if not sk.get('hasInv') or sk.get('st') != 'redeploy':
+                continue
+            oh, rop = sk.get('oh') or 0, sk.get('rop') or 0
+            surplus = oh - rop
+            if surplus > 0:
+                out.append({
+                    "store": store.get('name'), "sku": sk.get('name'),
+                    "on_hand": oh, "rop": rop, "surplus": surplus,
+                })
+    return {"overstock": out, "count": len(out)}
+
+
+def tool_list_shortfall_skus(data, args):
+    out = []
+    for store in data.get('stores', {}).values():
+        for sk in store.get('skus', []):
+            if not sk.get('hasInv') or sk.get('st') not in ('replenish', 'low'):
+                continue
+            nr = sk.get('nr') or 0
+            if nr > 0:
+                out.append({
+                    "store": store.get('name'), "sku": sk.get('name'),
+                    "net_requirement": nr, "status": sk.get('st'),
+                })
+    return {"shortfall": out, "count": len(out)}
+
+
+def tool_get_redeploy_match(data, args):
+    source = _find_store(data, args.get('source_store', ''))
+    if not source:
+        return {"error": f"No store found named '{args.get('source_store')}'"}
+    target = _find_store(data, args.get('target_store', ''))
+    if not target:
+        return {"error": f"No store found named '{args.get('target_store')}'"}
+    sku_name = args.get('sku', '')
+    src_sku, tgt_sku = _find_sku(source, sku_name), _find_sku(target, sku_name)
+    if not src_sku:
+        return {"error": f"No SKU found named '{sku_name}' at {source.get('name')}"}
+    if not tgt_sku:
+        return {"error": f"No SKU found named '{sku_name}' at {target.get('name')}"}
+    if not src_sku.get('hasInv') or not tgt_sku.get('hasInv'):
+        return {"error": f"Missing real inventory data for '{sku_name}' at one of these stores"}
+    surplus = (src_sku.get('oh') or 0) - (src_sku.get('rop') or 0)
+    shortfall = tgt_sku.get('nr') or 0
+    return {
+        "sku": sku_name,
+        "source_store": source.get('name'), "source_on_hand": src_sku.get('oh'),
+        "source_rop": src_sku.get('rop'), "source_surplus": surplus,
+        "target_store": target.get('name'), "target_status": tgt_sku.get('st'),
+        "target_net_requirement": shortfall,
+        "suggested_transfer_qty": max(0, min(surplus, shortfall)),
+    }
+
+
+TOOL_IMPL_REDEPLOY = {
+    "list_overstock_skus": tool_list_overstock_skus,
+    "list_shortfall_skus": tool_list_shortfall_skus,
+    "get_redeploy_match": tool_get_redeploy_match,
+}
+
+
+def _call_openrouter(messages, tools, api_key, model):
     body = json.dumps({
         "model": model,
         "messages": messages,
-        "tools": TOOL_SCHEMAS,
+        "tools": tools,
     }).encode('utf-8')
     req = urllib.request.Request(
         OPENROUTER_URL,
@@ -339,6 +489,44 @@ def _call_openrouter(messages, api_key, model):
         raise ChatError(f'Could not reach OpenRouter: {e.reason}')
 
 
+def _run_tool_loop(messages, tools, tool_impl, data, api_key, model, max_rounds, log_prefix):
+    """Shared agent loop: call the model, execute whatever tool calls it asks
+    for against the real data, feed the results back, repeat until it gives a
+    final text answer (or the round budget runs out). Used by both the
+    general chat assistant and the redeploy-matching agent -- same loop,
+    different system prompt / toolset / task."""
+    print(f'[{log_prefix}] starting (model={model})', flush=True)
+    for round_i in range(max_rounds):
+        resp = _call_openrouter(messages, tools, api_key, model)
+        if 'error' in resp:
+            raise ChatError(f"OpenRouter error: {resp['error']}")
+        choice = resp['choices'][0]
+        msg = choice['message']
+        tool_calls = msg.get('tool_calls')
+        if not tool_calls:
+            answer = msg.get('content', '').strip() or "(no answer returned)"
+            print(f'[{log_prefix}] -> answer (round {round_i}): {answer!r}', flush=True)
+            return answer
+
+        messages.append(msg)
+        for tc in tool_calls:
+            fn_name = tc['function']['name']
+            try:
+                fn_args = json.loads(tc['function'].get('arguments') or '{}')
+            except json.JSONDecodeError:
+                fn_args = {}
+            impl = tool_impl.get(fn_name)
+            result = impl(data, fn_args) if impl else {"error": f"Unknown tool '{fn_name}'"}
+            print(f'[{log_prefix}]   tool {fn_name}({fn_args}) -> {result}', flush=True)
+            messages.append({
+                "role": "tool",
+                "tool_call_id": tc['id'],
+                "content": json.dumps(result),
+            })
+
+    return "I wasn't able to settle on an answer within a reasonable number of tool calls -- try rephrasing the question."
+
+
 def handle_chat(user_message, history, data):
     """history: list of {role, content} from prior turns (no tool-call plumbing
     from earlier turns is replayed -- each turn resolves its own tool calls).
@@ -352,34 +540,19 @@ def handle_chat(user_message, history, data):
             messages.append({"role": h['role'], "content": h['content']})
     messages.append({"role": "user", "content": user_message})
 
-    MAX_TOOL_ROUNDS = 4
-    print(f'[chat] Q: {user_message!r} (model={model})', flush=True)
-    for round_i in range(MAX_TOOL_ROUNDS):
-        resp = _call_openrouter(messages, api_key, model)
-        if 'error' in resp:
-            raise ChatError(f"OpenRouter error: {resp['error']}")
-        choice = resp['choices'][0]
-        msg = choice['message']
-        tool_calls = msg.get('tool_calls')
-        if not tool_calls:
-            answer = msg.get('content', '').strip() or "(no answer returned)"
-            print(f'[chat] -> answer (round {round_i}): {answer!r}', flush=True)
-            return answer
+    return _run_tool_loop(messages, TOOL_SCHEMAS, TOOL_IMPL, data, api_key, model, max_rounds=4, log_prefix='chat')
 
-        messages.append(msg)
-        for tc in tool_calls:
-            fn_name = tc['function']['name']
-            try:
-                fn_args = json.loads(tc['function'].get('arguments') or '{}')
-            except json.JSONDecodeError:
-                fn_args = {}
-            impl = TOOL_IMPL.get(fn_name)
-            result = impl(data, fn_args) if impl else {"error": f"Unknown tool '{fn_name}'"}
-            print(f'[chat]   tool {fn_name}({fn_args}) -> {result}', flush=True)
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tc['id'],
-                "content": json.dumps(result),
-            })
 
-    return "I wasn't able to settle on an answer within a reasonable number of tool calls -- try rephrasing the question."
+def handle_redeploy_agent(data):
+    """Runs the redeploy-matching agent's fixed task once (no user question,
+    no conversation history -- it's a standalone analysis, not a chat turn)
+    and returns its markdown answer. data: the browser's parsed STORES
+    snapshot, same shape handle_chat receives."""
+    api_key = _read_config(API_KEY_FILE, 'OpenRouter API key')
+    model = get_model()
+
+    messages = [
+        {"role": "system", "content": REDEPLOY_SYSTEM_PROMPT},
+        {"role": "user", "content": "Find redeploy opportunities across the network right now."},
+    ]
+    return _run_tool_loop(messages, TOOL_SCHEMAS_REDEPLOY, TOOL_IMPL_REDEPLOY, data, api_key, model, max_rounds=8, log_prefix='redeploy')

@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect, Fragment } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Bot, X, Send, Sparkles } from 'lucide-react'
 import { useAppStore } from '../../store/useAppStore'
 import { buildChatPayload } from '../../lib/chatPayload'
+import { renderMarkdownLite } from '../../lib/markdownLite'
 
 /* Real AI assistant: POSTs to /api/chat (chat_backend.py), which gives an
    LLM a fixed set of tools that look up real values from the data this
@@ -20,30 +21,6 @@ type Msg = { role: 'user' | 'bot' | 'error'; text: string }
 // with a network error. The server.py-served build never sets this, so
 // chat behaves exactly as before there.
 const CHAT_DISABLED = import.meta.env.VITE_CHAT_DISABLED === 'true'
-
-/** Renders **bold** and "- " bullets as real React elements -- no HTML
- *  string is ever built from model output, so there's nothing to escape
- *  and no injection surface, unlike an innerHTML-based approach. */
-function renderMarkdownLite(text: string) {
-  const lines = text.split('\n')
-  return lines.map((line, li) => {
-    const isBullet = /^[-*]\s+/.test(line)
-    const content = isBullet ? line.replace(/^[-*]\s+/, '') : line
-    const parts = content.split(/(\*\*.+?\*\*)/g).map((part, pi) =>
-      part.startsWith('**') && part.endsWith('**') ? (
-        <strong key={pi} className="font-bold">{part.slice(2, -2)}</strong>
-      ) : (
-        <Fragment key={pi}>{part}</Fragment>
-      )
-    )
-    return (
-      <div key={li} className={isBullet ? 'flex gap-1.5' : undefined}>
-        {isBullet && <span className="flex-shrink-0">•</span>}
-        <span>{parts}</span>
-      </div>
-    )
-  })
-}
 
 export default function ChatAssistant() {
   const [open, setOpen] = useState(false)
