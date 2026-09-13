@@ -6,6 +6,7 @@ const PAGE_META: Record<string, { section: string; title: string }> = {
   '/overview': { section: 'Planning', title: 'Demand Overview' },
   '/kpi': { section: 'Planning', title: 'Demand KPI' },
   '/replenishment': { section: 'Planning', title: 'Replenishment & DC dispatch' },
+  '/agents': { section: 'AI', title: 'AI Agent' },
 }
 
 export default function Topbar() {

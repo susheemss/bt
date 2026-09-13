@@ -6,6 +6,7 @@ import Overview from './pages/Overview'
 import Kpi from './pages/Kpi'
 import StoreDetail from './pages/StoreDetail'
 import Dispatch from './pages/Dispatch'
+import Agents from './pages/Agents'
 import ChatAssistant from './components/ai/ChatAssistant'
 import DrillDownPanel from './components/drilldown/DrillDownPanel'
 import { useAppStore } from './store/useAppStore'
@@ -48,6 +49,7 @@ export default function App() {
               <Route path="/kpi" element={<Kpi />} />
               <Route path="/stores/:storeId" element={<StoreDetail />} />
               <Route path="/replenishment" element={<Dispatch />} />
+              <Route path="/agents" element={<Agents />} />
               <Route path="*" element={<Navigate to="/overview" replace />} />
             </Routes>
           </main>

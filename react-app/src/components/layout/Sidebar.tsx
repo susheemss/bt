@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Store, Truck, Network, Gauge } from 'lucide-react'
+import { LayoutDashboard, Store, Truck, Network, Gauge, Bot } from 'lucide-react'
 import { useAppStore } from '../../store/useAppStore'
 
 function NavItem({ to, icon: Icon, label, badge, aiDot, active }: {
@@ -60,6 +60,13 @@ export default function Sidebar() {
               active={location.pathname.startsWith('/stores/')}
             />
             <NavItem to="/replenishment" icon={Truck} label="Replenishment" aiDot />
+          </div>
+        </div>
+
+        <div>
+          <div className="sidebar-section">AI</div>
+          <div className="space-y-0.5">
+            <NavItem to="/agents" icon={Bot} label="AI Agent" aiDot />
           </div>
         </div>
       </nav>
