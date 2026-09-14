@@ -105,12 +105,12 @@ TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "list_skus",
-            "description": "List SKU names for a store, optionally only those with real inventory data.",
+            "description": "List SKU names for a store.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "store": {"type": "string", "description": "Store name, e.g. 'Location 817'"},
-                    "only_with_inventory": {"type": "boolean", "description": "If true, only list SKUs that have real on-hand/ROP data"},
+                    "store": {"type": "string"},
+                    "only_with_inventory": {"type": "boolean", "description": "true = only SKUs with real on-hand/ROP data"},
                 },
                 "required": ["store"],
             },
@@ -120,7 +120,7 @@ TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "list_customers",
-            "description": "List customer names known for a store (from either the demand or inventory file).",
+            "description": "List customer names known for a store.",
             "parameters": {
                 "type": "object",
                 "properties": {"store": {"type": "string"}},
@@ -132,16 +132,12 @@ TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "get_sku_snapshot",
-            "description": (
-                "Get the current on-hand, safety stock, ROP, net requirement, "
-                "replenishment quantity and status for one SKU at one store. "
-                "This is the real inventory figures, not a forecast."
-            ),
+            "description": "Real on-hand, safety stock, ROP, net requirement, replenishment qty and status for one SKU at one store.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "store": {"type": "string"},
-                    "sku": {"type": "string", "description": "Exact SKU name"},
+                    "sku": {"type": "string"},
                 },
                 "required": ["store", "sku"],
             },
@@ -151,11 +147,7 @@ TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "list_flagged_skus",
-            "description": (
-                "List SKUs at a store currently flagged with a given status "
-                "(replenish, low, ok, hold, or redeploy). Use this for "
-                "questions like 'which SKUs need replenishing'."
-            ),
+            "description": "SKUs at a store with a given status (replenish, low, ok, hold, redeploy) -- e.g. 'which SKUs need replenishing'.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -170,17 +162,12 @@ TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "get_demand_series",
-            "description": (
-                "Get the baseline demand forecast and AI-sensed demand, "
-                "month by month, for a store (optionally one SKU). This is "
-                "the Baseline (units) + Promo Units demand-file data behind "
-                "the 'Demand forecast' bar chart."
-            ),
+            "description": "Baseline forecast + AI-sensed demand by month, for a store (optionally one SKU). Demand-file data.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "store": {"type": "string"},
-                    "sku": {"type": "string", "description": "Optional; omit for the whole store"},
+                    "sku": {"type": "string", "description": "omit for whole store"},
                 },
                 "required": ["store"],
             },
@@ -190,12 +177,7 @@ TOOL_SCHEMAS = [
         "type": "function",
         "function": {
             "name": "get_sensing_series",
-            "description": (
-                "Get the Total Demand and Sensed Forecast, month by month, "
-                "from the separate demand-sensing file -- the data behind "
-                "the 'Demand sensing vs baseline' line chart. Different "
-                "source file from get_demand_series."
-            ),
+            "description": "Total Demand + Sensed Forecast by month, from the separate demand-sensing file (not the same as get_demand_series).",
             "parameters": {
                 "type": "object",
                 "properties": {
