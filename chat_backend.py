@@ -5,14 +5,26 @@ second Excel parser here, one source of truth), gives an LLM a small fixed
 set of tools that look up real values from that data, and returns the
 model's final answer.
 
-Uses OpenRouter (https://openrouter.ai), an OpenAI-compatible API that
-proxies many providers/models, several with a free tier. Only Python's
-standard library is used -- no pip install needed.
+Talks to any OpenAI-compatible chat-completions endpoint -- by default a
+locally-running LM Studio server (http://127.0.0.1:1234), so this needs no
+API key and no internet access at all. Still works with a real hosted
+provider (OpenRouter, etc.) if you point llm_base_url.txt and
+openrouter_api_key.txt at one instead -- nothing here is LM-Studio-specific
+beyond the default URL. Only Python's standard library is used -- no pip
+install needed either way.
 
-Config (both plain text files next to this one, first line only):
-  openrouter_api_key.txt  -- your OpenRouter API key (gitignored)
-  openrouter_model.txt    -- which model id to call, e.g.
-                             "google/gemini-2.0-flash-exp:free"
+Config (plain text files next to this one, first line only, all optional):
+  llm_base_url.txt        -- full chat-completions URL to call. Defaults to
+                              LM Studio's local server if this file is
+                              missing (see DEFAULT_LLM_BASE_URL below).
+  openrouter_model.txt    -- which model id to send. LM Studio ignores this
+                              and just uses whatever model is loaded in its
+                              UI, so it rarely needs to be accurate; matters
+                              more if base_url points at a real hosted API.
+  openrouter_api_key.txt  -- bearer token, only needed for a hosted API
+                              that requires one (gitignored). LM Studio
+                              doesn't check this at all -- if the file is
+                              missing, no Authorization header is sent.
 """
 import json
 import urllib.request
@@ -22,12 +34,12 @@ from pathlib import Path
 APP_DIR = Path(__file__).parent
 API_KEY_FILE = APP_DIR / 'openrouter_api_key.txt'
 MODEL_FILE = APP_DIR / 'openrouter_model.txt'
-OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
-# openrouter/free auto-selects among currently-available free models and
-# filters for tool-calling support -- avoids hardcoding a specific free
-# model id, since OpenRouter's free catalog rotates (models get delisted
-# often; a fixed id here already went stale once during testing).
-DEFAULT_MODEL = 'openrouter/free'
+BASE_URL_FILE = APP_DIR / 'llm_base_url.txt'
+# Local-first: a model running on the same machine via LM Studio, no key,
+# no internet call. Point llm_base_url.txt at a hosted API instead if you
+# want to go back to that.
+DEFAULT_LLM_BASE_URL = 'http://127.0.0.1:1234/v1/chat/completions'
+DEFAULT_MODEL = 'local-model'
 
 SYSTEM_PROMPT = (
     "You are a supply-chain assistant embedded in a demand & replenishment "
@@ -47,21 +59,30 @@ class ChatError(Exception):
     pass
 
 
-def _read_config(path, label):
-    if not path.is_file():
-        raise ChatError(f'{label} not found: {path}. Create it with your value on the first line.')
-    val = path.read_text(encoding='utf-8').strip()
-    if not val:
-        raise ChatError(f'{path.name} is empty.')
-    return val
+def _read_optional(path, default):
+    """Returns the file's first-line content, or `default` if the file is
+    missing or empty -- every one of this module's config files is optional
+    now that the default backend (LM Studio) needs no key and has a fixed
+    well-known local URL."""
+    if path.is_file():
+        val = path.read_text(encoding='utf-8').strip()
+        if val:
+            return val
+    return default
 
 
 def get_model():
-    if MODEL_FILE.is_file():
-        val = MODEL_FILE.read_text(encoding='utf-8').strip()
-        if val:
-            return val
-    return DEFAULT_MODEL
+    return _read_optional(MODEL_FILE, DEFAULT_MODEL)
+
+
+def get_base_url():
+    return _read_optional(BASE_URL_FILE, DEFAULT_LLM_BASE_URL)
+
+
+def get_api_key():
+    """None (not an error) when no key file exists -- a local LM Studio
+    server doesn't check for one at all."""
+    return _read_optional(API_KEY_FILE, None)
 
 
 # ════════════════════════════════════════════════════════════════
@@ -461,45 +482,42 @@ TOOL_IMPL_REDEPLOY = {
 }
 
 
-def _call_openrouter(messages, tools, api_key, model):
+def _call_llm(messages, tools, base_url, api_key, model):
     body = json.dumps({
         "model": model,
         "messages": messages,
         "tools": tools,
     }).encode('utf-8')
-    req = urllib.request.Request(
-        OPENROUTER_URL,
-        data=body,
-        method='POST',
-        headers={
-            'Authorization': f'Bearer {api_key}',
-            'Content-Type': 'application/json',
-            # OpenRouter asks for these two for attribution/rankings; harmless to omit-safe defaults.
-            'HTTP-Referer': 'http://127.0.0.1:8000',
-            'X-Title': 'Decision Intelligence Cockpit',
-        },
-    )
+    headers = {'Content-Type': 'application/json'}
+    # Only sent when a key is actually configured -- a local LM Studio server
+    # doesn't check for one at all, and sending a fake one is unnecessary.
+    if api_key:
+        headers['Authorization'] = f'Bearer {api_key}'
+    req = urllib.request.Request(base_url, data=body, method='POST', headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        with urllib.request.urlopen(req, timeout=60) as resp:
             return json.loads(resp.read().decode('utf-8'))
     except urllib.error.HTTPError as e:
         detail = e.read().decode('utf-8', errors='replace')[:500]
-        raise ChatError(f'OpenRouter HTTP {e.code}: {detail}')
+        raise ChatError(f'LLM backend HTTP {e.code} ({base_url}): {detail}')
     except urllib.error.URLError as e:
-        raise ChatError(f'Could not reach OpenRouter: {e.reason}')
+        raise ChatError(
+            f'Could not reach the LLM backend at {base_url} ({e.reason}). '
+            f'If this is meant to be LM Studio, check it\'s running and the local server is started.'
+        )
 
 
-def _run_tool_loop(messages, tools, tool_impl, data, api_key, model, max_rounds, log_prefix):
+def _run_tool_loop(messages, tools, tool_impl, data, base_url, api_key, model, max_rounds, log_prefix):
     """Shared agent loop: call the model, execute whatever tool calls it asks
     for against the real data, feed the results back, repeat until it gives a
     final text answer (or the round budget runs out). Used by both the
     general chat assistant and the redeploy-matching agent -- same loop,
     different system prompt / toolset / task."""
-    print(f'[{log_prefix}] starting (model={model})', flush=True)
+    print(f'[{log_prefix}] starting (model={model}, backend={base_url})', flush=True)
     for round_i in range(max_rounds):
-        resp = _call_openrouter(messages, tools, api_key, model)
+        resp = _call_llm(messages, tools, base_url, api_key, model)
         if 'error' in resp:
-            raise ChatError(f"OpenRouter error: {resp['error']}")
+            raise ChatError(f"LLM backend error: {resp['error']}")
         choice = resp['choices'][0]
         msg = choice['message']
         tool_calls = msg.get('tool_calls')
@@ -531,7 +549,8 @@ def handle_chat(user_message, history, data):
     """history: list of {role, content} from prior turns (no tool-call plumbing
     from earlier turns is replayed -- each turn resolves its own tool calls).
     data: the browser's parsed STORES snapshot, as JSON."""
-    api_key = _read_config(API_KEY_FILE, 'OpenRouter API key')
+    base_url = get_base_url()
+    api_key = get_api_key()
     model = get_model()
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
@@ -540,7 +559,7 @@ def handle_chat(user_message, history, data):
             messages.append({"role": h['role'], "content": h['content']})
     messages.append({"role": "user", "content": user_message})
 
-    return _run_tool_loop(messages, TOOL_SCHEMAS, TOOL_IMPL, data, api_key, model, max_rounds=4, log_prefix='chat')
+    return _run_tool_loop(messages, TOOL_SCHEMAS, TOOL_IMPL, data, base_url, api_key, model, max_rounds=4, log_prefix='chat')
 
 
 def handle_redeploy_agent(data):
@@ -548,11 +567,12 @@ def handle_redeploy_agent(data):
     no conversation history -- it's a standalone analysis, not a chat turn)
     and returns its markdown answer. data: the browser's parsed STORES
     snapshot, same shape handle_chat receives."""
-    api_key = _read_config(API_KEY_FILE, 'OpenRouter API key')
+    base_url = get_base_url()
+    api_key = get_api_key()
     model = get_model()
 
     messages = [
         {"role": "system", "content": REDEPLOY_SYSTEM_PROMPT},
         {"role": "user", "content": "Find redeploy opportunities across the network right now."},
     ]
-    return _run_tool_loop(messages, TOOL_SCHEMAS_REDEPLOY, TOOL_IMPL_REDEPLOY, data, api_key, model, max_rounds=8, log_prefix='redeploy')
+    return _run_tool_loop(messages, TOOL_SCHEMAS_REDEPLOY, TOOL_IMPL_REDEPLOY, data, base_url, api_key, model, max_rounds=8, log_prefix='redeploy')

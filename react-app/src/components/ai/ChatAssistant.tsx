@@ -76,7 +76,7 @@ export default function ChatAssistant() {
         setMessages((m) => [...m, { role: 'bot', text: body.answer }])
         historyRef.current = [...historyRef.current, { role: 'user', content: q }, { role: 'assistant', content: body.answer }]
       } else {
-        setMessages((m) => [...m, { role: 'error', text: `Could not get an answer — ${body.error ?? 'unknown error'}. If this is the first time, check that openrouter_api_key.txt is set up on the server.` }])
+        setMessages((m) => [...m, { role: 'error', text: `Could not get an answer — ${body.error ?? 'unknown error'}. If this is the first time, check that the local LLM server (LM Studio) is running on the server.` }])
       }
     } catch (err) {
       setMessages((m) => [...m, { role: 'error', text: `Could not reach the server — ${err instanceof Error ? err.message : String(err)}` }])

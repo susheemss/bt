@@ -3,7 +3,7 @@ import type { ReportData } from './reportData'
 
 /* Builds a downloadable .pptx entirely client-side from already-computed
    real data (ReportData, from reportData.ts) -- no backend call, no LLM, so
-   this works even without an OpenRouter key configured, and every number on
+   this works even without any LLM backend configured or running, and every number on
    every slide is something the app already computed elsewhere (status
    counts, net requirement, on-hand, the same redeploy-match definitions the
    AI Agent uses). Nothing here writes prose about what the numbers mean --
