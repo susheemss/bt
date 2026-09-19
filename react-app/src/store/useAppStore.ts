@@ -4,24 +4,27 @@ import type { LiveStore, RefreshState } from '../types'
 import { DEMAND_REQUIRED_COLS, findDemandSheet, parseDemandWorkbook } from '../lib/parseDemand'
 import { INVENTORY_REQUIRED_COLS, findInventorySheet, parseInventoryWorkbook, type InvStoreData } from '../lib/parseInventory'
 import { SENSING_REQUIRED_COLS, findSensingSheet, parseSensingWorkbook, type SensingStoreData } from '../lib/parseSensing'
+import { findRecommendationSheet, parseRecommendationsSheet, type Recommendation } from '../lib/parseRecommendations'
 import { mergeInventoryRoster } from '../lib/joinInventory'
 import { mergeSensingRoster } from '../lib/joinSensing'
 
-/* Same three routes the existing server.py already exposes -- each reads a
+/* Same routes the existing server.py already exposes -- each reads a
    path from a local config .txt file on every request and serves whatever
-   Excel file is at that path, so this fetch is agnostic to where the real
+   file is at that path, so this fetch is agnostic to where the real
    source files actually live on disk. Root-absolute, since server.py
    registers these routes at the server root regardless of which subfolder
    actually serves this build's index.html. */
 const DEMAND_URL = '/source-data.xlsx'
 const INVENTORY_URL = '/source-data-inventory.xlsx'
 const SENSING_URL = '/source-data-sensing.xlsx'
+const RECOMMENDATIONS_URL = '/source-data-recommendations.csv'
 
 interface AppState {
   stores: Record<string, LiveStore>
   storeOrder: string[]
   invData: Record<string, InvStoreData>
   sensingData: Record<string, SensingStoreData>
+  recommendations: Recommendation[]
   currentStore: string | null
   currentSkuFilter: string
   currentCustomerFilter: string
@@ -49,6 +52,7 @@ export const useAppStore = create<AppState>((set, get) => {
   storeOrder: [],
   invData: {},
   sensingData: {},
+  recommendations: [],
   currentStore: null,
   currentSkuFilter: 'all',
   currentCustomerFilter: 'all',
@@ -124,6 +128,31 @@ export const useAppStore = create<AppState>((set, get) => {
         console.warn('[Refresh] Sensing refresh failed, continuing without it:', sensErr)
       }
 
+      // Not per-store like the three above -- a flat list of already-decided
+      // recommendations from a separate external AI system, so there's no
+      // join step, just a fetch + parse. Optional/non-fatal, same as
+      // inventory and sensing: no file configured just means an empty list.
+      let recNote: string | null = null
+      let recommendations: Recommendation[] = []
+      try {
+        const recRes = await fetch(RECOMMENDATIONS_URL + '?t=' + Date.now(), { cache: 'no-store' })
+        if (recRes.ok) {
+          const recBuf = await recRes.arrayBuffer()
+          const recWb = XLSX.read(recBuf, { type: 'array', cellDates: true })
+          const recSheetName = findRecommendationSheet(recWb)
+          if (recSheetName) {
+            recommendations = parseRecommendationsSheet(recWb, recSheetName)
+            recNote = 'recommendations'
+          } else {
+            console.warn('[Refresh] Recommendations file reachable but no sheet matched the expected columns.')
+          }
+        } else {
+          console.warn('[Refresh] Recommendations file not reachable (HTTP ' + recRes.status + ') — continuing without it.')
+        }
+      } catch (recErr) {
+        console.warn('[Refresh] Recommendations refresh failed, continuing without it:', recErr)
+      }
+
       const prevStore = get().currentStore
       const nextStore = prevStore && stores[prevStore] ? prevStore : storeOrder[0] ?? null
 
@@ -132,12 +161,13 @@ export const useAppStore = create<AppState>((set, get) => {
         storeOrder,
         invData,
         sensingData,
+        recommendations,
         currentStore: nextStore,
         currentSkuFilter: 'all',
         currentCustomerFilter: 'all',
         refresh: {
           status: 'success',
-          message: '✓ Refreshed from source file' + (invNote ? ' + ' + invNote : '') + (sensNote ? ' + ' + sensNote : ''),
+          message: '✓ Refreshed from source file' + (invNote ? ' + ' + invNote : '') + (sensNote ? ' + ' + sensNote : '') + (recNote ? ' + ' + recNote : ''),
           lastRefreshedAt: Date.now(),
           demandFileNote: `${storeOrder.length} store${storeOrder.length === 1 ? '' : 's'}`,
           inventoryFileNote: invNote,

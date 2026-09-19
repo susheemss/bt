@@ -1,14 +1,16 @@
 """
 Tiny static file server for the Decision Intelligence dashboard, plus
-two custom routes that each serve a live Excel source file from ANY
+several custom routes that each serve a live source file from ANY
 absolute path on this server -- neither has to be inside this app's
 folder at all.
 
-  /source-data.xlsx           <- path in source_path.txt            (demand)
-  /source-data-inventory.xlsx <- path in source_path_inventory.txt  (inventory)
+  /source-data.xlsx                 <- source_path.txt                 (demand, Excel)
+  /source-data-inventory.xlsx       <- source_path_inventory.txt       (inventory, Excel)
+  /source-data-sensing.xlsx         <- source_path_sensing.txt         (sensing, Excel)
+  /source-data-recommendations.csv  <- source_path_recommendations.txt (AI recommendations, CSV)
 
 Each path is read from its config file on every request, so you can
-change where either one points without restarting this server -- just
+change where any of them points without restarting this server -- just
 edit the .txt file and click Refresh in the browser again.
 
 Everything else (index.html, live_data.js, etc.) is served normally
@@ -32,10 +34,19 @@ BIND = '127.0.0.1'
 APP_DIR = Path(__file__).parent
 
 ROUTES = {
-    '/source-data.xlsx':           APP_DIR / 'source_path.txt',
-    '/source-data-inventory.xlsx': APP_DIR / 'source_path_inventory.txt',
-    '/source-data-sensing.xlsx':   APP_DIR / 'source_path_sensing.txt',
+    '/source-data.xlsx':                APP_DIR / 'source_path.txt',
+    '/source-data-inventory.xlsx':      APP_DIR / 'source_path_inventory.txt',
+    '/source-data-sensing.xlsx':        APP_DIR / 'source_path_sensing.txt',
+    '/source-data-recommendations.csv': APP_DIR / 'source_path_recommendations.txt',
 }
+# Content-Type per route -- everything defaults to the Excel mimetype except
+# the recommendations route, which is a real CSV. Harmless either way since
+# the frontend parses raw bytes itself rather than trusting this header, but
+# worth being accurate.
+ROUTE_CONTENT_TYPE = {
+    '/source-data-recommendations.csv': 'text/csv',
+}
+DEFAULT_CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 
 
 class Handler(http.server.SimpleHTTPRequestHandler):
@@ -45,7 +56,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
         route = self.path.split('?')[0]
         if route in ROUTES:
-            self.serve_configured_file(ROUTES[route])
+            self.serve_configured_file(ROUTES[route], ROUTE_CONTENT_TYPE.get(route, DEFAULT_CONTENT_TYPE))
         else:
             super().do_GET()
 
@@ -113,9 +124,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def send_json_error(self, code, message):
         self.send_json(code, {'error': message})
 
-    def serve_configured_file(self, config_file):
+    def serve_configured_file(self, config_file, content_type=DEFAULT_CONTENT_TYPE):
         if not config_file.is_file():
-            self.send_plain_error(500, f'Config file not found: {config_file}. Create it with the full path to your Excel file on the first line.')
+            self.send_plain_error(500, f'Config file not found: {config_file}. Create it with the full path to your source file on the first line.')
             return
         raw_path = config_file.read_text(encoding='utf-8').strip()
         # Windows "Copy as path" wraps the path in double quotes -- strip
@@ -123,7 +134,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if len(raw_path) >= 2 and raw_path[0] == '"' and raw_path[-1] == '"':
             raw_path = raw_path[1:-1]
         if not raw_path:
-            self.send_plain_error(500, f'{config_file.name} is empty -- put the full path to the Excel file in it.')
+            self.send_plain_error(500, f'{config_file.name} is empty -- put the full path to the source file in it.')
             return
         source_path = Path(raw_path)
         if not source_path.is_file():
@@ -138,7 +149,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self.send_plain_error(500, f'Could not read file: {e}')
             return
         self.send_response(200)
-        self.send_header('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        self.send_header('Content-Type', content_type)
         self.send_header('Content-Length', str(len(data)))
         self.send_header('Cache-Control', 'no-store')
         self.end_headers()

@@ -1,24 +1,25 @@
 import { Truck, Gauge, Container, ShieldCheck } from 'lucide-react'
 import KpiTile from '../components/kpi/KpiTile'
 import AIRationalePanel from '../components/ai/AIRationalePanel'
-import PendingNote from '../components/ui/PendingNote'
+import RecommendationsPanel from '../components/ai/RecommendationsPanel'
 import AITag from '../components/ai/AITag'
+import { useAppStore } from '../store/useAppStore'
 
 /* Network-level lane consolidation (CLAUDE.md section 5, Screen 3). Nothing
    in the demand or inventory files gives freight cost, truck capacity, or a
-   DC-to-store lane assignment, so this has never had real numbers to plot --
-   it stays a clearly labelled preview of what the plan table and KPIs will
-   show once that data is wired up, same as every other pending panel here.
-   The rationale panel on the right is left as real content: it explains the
-   optimiser's methodology (net requirement, 85% truck-fill target, lane
-   modes), not a live number, so there's nothing to fabricate there. The
-   redeploy-matching agent that briefly lived in this left slot moved to its
-   own AI Agents page -- that's real content today (on-hand/ROP/net
-   requirement, no freight data needed), just not this screen's job per
-   CLAUDE.md's Screen 3 spec. */
+   DC-to-store lane assignment, so the KPI tiles above have never had real
+   numbers to plot -- they stay pending until that data exists. The left
+   panel below used to be a pending note for the same reason, but now shows
+   AI_recommendation.csv's real output instead (source_path_recommendations.txt)
+   -- a genuinely different, already-real data source, not something this
+   screen fabricates to fill the gap. The rationale panel on the right stays
+   as real content too: it explains the optimiser's methodology, not a live
+   number, so there's nothing to fabricate there either. */
 export default function Dispatch() {
+  const recommendations = useAppStore((s) => s.recommendations)
+
   return (
-    <div className="space-y-4">
+    <div className="h-full flex flex-col gap-4">
       <div className="flex items-center gap-2">
         <AITag label="AI-optimized" />
         <span className="text-[11px] text-ink4">Objective: minimise network transportation cost at 98% service level</span>
@@ -31,15 +32,8 @@ export default function Dispatch() {
         <KpiTile label="Capacity-feasible" value="—" icon={<ShieldCheck size={15} />} />
       </div>
 
-      <div className="grid grid-cols-[1fr_330px] gap-4 items-stretch">
-        <div className="min-w-0 panel p-5">
-          <PendingNote>
-            The consolidated replenishment plan needs <b className="text-ink3">freight cost and truck capacity</b> data
-            per DC → store lane — neither is part of the uploaded demand or inventory files yet. Once available, this
-            panel will show each lane's SKU count, units, truck fill, shipping mode and freight cost, consolidated
-            to maximise truck fill above the 85% target.
-          </PendingNote>
-        </div>
+      <div className="grid grid-cols-[1fr_330px] gap-4 items-stretch flex-1 min-h-0">
+        <RecommendationsPanel recommendations={recommendations} />
         <AIRationalePanel />
       </div>
     </div>
