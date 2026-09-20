@@ -1,0 +1,8 @@
+id,rank,priority,recommendation_type,headline,subtext
+REC-001,1,CRITICAL,CURRENT_CYCLE_REPLENISHMENT,Current Cycle Replenishment Required: 2376 Units Now,"Based on current simulation, reorder now to avoid stockouts."
+REC-002,2,CRITICAL,ZERO_BALANCE_RISK,Zero Balance Warning for 65 SKUs: Replenish Now,"Projected balance at or below zero for 65 SKUs, urgent action required."
+REC-003,3,CRITICAL,HORIZON_REPLENISHMENT_OUTLOOK,Full Horizon Replenishment Outlook: 24026 Units Over Simulation,Projected replenishment over the full simulation horizon.
+REC-004,4,HIGH,TOP_SKU_REPLENISHMENT,Order Now for Planning Item 179191: 276 Units,Critical SKU with high risk score and urgent period count.
+REC-005,5,HIGH,TOP_SKU_REPLENISHMENT,Order Now for Planning Item 76628: 157 Units,Critical SKU with high risk score and urgent period count.
+REC-006,6,HIGH,TOP_SKU_REPLENISHMENT,Order Now for Planning Item 76627: 125 Units,Critical SKU with high risk score and urgent period count.
+REC-007,7,HIGH,TOP_SKU_REPLENISHMENT,Order Now for Planning Item 74682: 123 Units,Critical SKU with high risk score and urgent period count.
